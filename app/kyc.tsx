@@ -1,0 +1,243 @@
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Image } from 'expo-image';
+import { useRouter } from 'expo-router';
+import * as DocumentPicker from 'expo-document-picker';
+import * as LegacyFS from 'expo-file-system/legacy';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Modal } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { BSColors } from '@/constants/theme';
+
+export default function KYCScreen() {
+  const router = useRouter();
+  const [docName, setDocName] = useState<string | null>(null);
+  const [docUri, setDocUri] = useState<string | null>(null);
+  const [docSize, setDocSize] = useState<number | null>(null);
+  const [error, setError] = useState('');
+  const [showConsent, setShowConsent] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [downloadDone, setDownloadDone] = useState(false);
+
+  const handlePickDocument = () => {
+    // Show consent modal before picking
+    setShowConsent(true);
+  };
+
+  const handleConsentAccept = async () => {
+    setShowConsent(false);
+    setError('');
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'application/pdf',
+        copyToCacheDirectory: true,
+      });
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        setDocName(asset.name);
+        setDocUri(asset.uri);
+        setDocSize(asset.size ?? null);
+        setDownloadDone(false);
+      }
+    } catch {
+      setError('Failed to pick document. Please try again.');
+    }
+  };
+
+  const handleDownload = async () => {
+    if (!docUri || !docName) return;
+    setDownloading(true);
+    try {
+      const dest = (LegacyFS.documentDirectory ?? '') + docName;
+      await LegacyFS.copyAsync({ from: docUri, to: dest });
+      setDownloadDone(true);
+      Alert.alert('Download Complete', `"${docName}" has been saved to your documents.`);
+    } catch {
+      Alert.alert('Download Failed', 'Could not save the file. Please try again.');
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const handleComplete = () => {
+    if (!docName) { setError('Please upload your identity document to continue.'); return; }
+    router.replace('/(banking)/home' as any);
+  };
+
+  const formatSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  return (
+    <SafeAreaView style={s.safe}>
+      <ScrollView contentContainerStyle={s.container} keyboardShouldPersistTaps="handled">
+        <Image source={require('@/assets/images/browserstack-logo.png')} style={s.logo} contentFit="contain" />
+
+        <View style={s.stepBadge}>
+          <Text style={s.stepBadgeText}>Step 5 of 5 — KYC Verification</Text>
+        </View>
+
+        <Text style={s.title}>Identity Verification</Text>
+        <Text style={s.subtitle}>Upload a government-issued ID document to complete your registration</Text>
+
+        <View style={s.requirementsCard}>
+          <Text style={s.requirementsTitle}>Document Requirements</Text>
+          {[
+            "Government-issued photo ID (Passport, Driver's License)",
+            'File must be in PDF format',
+            'Document must be clearly legible',
+            'File size should not exceed 10 MB',
+          ].map((req, i) => (
+            <View key={i} style={s.reqRow}>
+              <Ionicons name="checkmark-circle-outline" size={15} color={BSColors.orange} />
+              <Text style={s.reqText}>{req}</Text>
+            </View>
+          ))}
+        </View>
+
+        <TouchableOpacity style={[s.uploadArea, docName && s.uploadAreaDone]} onPress={handlePickDocument} testID="upload-btn">
+          {docName ? (
+            <View style={s.uploadedContent}>
+              <View style={s.uploadedIcon}>
+                <Ionicons name="document-text" size={32} color="#059669" />
+              </View>
+              <View style={s.uploadedInfo}>
+                <Text style={s.uploadedName} numberOfLines={2}>{docName}</Text>
+                {docSize && <Text style={s.uploadedSize}>{formatSize(docSize)}</Text>}
+              </View>
+              <Ionicons name="checkmark-circle" size={24} color="#059669" />
+            </View>
+          ) : (
+            <View style={s.uploadPrompt}>
+              <View style={s.uploadIconCircle}>
+                <Ionicons name="cloud-upload-outline" size={36} color={BSColors.orange} />
+              </View>
+              <Text style={s.uploadTitle}>Upload Identity PDF</Text>
+              <Text style={s.uploadSub}>Tap to browse and select your document</Text>
+              <View style={s.uploadBadge}>
+                <Ionicons name="document-outline" size={12} color={BSColors.orange} />
+                <Text style={s.uploadBadgeText}>PDF only</Text>
+              </View>
+            </View>
+          )}
+        </TouchableOpacity>
+
+        {docName && (
+          <View style={s.docActions}>
+            <TouchableOpacity style={s.reuploadBtn} onPress={handlePickDocument}>
+              <Ionicons name="refresh-outline" size={14} color={BSColors.orange} />
+              <Text style={s.reuploadText}>Replace document</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[s.downloadBtn, downloading && s.downloadBtnDisabled]}
+              onPress={handleDownload}
+              disabled={downloading}
+              testID="download-btn"
+            >
+              <Ionicons name={downloadDone ? 'checkmark-circle-outline' : 'download-outline'} size={14} color={downloadDone ? '#059669' : '#4F46E5'} />
+              <Text style={[s.downloadBtnText, downloadDone && s.downloadBtnTextDone]}>
+                {downloading ? 'Saving...' : downloadDone ? 'Downloaded' : 'Download Report'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {error ? <Text style={s.error} testID="kyc-error">{error}</Text> : null}
+
+        <TouchableOpacity
+          style={[s.completeBtn, !docName && s.completeBtnDisabled]}
+          onPress={handleComplete}
+          testID="complete-btn"
+        >
+          <Ionicons name="checkmark-circle-outline" size={18} color="#fff" style={{ marginRight: 8 }} />
+          <Text style={s.completeBtnText}>Complete Registration</Text>
+        </TouchableOpacity>
+
+        <View style={s.secureNote}>
+          <Ionicons name="lock-closed-outline" size={13} color="#888" />
+          <Text style={s.secureNoteText}>Your document is encrypted and stored securely</Text>
+        </View>
+      </ScrollView>
+
+      {/* Consent Modal */}
+      <Modal visible={showConsent} transparent animationType="slide">
+        <View style={s.overlay}>
+          <View style={s.consentModal}>
+            <View style={s.consentIcon}>
+              <Ionicons name="shield-checkmark" size={40} color={BSColors.orange} />
+            </View>
+            <Text style={s.consentTitle}>Data Privacy Consent</Text>
+            <Text style={s.consentBody}>
+              By uploading your identity document, you consent to BrowserStack Bank collecting and processing your personal data for KYC (Know Your Customer) verification purposes.{'\n\n'}
+              Your document will be:{'\n'}
+              • Encrypted during transmission{'\n'}
+              • Stored securely on our servers{'\n'}
+              • Used solely for identity verification{'\n'}
+              • Retained as per regulatory requirements{'\n\n'}
+              You may request deletion of your data at any time by contacting support.
+            </Text>
+            <View style={s.consentBtns}>
+              <TouchableOpacity style={s.consentDecline} onPress={() => setShowConsent(false)} testID="consent-decline">
+                <Text style={s.consentDeclineText}>Decline</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={s.consentAccept} onPress={handleConsentAccept} testID="consent-accept">
+                <Text style={s.consentAcceptText}>I Agree & Continue</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </SafeAreaView>
+  );
+}
+
+const s = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: '#fff' },
+  container: { alignItems: 'center', paddingHorizontal: 24, paddingTop: 32, paddingBottom: 40 },
+  logo: { width: 160, height: 44, marginBottom: 16 },
+  stepBadge: { backgroundColor: '#FFF8F3', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 5, marginBottom: 16, borderWidth: 1, borderColor: BSColors.orange + '40' },
+  stepBadgeText: { color: BSColors.orange, fontSize: 12, fontWeight: '600' },
+  title: { color: '#111', fontSize: 22, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
+  subtitle: { color: '#888', fontSize: 14, textAlign: 'center', marginBottom: 24 },
+  requirementsCard: { width: '100%', backgroundColor: '#F5F6FA', borderRadius: 14, padding: 16, marginBottom: 24 },
+  requirementsTitle: { color: '#333', fontSize: 13, fontWeight: '700', marginBottom: 10 },
+  reqRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 6 },
+  reqText: { color: '#555', fontSize: 13, flex: 1 },
+  uploadArea: { width: '100%', borderRadius: 16, borderWidth: 2, borderColor: '#E0E0E0', borderStyle: 'dashed', padding: 24, alignItems: 'center', marginBottom: 12, backgroundColor: '#FAFAFA' },
+  uploadAreaDone: { borderColor: '#059669', borderStyle: 'solid', backgroundColor: '#F0FDF4' },
+  uploadPrompt: { alignItems: 'center', gap: 8 },
+  uploadIconCircle: { width: 72, height: 72, borderRadius: 36, backgroundColor: '#FFF8F3', alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
+  uploadTitle: { color: '#111', fontSize: 16, fontWeight: '700' },
+  uploadSub: { color: '#888', fontSize: 13 },
+  uploadBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#FFF8F3', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: BSColors.orange + '40' },
+  uploadBadgeText: { color: BSColors.orange, fontSize: 11, fontWeight: '600' },
+  uploadedContent: { flexDirection: 'row', alignItems: 'center', width: '100%', gap: 12 },
+  uploadedIcon: { width: 48, height: 48, borderRadius: 12, backgroundColor: '#D1FAE5', alignItems: 'center', justifyContent: 'center' },
+  uploadedInfo: { flex: 1 },
+  uploadedName: { color: '#111', fontSize: 14, fontWeight: '600', marginBottom: 2 },
+  uploadedSize: { color: '#888', fontSize: 12 },
+  docActions: { flexDirection: 'row', gap: 12, marginBottom: 16, width: '100%' },
+  reuploadBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#FFF8F3', borderRadius: 10, paddingVertical: 10, borderWidth: 1, borderColor: BSColors.orange + '40' },
+  reuploadText: { color: BSColors.orange, fontSize: 13, fontWeight: '600' },
+  downloadBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#EEF2FF', borderRadius: 10, paddingVertical: 10, borderWidth: 1, borderColor: '#C7D2FE' },
+  downloadBtnDisabled: { opacity: 0.5 },
+  downloadBtnText: { color: '#4F46E5', fontSize: 13, fontWeight: '600' },
+  downloadBtnTextDone: { color: '#059669' },
+  error: { color: '#DC2626', fontSize: 13, marginBottom: 14, textAlign: 'center' },
+  completeBtn: { width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: BSColors.orange, borderRadius: 12, paddingVertical: 16, marginBottom: 16, shadowColor: BSColors.orange, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
+  completeBtnDisabled: { opacity: 0.45 },
+  completeBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  secureNote: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  secureNoteText: { color: '#AAA', fontSize: 12 },
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  consentModal: { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
+  consentIcon: { alignItems: 'center', marginBottom: 12 },
+  consentTitle: { color: '#111', fontSize: 20, fontWeight: '700', textAlign: 'center', marginBottom: 12 },
+  consentBody: { color: '#555', fontSize: 14, lineHeight: 22, marginBottom: 24 },
+  consentBtns: { flexDirection: 'row', gap: 12 },
+  consentDecline: { flex: 1, paddingVertical: 14, borderRadius: 12, alignItems: 'center', backgroundColor: '#F5F5F5' },
+  consentDeclineText: { color: '#666', fontSize: 15, fontWeight: '600' },
+  consentAccept: { flex: 2, paddingVertical: 14, borderRadius: 12, alignItems: 'center', backgroundColor: BSColors.orange },
+  consentAcceptText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+});

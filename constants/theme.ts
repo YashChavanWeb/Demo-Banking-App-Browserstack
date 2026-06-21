@@ -1,12 +1,24 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
- */
-
 import { Platform } from 'react-native';
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
+// BrowserStack brand colors
+export const BSColors = {
+  orange: '#FF6B00',
+  orangeLight: '#FF8C3A',
+  orangeDark: '#E55A00',
+  navy: '#1A1A2E',
+  navyLight: '#16213E',
+  white: '#FFFFFF',
+  lightGray: '#F5F5F5',
+  mediumGray: '#E0E0E0',
+  darkGray: '#666666',
+  error: '#D32F2F',
+  success: '#2E7D32',
+  inputBorder: '#CCCCCC',
+  inputBg: '#FAFAFA',
+};
+
+const tintColorLight = BSColors.orange;
+const tintColorDark = BSColors.orangeLight;
 
 export const Colors = {
   light: {
@@ -29,13 +41,9 @@ export const Colors = {
 
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
     sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
     serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
     rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
     mono: 'ui-monospace',
   },
   default: {
@@ -48,6 +56,6 @@ export const Fonts = Platform.select({
     sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
     serif: "Georgia, 'Times New Roman', serif",
     rounded: "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
-    mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+    mono: "ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, 'DejaVu Sans Mono', monospace",
   },
 });
