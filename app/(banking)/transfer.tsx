@@ -65,7 +65,7 @@ export default function TransferScreen() {
     if (!amount || isNaN(amt) || amt <= 0) { setSendError('Please enter a valid amount.'); return; }
     if (!BankStore.canAfford(amt)) { setSendError(`Insufficient balance. Available: $${BankStore.getBalance().toLocaleString()}`); return; }
     setSendError('');
-    const tx = await BankStore.transfer(recipient!.name, amt, remarks || undefined);
+    const tx = await BankStore.transfer(recipient!.name, amt, remarks || undefined, recipient!.id);
     setBalance(BankStore.getBalance());
     setLastTx({ amount: amt.toFixed(2), name: recipient!.name, ref: tx.referenceId });
     setShowSuccess(true);

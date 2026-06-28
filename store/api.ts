@@ -60,8 +60,8 @@ export const api = {
 
   // Transactions
   getTransactions: () => request<{ transactions: any[] }>('GET', '/transactions'),
-  transfer: (recipientName: string, amount: number, note?: string) =>
-    request<{ transaction: any; newBalance: number }>('POST', '/transactions/transfer', { recipientName, amount, note }),
+  transfer: (recipientName: string, amount: number, note?: string, recipientId?: string) =>
+    request<{ transaction: any; newBalance: number }>('POST', '/transactions/transfer', { recipientName, amount, note, recipientId }),
   recordPayment: (amount: number, description?: string) =>
     request<{ transaction: any; newBalance: number }>('POST', '/transactions/payment', { amount, description }),
 

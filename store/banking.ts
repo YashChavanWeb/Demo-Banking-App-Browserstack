@@ -63,9 +63,9 @@ export const BankStore = {
   },
 
   // Transfer via API (updates DB + local state)
-  transfer: async (recipientName: string, amount: number, note?: string): Promise<Transaction> => {
+  transfer: async (recipientName: string, amount: number, note?: string, recipientId?: string): Promise<Transaction> => {
     try {
-      const res = await api.transfer(recipientName, amount, note);
+      const res = await api.transfer(recipientName, amount, note, recipientId);
       _balance = res.newBalance;
       const tx = res.transaction;
       _transactions = [tx, ..._transactions];
