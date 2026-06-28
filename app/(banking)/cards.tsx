@@ -1,123 +1,319 @@
-import { SafeAreaView } from 'react-native-safe-area-context';
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { BSColors } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
+import { AuthStore } from '@/store/auth';
+import { CardShimmer } from '@/components/shimmer';
+import { api } from '@/store/api';
+import { Ionicons } from '@expo/vector-icons';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator, Alert, Modal, ScrollView, StyleSheet,
+  Text, TextInput, TouchableOpacity, View
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-const INIT_CARDS = [
-  { id: '1', type: 'Visa Debit', number: '**** **** **** 4521', expiry: '09/27', holder: 'ALEX JOHNSON', color: BSColors.orange, frozen: false },
-  { id: '2', type: 'Mastercard Credit', number: '**** **** **** 8834', expiry: '03/26', holder: 'ALEX JOHNSON', color: '#1A1A2E', frozen: false },
+interface Card {
+  id: string;
+  label: string;
+  number: string;
+  holder: string;
+  expiry: string;
+  color: string;
+  type: 'visa' | 'mastercard' | 'amex';
+  frozen: boolean;
+}
+
+const CARD_COLORS = [
+  { label: 'Indigo', value: '#4F46E5' },
+  { label: 'Slate', value: '#334155' },
+  { label: 'Emerald', value: '#059669' },
+  { label: 'Rose', value: '#E11D48' },
+  { label: 'Amber', value: '#D97706' },
+  { label: 'Sky', value: '#0284C7' },
 ];
 
+const CARD_TYPES: { label: string; value: Card['type'] }[] = [
+  { label: 'Visa', value: 'visa' },
+  { label: 'Mastercard', value: 'mastercard' },
+  { label: 'Amex', value: 'amex' },
+];
+
+const INITIAL_CARDS: Card[] = [
+  { id: 'c1', label: 'Primary Card', number: '4242 4242 4242 4242', holder: 'ALEX JOHNSON', expiry: '12/28', color: '#4F46E5', type: 'visa', frozen: false },
+  { id: 'c2', label: 'Savings Card', number: '5555 5555 5555 4444', holder: 'ALEX JOHNSON', expiry: '09/27', color: '#059669', type: 'mastercard', frozen: false },
+];
+
+function CardDisplay({ card }: { card: Card }) {
+  const [showNumber, setShowNumber] = useState(false);
+  const masked = card.number.replace(/(\d{4} \d{4} \d{4}) (\d{4})/, '•••• •••• •••• $2');
+  return (
+    <View style={[styles.cardDisplay, { backgroundColor: card.color }]}>
+      {card.frozen && (
+        <View style={styles.frozenOverlay}>
+          <Ionicons name="snow-outline" size={28} color="#fff" />
+          <Text style={styles.frozenText}>Card Frozen</Text>
+        </View>
+      )}
+      <View style={styles.cardTop}>
+        <Text style={styles.cardLabel}>{card.label}</Text>
+        <Text style={styles.cardTypeText}>{card.type.toUpperCase()}</Text>
+      </View>
+      <TouchableOpacity style={styles.cardNumberRow} onPress={() => setShowNumber(!showNumber)}>
+        <Text style={styles.cardNumber}>{showNumber ? card.number : masked}</Text>
+        <Ionicons name={showNumber ? 'eye-off-outline' : 'eye-outline'} size={16} color="rgba(255,255,255,0.7)" />
+      </TouchableOpacity>
+      <View style={styles.cardBottom}>
+        <View>
+          <Text style={styles.cardMeta}>CARD HOLDER</Text>
+          <Text style={styles.cardMetaValue}>{card.holder}</Text>
+        </View>
+        <View>
+          <Text style={styles.cardMeta}>EXPIRES</Text>
+          <Text style={styles.cardMetaValue}>{card.expiry}</Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
 export default function CardsScreen() {
-  const [cards, setCards] = useState(INIT_CARDS);
-  const [activeCard, setActiveCard] = useState('1');
-  const card = cards.find(c => c.id === activeCard)!;
-  const toggleFreeze = (id: string) => setCards(prev => prev.map(c => c.id === id ? { ...c, frozen: !c.frozen } : c));
+  const { primaryColor, primaryBg, primaryBorder, greenMode } = useTheme();
+  const [cards, setCards] = useState<Card[]>(INITIAL_CARDS);
+  const [selectedCard, setSelectedCard] = useState<string>(INITIAL_CARDS[0].id);
+  const [cardsLoading, setCardsLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newLabel, setNewLabel] = useState('');
+  const userFullName = AuthStore.getUser()?.fullName?.toUpperCase() || 'ALEX JOHNSON';
+  const [newHolder, setNewHolder] = useState(userFullName);
+
+  useEffect(() => {
+    api.getCards().then(res => {
+      if (res.cards && res.cards.length > 0) {
+        const mapped = res.cards.map((c: any) => ({
+          id: c.id,
+          label: c.label,
+          number: c.number,
+          holder: c.holder,
+          expiry: c.expiry,
+          color: c.color,
+          type: (c.card_type || c.cardType || 'visa') as Card['type'],
+          frozen: c.frozen,
+        }));
+        setCards(mapped);
+        setSelectedCard(mapped[0].id);
+      }
+    }).catch(() => {}).finally(() => setCardsLoading(false));
+  }, []);
+  const [newColor, setNewColor] = useState(CARD_COLORS[0].value);
+  const [newType, setNewType] = useState<Card['type']>('visa');
+  const [newExpiry, setNewExpiry] = useState('');
+
+  const activeCard = cards.find(c => c.id === selectedCard) ?? cards[0];
+
+  const toggleFreeze = () => setCards(prev => prev.map(c => c.id === selectedCard ? { ...c, frozen: !c.frozen } : c));
+
+  const deleteCard = () => {
+    if (cards.length <= 1) { Alert.alert('Cannot Delete', 'You must have at least one card.'); return; }
+    Alert.alert('Delete Card', `Delete "${activeCard.label}"?`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => {
+        const remaining = cards.filter(c => c.id !== selectedCard);
+        setCards(remaining);
+        setSelectedCard(remaining[0].id);
+      }},
+    ]);
+  };
+
+  const createCard = () => {
+    if (!newLabel.trim()) { Alert.alert('Error', 'Please enter a card label.'); return; }
+    if (!newExpiry.match(/^\d{2}\/\d{2}$/)) { Alert.alert('Error', 'Expiry must be MM/YY format.'); return; }
+    const randomNum = Array.from({ length: 4 }, () => Math.floor(1000 + Math.random() * 9000).toString()).join(' ');
+    const newCard: Card = { id: `c${Date.now()}`, label: newLabel.trim(), number: randomNum, holder: newHolder.trim().toUpperCase() || 'ALEX JOHNSON', expiry: newExpiry, color: newColor, type: newType, frozen: false };
+    setCards(prev => [...prev, newCard]);
+    setSelectedCard(newCard.id);
+    setShowCreateModal(false);
+    setNewLabel(''); setNewHolder('ALEX JOHNSON'); setNewColor(CARD_COLORS[0].value); setNewType('visa'); setNewExpiry('');
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.pageTitle}>My Cards</Text>
-        <Text style={styles.pageSubtitle}>Manage your payment cards</Text>
+        <View style={styles.header}>
+          <Text style={styles.pageTitle}>My Cards</Text>
+          <TouchableOpacity style={styles.addBtn} onPress={() => setShowCreateModal(true)} testID="add-card-btn">
+            <Ionicons name="add" size={20} color="#fff" />
+            <Text style={styles.addBtnText}>New Card</Text>
+          </TouchableOpacity>
+        </View>
 
-        <View style={styles.tabRow}>
+        {cardsLoading ? <CardShimmer /> : <CardDisplay card={activeCard} />}
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.cardSelector} contentContainerStyle={{ gap: 10, paddingHorizontal: 2 }}>
           {cards.map(c => (
-            <TouchableOpacity key={c.id} style={[styles.tab, activeCard === c.id && styles.tabActive]} onPress={() => setActiveCard(c.id)}>
-              <Text style={[styles.tabText, activeCard === c.id && styles.tabTextActive]}>{c.type}</Text>
+            <TouchableOpacity key={c.id} style={[styles.cardChip, selectedCard === c.id && styles.cardChipActive, { borderColor: c.color }]} onPress={() => setSelectedCard(c.id)}>
+              <View style={[styles.cardChipDot, { backgroundColor: c.color }]} />
+              <Text style={[styles.cardChipText, selectedCard === c.id && { color: c.color }]}>{c.label}</Text>
             </TouchableOpacity>
           ))}
-        </View>
+        </ScrollView>
 
-        <View style={[styles.cardVisual, { backgroundColor: card.color }]}>
-          {card.frozen && (
-            <View style={styles.frozenOverlay}>
-              <Ionicons name="snow-outline" size={36} color="#fff" />
-              <Text style={styles.frozenLabel}>Card Frozen</Text>
-            </View>
-          )}
-          <View style={styles.cardTopRow}>
-            <Ionicons name="hardware-chip-outline" size={28} color="rgba(255,255,255,0.6)" />
-            <Text style={styles.cardNetwork}>{card.type.split(' ')[0].toUpperCase()}</Text>
-          </View>
-          <Text style={styles.cardNumber}>{card.number}</Text>
-          <View style={styles.cardBottomRow}>
-            <View>
-              <Text style={styles.cardFieldLabel}>CARD HOLDER</Text>
-              <Text style={styles.cardFieldValue}>{card.holder}</Text>
-            </View>
-            <View>
-              <Text style={styles.cardFieldLabel}>EXPIRES</Text>
-              <Text style={styles.cardFieldValue}>{card.expiry}</Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.controlCard}>
-          <View style={styles.controlRow}>
-            <View style={styles.controlLeft}>
-              <View style={[styles.controlIcon, { backgroundColor: card.frozen ? '#EFF6FF' : '#FFF8F3' }]}>
-                <Ionicons name="snow-outline" size={20} color={card.frozen ? '#3B82F6' : BSColors.orange} />
-              </View>
-              <View>
-                <Text style={styles.controlTitle}>{card.frozen ? 'Card Frozen' : 'Freeze Card'}</Text>
-                <Text style={styles.controlSub}>{card.frozen ? 'Tap to unfreeze' : 'Disable all transactions'}</Text>
-              </View>
-            </View>
-            <Switch value={card.frozen} onValueChange={() => toggleFreeze(card.id)}
-              trackColor={{ false: '#E0E0E0', true: '#BFDBFE' }} thumbColor={card.frozen ? '#3B82F6' : '#fff'} testID="freeze-toggle" />
-          </View>
-        </View>
-
-        <Text style={styles.sectionTitle}>Card Actions</Text>
-        <View style={styles.actionsGrid}>
+        <View style={[styles.actionsRow, greenMode && { flexWrap: "wrap", gap: 16 }]}>
           {[
-            { label: 'View PIN', icon: 'keypad-outline', color: '#4F46E5' },
-            { label: 'Set Limit', icon: 'speedometer-outline', color: '#059669' },
-            { label: 'Block Card', icon: 'ban-outline', color: '#DC2626' },
-            { label: 'Statements', icon: 'document-text-outline', color: '#D97706' },
+            { label: activeCard.frozen ? 'Unfreeze' : 'Freeze', icon: activeCard.frozen ? 'snow' : 'snow-outline', color: activeCard.frozen ? primaryColor : '#64748B', bg: activeCard.frozen ? primaryBg : '#F1F5F9', onPress: toggleFreeze, testID: 'freeze-btn' },
+            { label: 'Details', icon: 'eye-outline', color: '#64748B', bg: '#F1F5F9', onPress: () => Alert.alert('Card Details', `Number: ${activeCard.number}\nExpiry: ${activeCard.expiry}\nCVV: •••`), testID: 'details-btn' },
+            { label: 'Limits', icon: 'speedometer-outline', color: '#64748B', bg: '#F1F5F9', onPress: () => Alert.alert('Limits', 'Daily: $5,000\nMonthly: $50,000'), testID: 'limits-btn' },
+            { label: 'Delete', icon: 'trash-outline', color: '#DC2626', bg: '#FEF2F2', onPress: deleteCard, testID: 'delete-card-btn' },
           ].map(a => (
-            <TouchableOpacity key={a.label} style={styles.actionCard}>
-              <View style={[styles.actionIcon, { backgroundColor: a.color + '18' }]}>
+            <TouchableOpacity key={a.label} style={styles.actionBtn} onPress={a.onPress} testID={a.testID}>
+              <View style={[styles.actionIcon, { backgroundColor: a.bg }]}>
                 <Ionicons name={a.icon as any} size={22} color={a.color} />
               </View>
-              <Text style={styles.actionLabel}>{a.label}</Text>
+              <Text style={[styles.actionLabel, { color: a.color }]}>{a.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
+
+        <View style={styles.infoCard}>
+          {[
+            { label: 'Card Type', value: activeCard.type.charAt(0).toUpperCase() + activeCard.type.slice(1) },
+            { label: 'Daily Limit', value: '$5,000.00' },
+            { label: 'Monthly Limit', value: '$50,000.00' },
+          ].map((row, i, arr) => (
+            <View key={row.label} style={[styles.infoRow, i === arr.length - 1 && { borderBottomWidth: 0 }]}>
+              <Text style={styles.infoLabel}>{row.label}</Text>
+              <Text style={styles.infoValue}>{row.value}</Text>
+            </View>
+          ))}
+          <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
+            <Text style={styles.infoLabel}>Status</Text>
+            <View style={[styles.statusBadge, { backgroundColor: activeCard.frozen ? primaryBg : '#F0FDF4' }]}>
+              <Text style={[styles.statusText, { color: activeCard.frozen ? primaryColor : '#059669' }]}>{activeCard.frozen ? 'Frozen' : 'Active'}</Text>
+            </View>
+          </View>
+        </View>
       </ScrollView>
+
+      <Modal visible={showCreateModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Create New Card</Text>
+              <TouchableOpacity onPress={() => setShowCreateModal(false)}><Ionicons name="close" size={24} color="#64748B" /></TouchableOpacity>
+            </View>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <Text style={styles.fieldLabel}>Card Label</Text>
+              <TextInput style={styles.fieldInput} value={newLabel} onChangeText={setNewLabel} placeholder="e.g. Travel Card" placeholderTextColor="#94A3B8" testID="card-label-input" />
+              <Text style={styles.fieldLabel}>Card Holder Name</Text>
+              <TextInput style={styles.fieldInput} value={newHolder} onChangeText={setNewHolder} placeholder="ALEX JOHNSON" placeholderTextColor="#94A3B8" autoCapitalize="characters" testID="card-holder-input" />
+              <Text style={styles.fieldLabel}>Expiry (MM/YY)</Text>
+              <TextInput
+                style={styles.fieldInput}
+                value={newExpiry}
+                onChangeText={v => {
+                  // Auto-insert slash after MM
+                  const digits = v.replace(/\D/g, '').slice(0, 4);
+                  if (digits.length >= 3) {
+                    setNewExpiry(digits.slice(0, 2) + '/' + digits.slice(2));
+                  } else if (v.endsWith('/') && digits.length === 2) {
+                    setNewExpiry(digits + '/');
+                  } else {
+                    setNewExpiry(digits.length <= 2 ? digits : digits);
+                  }
+                }}
+                placeholder="12/28"
+                placeholderTextColor="#94A3B8"
+                keyboardType="numeric"
+                maxLength={5}
+                testID="card-expiry-input"
+              />
+              <Text style={styles.fieldLabel}>Card Type</Text>
+              <View style={styles.typeRow}>
+                {CARD_TYPES.map(t => (
+                  <TouchableOpacity key={t.value} style={[styles.typeChip, newType === t.value && styles.typeChipActive]} onPress={() => setNewType(t.value)}>
+                    <Text style={[styles.typeChipText, newType === t.value && styles.typeChipTextActive]}>{t.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <Text style={styles.fieldLabel}>Card Color</Text>
+              <View style={styles.colorRow}>
+                {CARD_COLORS.map(c => (
+                  <TouchableOpacity key={c.value} style={[styles.colorDot, { backgroundColor: c.value }, newColor === c.value && styles.colorDotSelected]} onPress={() => setNewColor(c.value)}>
+                    {newColor === c.value && <Ionicons name="checkmark" size={14} color="#fff" />}
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <Text style={styles.fieldLabel}>Preview</Text>
+              <View style={[styles.previewCard, { backgroundColor: newColor }]}>
+                <Text style={styles.previewLabel}>{newLabel || 'Card Label'}</Text>
+                <Text style={styles.previewNumber}>•••• •••• •••• ••••</Text>
+                <View style={styles.previewBottom}>
+                  <Text style={styles.previewHolder}>{(newHolder || 'ALEX JOHNSON').toUpperCase()}</Text>
+                  <Text style={styles.previewExpiry}>{newExpiry || 'MM/YY'}</Text>
+                </View>
+              </View>
+              <TouchableOpacity style={styles.createBtn} onPress={createCard} testID="create-card-btn">
+                <Text style={styles.createBtnText}>Create Card</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F5F6FA' },
-  content: { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 32 },
-  pageTitle: { color: '#111', fontSize: 22, fontWeight: '700', marginBottom: 4 },
-  pageSubtitle: { color: '#888', fontSize: 14, marginBottom: 24 },
-  tabRow: { flexDirection: 'row', backgroundColor: '#fff', borderRadius: 12, padding: 4, marginBottom: 24, gap: 4 },
-  tab: { flex: 1, paddingVertical: 9, borderRadius: 10, alignItems: 'center' },
-  tabActive: { backgroundColor: BSColors.orange },
-  tabText: { color: '#888', fontSize: 13, fontWeight: '600' },
-  tabTextActive: { color: '#fff' },
-  cardVisual: { borderRadius: 20, padding: 24, marginBottom: 20, minHeight: 190, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 16, elevation: 8, overflow: 'hidden', justifyContent: 'space-between' },
-  frozenOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(59,130,246,0.3)', alignItems: 'center', justifyContent: 'center', gap: 8, zIndex: 1 },
-  frozenLabel: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  cardTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
-  cardNetwork: { color: 'rgba(255,255,255,0.9)', fontSize: 16, fontWeight: '700', letterSpacing: 2 },
-  cardNumber: { color: '#fff', fontSize: 20, fontWeight: '700', letterSpacing: 3, marginBottom: 24 },
-  cardBottomRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  cardFieldLabel: { color: 'rgba(255,255,255,0.6)', fontSize: 10, letterSpacing: 1, marginBottom: 2 },
-  cardFieldValue: { color: '#fff', fontSize: 14, fontWeight: '600' },
-  controlCard: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 28, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
-  controlRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  controlLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
-  controlIcon: { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  controlTitle: { color: '#111', fontSize: 14, fontWeight: '600', marginBottom: 2 },
-  controlSub: { color: '#888', fontSize: 12 },
-  sectionTitle: { color: '#111', fontSize: 16, fontWeight: '700', marginBottom: 14 },
-  actionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  actionCard: { width: '47%', backgroundColor: '#fff', borderRadius: 14, padding: 16, alignItems: 'center', gap: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6, elevation: 1 },
-  actionIcon: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  actionLabel: { color: '#333', fontSize: 13, fontWeight: '600' },
+  safe: { flex: 1, backgroundColor: '#F8FAFF' },
+  content: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  pageTitle: { color: '#0F172A', fontSize: 22, fontWeight: '700' },
+  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: BSColors.primary, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 },
+  addBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  cardDisplay: { borderRadius: 20, padding: 24, marginBottom: 16, minHeight: 180, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 16, elevation: 8, overflow: 'hidden' },
+  frozenOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)', borderRadius: 20, alignItems: 'center', justifyContent: 'center', zIndex: 10 },
+  frozenText: { color: '#fff', fontSize: 16, fontWeight: '700', marginTop: 8 },
+  cardTop: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24 },
+  cardLabel: { color: 'rgba(255,255,255,0.9)', fontSize: 14, fontWeight: '600' },
+  cardTypeText: { color: 'rgba(255,255,255,0.8)', fontSize: 13, fontWeight: '700', letterSpacing: 1 },
+  cardNumberRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 24 },
+  cardNumber: { color: '#fff', fontSize: 16, fontWeight: '600', letterSpacing: 2, flex: 1 },
+  cardBottom: { flexDirection: 'row', justifyContent: 'space-between' },
+  cardMeta: { color: 'rgba(255,255,255,0.6)', fontSize: 9, letterSpacing: 1, marginBottom: 2 },
+  cardMetaValue: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  cardSelector: { marginBottom: 20 },
+  cardChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#E2E8F0' },
+  cardChipActive: { backgroundColor: '#EEF2FF' },
+  cardChipDot: { width: 8, height: 8, borderRadius: 4 },
+  cardChipText: { color: '#64748B', fontSize: 12, fontWeight: '600' },
+  actionsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
+  actionBtn: { alignItems: 'center', gap: 6 },
+  actionIcon: { width: 52, height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  actionLabel: { color: '#64748B', fontSize: 11, fontWeight: '600' },
+  infoCard: { backgroundColor: '#fff', borderRadius: 16, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+  infoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  infoLabel: { color: '#64748B', fontSize: 14 },
+  infoValue: { color: '#0F172A', fontSize: 14, fontWeight: '600' },
+  statusBadge: { borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
+  statusText: { fontSize: 12, fontWeight: '700' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+  modalCard: { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: '90%' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  modalTitle: { color: '#0F172A', fontSize: 18, fontWeight: '700' },
+  fieldLabel: { color: '#334155', fontSize: 13, fontWeight: '600', marginBottom: 8, marginTop: 16 },
+  fieldInput: { backgroundColor: '#F8FAFF', borderRadius: 12, borderWidth: 1.5, borderColor: '#C7D2FE', paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: '#0F172A' },
+  typeRow: { flexDirection: 'row', gap: 10 },
+  typeChip: { flex: 1, paddingVertical: 10, borderRadius: 10, backgroundColor: '#F1F5F9', alignItems: 'center', borderWidth: 1.5, borderColor: '#E2E8F0' },
+  typeChipActive: { backgroundColor: '#EEF2FF', borderColor: BSColors.primary },
+  typeChipText: { color: '#64748B', fontSize: 13, fontWeight: '600' },
+  typeChipTextActive: { color: BSColors.primary },
+  colorRow: { flexDirection: 'row', gap: 12, flexWrap: 'wrap' },
+  colorDot: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  colorDotSelected: { borderWidth: 3, borderColor: '#fff', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 4 },
+  previewCard: { borderRadius: 16, padding: 20, marginTop: 4, minHeight: 120 },
+  previewLabel: { color: 'rgba(255,255,255,0.85)', fontSize: 13, fontWeight: '600', marginBottom: 16 },
+  previewNumber: { color: '#fff', fontSize: 15, fontWeight: '600', letterSpacing: 2, marginBottom: 16 },
+  previewBottom: { flexDirection: 'row', justifyContent: 'space-between' },
+  previewHolder: { color: 'rgba(255,255,255,0.85)', fontSize: 12 },
+  previewExpiry: { color: 'rgba(255,255,255,0.85)', fontSize: 12 },
+  createBtn: { backgroundColor: BSColors.primary, borderRadius: 14, paddingVertical: 16, alignItems: 'center', marginTop: 24, marginBottom: 8 },
+  createBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 });

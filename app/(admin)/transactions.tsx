@@ -123,7 +123,7 @@ export default function TransactionsTab() {
 
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#F5F6FA' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#EEF2FF' },
   headerTitle: { color: '#111', fontSize: 17, fontWeight: '700' },
   headerSub: { color: '#888', fontSize: 12, marginTop: 1 },
   alertBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#FEE2E2', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
@@ -134,8 +134,8 @@ const s = StyleSheet.create({
   statValue: { fontSize: 16, fontWeight: '700' },
   statLabel: { color: '#888', fontSize: 11 },
   filterRow: { marginBottom: 14 },
-  filterPill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, backgroundColor: '#fff', borderWidth: 1, borderColor: '#E0E0E0' },
-  filterPillActive: { backgroundColor: BSColors.orange, borderColor: BSColors.orange },
+  filterPill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, backgroundColor: '#fff', borderWidth: 1, borderColor: '#C7D2FE' },
+  filterPillActive: { backgroundColor: BSColors.primary, borderColor: BSColors.primary },
   filterPillText: { color: '#555', fontSize: 13, fontWeight: '600' },
   filterPillTextActive: { color: '#fff' },
   txCard: { backgroundColor: '#fff', borderRadius: 14, padding: 14, marginBottom: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 },

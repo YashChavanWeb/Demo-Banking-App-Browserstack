@@ -39,7 +39,7 @@ export default function LivenessScreen() {
       <SafeAreaView style={s.safe}>
         <View style={s.container}>
           <Image source={require('@/assets/images/browserstack-logo.png')} style={s.logo} contentFit="contain" />
-          <Ionicons name="camera-outline" size={56} color={BSColors.orange} style={{ marginBottom: 16 }} />
+          <Ionicons name="camera-outline" size={56} color={BSColors.primary} style={{ marginBottom: 16 }} />
           <Text style={s.title}>Camera Access Required</Text>
           <Text style={s.subtitle}>We need camera access for liveness verification</Text>
           <TouchableOpacity style={s.primaryBtn} onPress={requestPermission}>
@@ -105,21 +105,21 @@ export default function LivenessScreen() {
 }
 
 const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#fff' },
+  safe: { flex: 1, backgroundColor: '#F8FAFF' },
   container: { flex: 1, alignItems: 'center', paddingHorizontal: 28, paddingTop: 32, paddingBottom: 32 },
   logo: { width: 160, height: 44, marginBottom: 16 },
-  stepBadge: { backgroundColor: '#FFF8F3', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 5, marginBottom: 16, borderWidth: 1, borderColor: BSColors.orange + '40' },
-  stepBadgeText: { color: BSColors.orange, fontSize: 12, fontWeight: '600' },
+  stepBadge: { backgroundColor: '#EEF2FF', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 5, marginBottom: 16, borderWidth: 1, borderColor: BSColors.primary + '40' },
+  stepBadgeText: { color: BSColors.primary, fontSize: 12, fontWeight: '600' },
   title: { color: '#111', fontSize: 22, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
   subtitle: { color: '#888', fontSize: 14, textAlign: 'center', marginBottom: 24 },
-  cameraFrame: { width: 220, height: 220, borderRadius: 110, overflow: 'hidden', borderWidth: 4, borderColor: BSColors.orange, marginBottom: 16, shadowColor: BSColors.orange, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.25, shadowRadius: 12, elevation: 6 },
+  cameraFrame: { width: 220, height: 220, borderRadius: 110, overflow: 'hidden', borderWidth: 4, borderColor: BSColors.primary, marginBottom: 16, shadowColor: BSColors.primary, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.25, shadowRadius: 12, elevation: 6 },
   camera: { width: '100%', height: '100%' },
   countdownOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.35)', alignItems: 'center', justifyContent: 'center' },
   countdownText: { color: '#fff', fontSize: 64, fontWeight: '800' },
   recDot: { position: 'absolute', top: 12, right: 12, width: 12, height: 12, borderRadius: 6, backgroundColor: '#DC2626' },
   cameraHint: { color: '#888', fontSize: 13, marginBottom: 24 },
-  recordingLabel: { color: BSColors.orange, fontSize: 14, fontWeight: '600', marginBottom: 24 },
-  primaryBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: BSColors.orange, borderRadius: 12, paddingVertical: 14, paddingHorizontal: 28, marginTop: 8, shadowColor: BSColors.orange, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
+  recordingLabel: { color: BSColors.primary, fontSize: 14, fontWeight: '600', marginBottom: 24 },
+  primaryBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: BSColors.primary, borderRadius: 12, paddingVertical: 14, paddingHorizontal: 28, marginTop: 8, shadowColor: BSColors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
   primaryBtnDisabled: { opacity: 0.5 },
   primaryBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
   successContainer: { alignItems: 'center', width: '100%', marginTop: 16 },

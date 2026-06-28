@@ -1,12 +1,12 @@
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
+import { BSColors } from '@/constants/theme';
+import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import * as LegacyFS from 'expo-file-system/legacy';
+import { Image } from 'expo-image';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Modal } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { BSColors } from '@/constants/theme';
+import { Alert, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function KYCScreen() {
   const router = useRouter();
@@ -58,8 +58,9 @@ export default function KYCScreen() {
     }
   };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     if (!docName) { setError('Please upload your identity document to continue.'); return; }
+    try { await (await import('@/store/api')).api.markKyc(); } catch { /* ignore */ }
     router.replace('/(banking)/home' as any);
   };
 
@@ -90,7 +91,7 @@ export default function KYCScreen() {
             'File size should not exceed 10 MB',
           ].map((req, i) => (
             <View key={i} style={s.reqRow}>
-              <Ionicons name="checkmark-circle-outline" size={15} color={BSColors.orange} />
+              <Ionicons name="checkmark-circle-outline" size={15} color={BSColors.primary} />
               <Text style={s.reqText}>{req}</Text>
             </View>
           ))}
@@ -111,12 +112,12 @@ export default function KYCScreen() {
           ) : (
             <View style={s.uploadPrompt}>
               <View style={s.uploadIconCircle}>
-                <Ionicons name="cloud-upload-outline" size={36} color={BSColors.orange} />
+                <Ionicons name="cloud-upload-outline" size={36} color={BSColors.primary} />
               </View>
               <Text style={s.uploadTitle}>Upload Identity PDF</Text>
               <Text style={s.uploadSub}>Tap to browse and select your document</Text>
               <View style={s.uploadBadge}>
-                <Ionicons name="document-outline" size={12} color={BSColors.orange} />
+                <Ionicons name="document-outline" size={12} color={BSColors.primary} />
                 <Text style={s.uploadBadgeText}>PDF only</Text>
               </View>
             </View>
@@ -126,7 +127,7 @@ export default function KYCScreen() {
         {docName && (
           <View style={s.docActions}>
             <TouchableOpacity style={s.reuploadBtn} onPress={handlePickDocument}>
-              <Ionicons name="refresh-outline" size={14} color={BSColors.orange} />
+              <Ionicons name="refresh-outline" size={14} color={BSColors.primary} />
               <Text style={s.reuploadText}>Replace document</Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -165,7 +166,7 @@ export default function KYCScreen() {
         <View style={s.overlay}>
           <View style={s.consentModal}>
             <View style={s.consentIcon}>
-              <Ionicons name="shield-checkmark" size={40} color={BSColors.orange} />
+              <Ionicons name="shield-checkmark" size={40} color={BSColors.primary} />
             </View>
             <Text style={s.consentTitle}>Data Privacy Consent</Text>
             <Text style={s.consentBody}>
@@ -193,39 +194,39 @@ export default function KYCScreen() {
 }
 
 const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#fff' },
+  safe: { flex: 1, backgroundColor: '#F8FAFF' },
   container: { alignItems: 'center', paddingHorizontal: 24, paddingTop: 32, paddingBottom: 40 },
   logo: { width: 160, height: 44, marginBottom: 16 },
-  stepBadge: { backgroundColor: '#FFF8F3', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 5, marginBottom: 16, borderWidth: 1, borderColor: BSColors.orange + '40' },
-  stepBadgeText: { color: BSColors.orange, fontSize: 12, fontWeight: '600' },
+  stepBadge: { backgroundColor: '#EEF2FF', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 5, marginBottom: 16, borderWidth: 1, borderColor: BSColors.primary + '40' },
+  stepBadgeText: { color: BSColors.primary, fontSize: 12, fontWeight: '600' },
   title: { color: '#111', fontSize: 22, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
   subtitle: { color: '#888', fontSize: 14, textAlign: 'center', marginBottom: 24 },
   requirementsCard: { width: '100%', backgroundColor: '#F5F6FA', borderRadius: 14, padding: 16, marginBottom: 24 },
   requirementsTitle: { color: '#333', fontSize: 13, fontWeight: '700', marginBottom: 10 },
   reqRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 6 },
   reqText: { color: '#555', fontSize: 13, flex: 1 },
-  uploadArea: { width: '100%', borderRadius: 16, borderWidth: 2, borderColor: '#E0E0E0', borderStyle: 'dashed', padding: 24, alignItems: 'center', marginBottom: 12, backgroundColor: '#FAFAFA' },
+  uploadArea: { width: '100%', borderRadius: 16, borderWidth: 2, borderColor: '#C7D2FE', borderStyle: 'dashed', padding: 24, alignItems: 'center', marginBottom: 12, backgroundColor: '#FAFAFA' },
   uploadAreaDone: { borderColor: '#059669', borderStyle: 'solid', backgroundColor: '#F0FDF4' },
   uploadPrompt: { alignItems: 'center', gap: 8 },
-  uploadIconCircle: { width: 72, height: 72, borderRadius: 36, backgroundColor: '#FFF8F3', alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
+  uploadIconCircle: { width: 72, height: 72, borderRadius: 36, backgroundColor: '#EEF2FF', alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
   uploadTitle: { color: '#111', fontSize: 16, fontWeight: '700' },
   uploadSub: { color: '#888', fontSize: 13 },
-  uploadBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#FFF8F3', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: BSColors.orange + '40' },
-  uploadBadgeText: { color: BSColors.orange, fontSize: 11, fontWeight: '600' },
+  uploadBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#EEF2FF', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: BSColors.primary + '40' },
+  uploadBadgeText: { color: BSColors.primary, fontSize: 11, fontWeight: '600' },
   uploadedContent: { flexDirection: 'row', alignItems: 'center', width: '100%', gap: 12 },
   uploadedIcon: { width: 48, height: 48, borderRadius: 12, backgroundColor: '#D1FAE5', alignItems: 'center', justifyContent: 'center' },
   uploadedInfo: { flex: 1 },
   uploadedName: { color: '#111', fontSize: 14, fontWeight: '600', marginBottom: 2 },
   uploadedSize: { color: '#888', fontSize: 12 },
   docActions: { flexDirection: 'row', gap: 12, marginBottom: 16, width: '100%' },
-  reuploadBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#FFF8F3', borderRadius: 10, paddingVertical: 10, borderWidth: 1, borderColor: BSColors.orange + '40' },
-  reuploadText: { color: BSColors.orange, fontSize: 13, fontWeight: '600' },
+  reuploadBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#EEF2FF', borderRadius: 10, paddingVertical: 10, borderWidth: 1, borderColor: BSColors.primary + '40' },
+  reuploadText: { color: BSColors.primary, fontSize: 13, fontWeight: '600' },
   downloadBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#EEF2FF', borderRadius: 10, paddingVertical: 10, borderWidth: 1, borderColor: '#C7D2FE' },
   downloadBtnDisabled: { opacity: 0.5 },
   downloadBtnText: { color: '#4F46E5', fontSize: 13, fontWeight: '600' },
   downloadBtnTextDone: { color: '#059669' },
   error: { color: '#DC2626', fontSize: 13, marginBottom: 14, textAlign: 'center' },
-  completeBtn: { width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: BSColors.orange, borderRadius: 12, paddingVertical: 16, marginBottom: 16, shadowColor: BSColors.orange, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
+  completeBtn: { width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: BSColors.primary, borderRadius: 12, paddingVertical: 16, marginBottom: 16, shadowColor: BSColors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
   completeBtnDisabled: { opacity: 0.45 },
   completeBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
   secureNote: { flexDirection: 'row', alignItems: 'center', gap: 6 },
@@ -238,6 +239,6 @@ const s = StyleSheet.create({
   consentBtns: { flexDirection: 'row', gap: 12 },
   consentDecline: { flex: 1, paddingVertical: 14, borderRadius: 12, alignItems: 'center', backgroundColor: '#F5F5F5' },
   consentDeclineText: { color: '#666', fontSize: 15, fontWeight: '600' },
-  consentAccept: { flex: 2, paddingVertical: 14, borderRadius: 12, alignItems: 'center', backgroundColor: BSColors.orange },
+  consentAccept: { flex: 2, paddingVertical: 14, borderRadius: 12, alignItems: 'center', backgroundColor: BSColors.primary },
   consentAcceptText: { color: '#fff', fontSize: 15, fontWeight: '700' },
 });

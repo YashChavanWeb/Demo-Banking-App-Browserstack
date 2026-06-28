@@ -1,13 +1,16 @@
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { BSColors } from '@/constants/theme';
+import { api } from '@/store/api';
+import { AuthStore } from '@/store/auth';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity,
-  StyleSheet, ScrollView,
+  ScrollView,
+  StyleSheet,
+  Text, TextInput, TouchableOpacity,
+  View,
 } from 'react-native';
-import { BSColors } from '@/constants/theme';
-import { AuthStore } from '@/store/auth';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function SignupScreen() {
   const router = useRouter();
@@ -25,7 +28,7 @@ export default function SignupScreen() {
     setError('');
   };
 
-  const handleSignup = () => {
+  const handleSignup = async () => {
     if (!fullName || !email || !password || !confirmPassword) {
       setError('Please fill in all fields.'); return;
     }
@@ -33,8 +36,24 @@ export default function SignupScreen() {
       setError('Passwords do not match.'); return;
     }
     setError('');
+    try {
+      const res = await api.signup(fullName, email, password);
+      await AuthStore.setToken(res.token);
+      AuthStore.setUser(res.user);
+    } catch (err: any) {
+      // If already registered, try login
+      if (err.message?.includes('already')) {
+        try {
+          const res = await api.login(email, password);
+          await AuthStore.setToken(res.token);
+          AuthStore.setUser(res.user);
+        } catch { /* proceed anyway in demo mode */ }
+      }
+      // Don't block flow for demo
+    }
     AuthStore.setRole('user');
     AuthStore.setFlow('signup');
+    AuthStore.setEmail(email);
     router.replace('/otp' as any);
   };
 
@@ -111,8 +130,8 @@ export default function SignupScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#fff' },
-  container: { flex: 1, backgroundColor: '#fff' },
+  safe: { flex: 1, backgroundColor: '#F8FAFF' },
+  container: { flex: 1, backgroundColor: '#F8FAFF' },
   content: { paddingHorizontal: 28, paddingTop: 48, paddingBottom: 32 },
   logoContainer: { alignItems: 'center', marginBottom: 36 },
   logo: { width: 200, height: 54 },
@@ -121,25 +140,25 @@ const styles = StyleSheet.create({
   inputGroup: { marginBottom: 20 },
   label: { color: '#333', fontSize: 14, fontWeight: '600', marginBottom: 8 },
   input: {
-    backgroundColor: '#F7F7F7', borderRadius: 12, borderWidth: 1.5,
-    borderColor: '#E0E0E0', paddingHorizontal: 16, paddingVertical: 14,
+    backgroundColor: '#fff', borderRadius: 12, borderWidth: 1.5,
+    borderColor: '#C7D2FE', paddingHorizontal: 16, paddingVertical: 14,
     fontSize: 15, color: '#111',
   },
   error: { color: '#D32F2F', fontSize: 13, marginBottom: 14, textAlign: 'center' },
   primaryBtn: {
-    backgroundColor: BSColors.orange, borderRadius: 12, paddingVertical: 16,
+    backgroundColor: BSColors.primary, borderRadius: 12, paddingVertical: 16,
     alignItems: 'center', marginBottom: 20, marginTop: 8,
-    shadowColor: BSColors.orange, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
+    shadowColor: BSColors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
   },
   primaryBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
   linkRow: { marginBottom: 36 },
   linkText: { color: '#666', textAlign: 'center', fontSize: 14 },
-  link: { color: BSColors.orange, fontWeight: '700' },
+  link: { color: BSColors.primary, fontWeight: '700' },
   mockBar: {
-    backgroundColor: '#FFF8F3', borderRadius: 14, padding: 16,
-    borderWidth: 1.5, borderColor: BSColors.orange, marginTop: 8,
+    backgroundColor: '#EEF2FF', borderRadius: 14, padding: 16,
+    borderWidth: 1.5, borderColor: BSColors.primary, marginTop: 8,
   },
-  mockBarTitle: { color: BSColors.orange, fontWeight: '700', fontSize: 11, marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1 },
-  mockBtn: { backgroundColor: BSColors.orange, borderRadius: 8, paddingVertical: 11, alignItems: 'center' },
+  mockBarTitle: { color: BSColors.primary, fontWeight: '700', fontSize: 11, marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1 },
+  mockBtn: { backgroundColor: BSColors.primary, borderRadius: 8, paddingVertical: 11, alignItems: 'center' },
   mockBtnText: { color: '#fff', fontSize: 13, fontWeight: '600' },
 });

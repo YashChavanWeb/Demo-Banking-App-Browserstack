@@ -2,38 +2,46 @@ require('dotenv').config({ path: '../.env' });
 const express = require('express');
 const cors = require('cors');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const { createSchema } = require('./schema');
+
+const authRoutes = require('./routes/auth');
+const accountRoutes = require('./routes/account');
+const transactionRoutes = require('./routes/transactions');
+const cardRoutes = require('./routes/cards');
+const userRoutes = require('./routes/users');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 
-// Health check
-app.get('/', (req, res) => {
-  res.json({ status: 'BrowserStack Bank Payment Server running' });
-});
+// ── Routes ──────────────────────────────────────────────────────────────────
+app.get('/', (req, res) => res.json({ status: 'BrowserStack Bank Server running' }));
 
-// Create payment sheet — called by the mobile app before showing Stripe UI
+app.use('/auth', authRoutes);
+app.use('/account', accountRoutes);
+app.use('/transactions', transactionRoutes);
+app.use('/cards', cardRoutes);
+app.use('/users', userRoutes);
+
+// ── Stripe Payment Sheet ─────────────────────────────────────────────────────
 app.post('/payment-sheet', async (req, res) => {
   try {
     const { amount = 1099, currency = 'usd', customerName = 'Alex Johnson' } = req.body;
 
-    // Create or retrieve a Stripe customer
     const customer = await stripe.customers.create({
       name: customerName,
       metadata: { source: 'browserstack-bank-app' },
     });
 
-    // Create an ephemeral key for the customer (allows client-side access)
     const ephemeralKey = await stripe.ephemeralKeys.create(
       { customer: customer.id },
       { apiVersion: '2024-06-20' }
     );
 
-    // Create the PaymentIntent
     const paymentIntent = await stripe.paymentIntents.create({
-      amount,           // amount in smallest currency unit (cents)
+      amount,
       currency,
       customer: customer.id,
       automatic_payment_methods: { enabled: true },
@@ -52,8 +60,32 @@ app.post('/payment-sheet', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`\n🏦 BrowserStack Bank Payment Server`);
-  console.log(`   Running on http://localhost:${PORT}`);
-  console.log(`   POST /payment-sheet  — create payment intent\n`);
-});
+// ── Start ────────────────────────────────────────────────────────────────────
+async function start() {
+  try {
+    await createSchema();
+    app.listen(PORT, () => {
+      console.log(`\n🏦 BrowserStack Bank Server`);
+      console.log(`   Running on http://localhost:${PORT}`);
+      console.log(`   POST /auth/signup       — register user`);
+      console.log(`   POST /auth/login        — login`);
+      console.log(`   POST /auth/send-otp     — send OTP`);
+      console.log(`   POST /auth/verify-otp   — verify OTP`);
+      console.log(`   GET  /account/profile   — user profile`);
+      console.log(`   GET  /account/balance   — account balance`);
+      console.log(`   GET  /transactions      — transaction history`);
+      console.log(`   POST /transactions/transfer — send money`);
+      console.log(`   POST /transactions/payment  — record card payment`);
+      console.log(`   GET  /cards             — list cards`);
+      console.log(`   POST /cards             — create card`);
+      console.log(`   PATCH /cards/:id        — update card`);
+      console.log(`   DELETE /cards/:id       — delete card`);
+      console.log(`   POST /payment-sheet     — Stripe payment sheet\n`);
+    });
+  } catch (err) {
+    console.error('Failed to start server:', err.message);
+    process.exit(1);
+  }
+}
+
+start();

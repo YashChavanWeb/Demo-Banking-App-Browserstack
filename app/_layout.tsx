@@ -8,7 +8,7 @@ const STRIPE_PK = process.env.EXPO_PUBLIC_STRIPE_PK ?? 'pk_test_YOUR_PUBLISHABLE
 
 export default function RootLayout() {
   return (
-    <StripeProvider publishableKey={STRIPE_PK} merchantIdentifier="merchant.com.browserstackbank" urlScheme="bankingapp">
+    <StripeProvider publishableKey={STRIPE_PK} merchantIdentifier="merchant.com.browserstackbank" urlScheme="demobankingapp">
       <Stack>
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="signup" options={{ headerShown: false }} />

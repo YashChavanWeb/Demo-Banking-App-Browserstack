@@ -1,19 +1,25 @@
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { BSColors } from '@/constants/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { useStripe } from '@stripe/stripe-react-native';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, Alert,
-  ActivityIndicator, TextInput, ScrollView, Platform,
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useStripe } from '@stripe/stripe-react-native';
-import { BSColors } from '@/constants/theme';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Use your machine's LAN IP so physical devices can reach the server.
 // 10.0.2.2 works for Android emulator; localhost works for iOS simulator.
 const API_URL = __DEV__
-  ? 'http://192.168.0.106:3000'   // ← your Mac's LAN IP (auto-detected)
-  : 'http://192.168.0.106:3000';  // same for production builds
+  ? 'http://192.168.0.109:3000'   // ← your Mac's LAN IP (auto-detected)
+  : 'http://192.168.0.109:3000';  // same for production builds
 const QUICK_AMOUNTS = [5, 10, 25, 50];
 
 export default function PaymentScreen() {
@@ -45,7 +51,7 @@ export default function PaymentScreen() {
         paymentIntentClientSecret: paymentIntent,
         allowsDelayedPaymentMethods: false,
         defaultBillingDetails: { name: 'Alex Johnson' },
-        returnURL: 'bankingapp://stripe-redirect',
+        returnURL: 'demobankingapp://stripe-redirect',
       });
 
       if (error) { setServerError(error.message); } else { setReady(true); }
@@ -187,32 +193,32 @@ const s = StyleSheet.create({
   stripeBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#F0FDF4', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5, alignSelf: 'center', marginBottom: 24, borderWidth: 1, borderColor: '#BBF7D0' },
   stripeBadgeText: { color: '#059669', fontSize: 12, fontWeight: '600' },
   label: { color: '#333', fontSize: 14, fontWeight: '600', marginBottom: 8 },
-  amountRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 14, borderWidth: 1.5, borderColor: '#E0E0E0', paddingHorizontal: 16, marginBottom: 12 },
+  amountRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 14, borderWidth: 1.5, borderColor: '#C7D2FE', paddingHorizontal: 16, marginBottom: 12 },
   currencySymbol: { color: '#333', fontSize: 26, fontWeight: '700', marginRight: 8 },
   amountInput: { flex: 1, fontSize: 30, fontWeight: '700', color: '#111', paddingVertical: 14 },
   quickAmounts: { flexDirection: 'row', gap: 8, marginBottom: 20 },
-  quickPill: { flex: 1, paddingVertical: 8, borderRadius: 10, backgroundColor: '#fff', alignItems: 'center', borderWidth: 1, borderColor: '#E0E0E0' },
-  quickPillActive: { backgroundColor: BSColors.orange, borderColor: BSColors.orange },
+  quickPill: { flex: 1, paddingVertical: 8, borderRadius: 10, backgroundColor: '#fff', alignItems: 'center', borderWidth: 1, borderColor: '#C7D2FE' },
+  quickPillActive: { backgroundColor: BSColors.primary, borderColor: BSColors.primary },
   quickPillText: { color: '#555', fontSize: 13, fontWeight: '600' },
   quickPillTextActive: { color: '#fff' },
-  descInput: { backgroundColor: '#fff', borderRadius: 12, borderWidth: 1.5, borderColor: '#E0E0E0', paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: '#111', marginBottom: 20 },
+  descInput: { backgroundColor: '#fff', borderRadius: 12, borderWidth: 1.5, borderColor: '#C7D2FE', paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: '#111', marginBottom: 20 },
   summaryCard: { backgroundColor: '#fff', borderRadius: 14, padding: 16, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
   summaryLabel: { color: '#888', fontSize: 14 },
   summaryValue: { color: '#333', fontSize: 14, fontWeight: '500' },
   summaryTotal: { borderTopWidth: 1, borderTopColor: '#F0F0F0', paddingTop: 10, marginBottom: 0 },
   summaryTotalLabel: { color: '#111', fontSize: 15, fontWeight: '700' },
-  summaryTotalValue: { color: BSColors.orange, fontSize: 16, fontWeight: '800' },
+  summaryTotalValue: { color: BSColors.primary, fontSize: 16, fontWeight: '800' },
   errorCard: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, backgroundColor: '#FEF2F2', borderRadius: 10, padding: 12, marginBottom: 12, borderWidth: 1, borderColor: '#FECACA' },
   errorText: { flex: 1, color: '#DC2626', fontSize: 13 },
   infoCard: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, backgroundColor: '#E0F2FE', borderRadius: 10, padding: 12, marginBottom: 16 },
   infoText: { flex: 1, color: '#0369A1', fontSize: 12 },
   infoCode: { fontWeight: '700' },
-  payBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: BSColors.orange, borderRadius: 14, paddingVertical: 16, marginBottom: 20, shadowColor: BSColors.orange, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
+  payBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: BSColors.primary, borderRadius: 14, paddingVertical: 16, marginBottom: 20, shadowColor: BSColors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
   payBtnReady: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#059669', borderRadius: 14, paddingVertical: 16, marginBottom: 20, shadowColor: '#059669', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
   payBtnDisabled: { opacity: 0.6 },
   payBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  testCards: { backgroundColor: '#fff', borderRadius: 14, padding: 16, borderWidth: 1, borderColor: '#E0E0E0' },
+  testCards: { backgroundColor: '#fff', borderRadius: 14, padding: 16, borderWidth: 1, borderColor: '#C7D2FE' },
   testCardsTitle: { color: '#333', fontSize: 13, fontWeight: '700', marginBottom: 10 },
   testCardRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   testCardNum: { color: '#555', fontSize: 12 },

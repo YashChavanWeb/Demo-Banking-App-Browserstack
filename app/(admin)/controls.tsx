@@ -110,7 +110,7 @@ export default function ControlsTab() {
 
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#F5F6FA' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#EEF2FF' },
   headerTitle: { color: '#111', fontSize: 17, fontWeight: '700' },
   headerSub: { color: '#888', fontSize: 12, marginTop: 1 },
   alertBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#FEE2E2', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },

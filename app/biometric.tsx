@@ -74,7 +74,7 @@ export default function BiometricScreen() {
             <Ionicons
               name={status === 'success' ? 'checkmark-circle' : status === 'error' ? 'close-circle' : 'finger-print'}
               size={72}
-              color={status === 'idle' ? BSColors.orange : '#fff'}
+              color={status === 'idle' ? BSColors.primary : '#fff'}
             />
           )}
         </TouchableOpacity>
@@ -108,27 +108,27 @@ export default function BiometricScreen() {
 }
 
 const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#fff' },
+  safe: { flex: 1, backgroundColor: '#F8FAFF' },
   container: { flex: 1, alignItems: 'center', paddingHorizontal: 28, paddingTop: 40, paddingBottom: 32 },
   logo: { width: 180, height: 48, marginBottom: 16 },
-  stepBadge: { backgroundColor: '#FFF8F3', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 5, marginBottom: 16, borderWidth: 1, borderColor: BSColors.orange + '40' },
-  stepBadgeText: { color: BSColors.orange, fontSize: 12, fontWeight: '600' },
+  stepBadge: { backgroundColor: '#EEF2FF', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 5, marginBottom: 16, borderWidth: 1, borderColor: BSColors.primary + '40' },
+  stepBadgeText: { color: BSColors.primary, fontSize: 12, fontWeight: '600' },
   title: { color: '#111', fontSize: 24, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
   subtitle: { color: '#888', fontSize: 14, textAlign: 'center', marginBottom: 40 },
   fpCircle: {
-    width: 140, height: 140, borderRadius: 70, backgroundColor: '#FFF8F3',
-    borderWidth: 3, borderColor: BSColors.orange, alignItems: 'center', justifyContent: 'center',
-    marginBottom: 16, shadowColor: BSColors.orange, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.2, shadowRadius: 12, elevation: 6,
+    width: 140, height: 140, borderRadius: 70, backgroundColor: '#EEF2FF',
+    borderWidth: 3, borderColor: BSColors.primary, alignItems: 'center', justifyContent: 'center',
+    marginBottom: 16, shadowColor: BSColors.primary, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.2, shadowRadius: 12, elevation: 6,
   },
-  fpScanning: { backgroundColor: BSColors.orange, borderColor: BSColors.orange },
+  fpScanning: { backgroundColor: BSColors.primary, borderColor: BSColors.primary },
   fpSuccess: { backgroundColor: '#059669', borderColor: '#059669' },
   fpError: { backgroundColor: '#DC2626', borderColor: '#DC2626' },
   fpLabel: { color: '#555', fontSize: 15, fontWeight: '500', marginBottom: 8 },
   errorMsg: { color: '#DC2626', fontSize: 13, textAlign: 'center', marginBottom: 16, paddingHorizontal: 16 },
   scanBtn: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: BSColors.orange,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: BSColors.primary,
     borderRadius: 12, paddingVertical: 14, paddingHorizontal: 32, marginTop: 16, marginBottom: 24,
-    shadowColor: BSColors.orange, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
+    shadowColor: BSColors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
   },
   scanBtnDisabled: { opacity: 0.5 },
   scanBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
