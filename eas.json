@@ -1,0 +1,37 @@
+{
+  "cli": {
+    "version": ">= 20.0.0"
+  },
+  "build": {
+    "preview": {
+      "android": {
+        "buildType": "apk"
+      },
+      "ios": {
+        "simulator": true
+      },
+      "env": {
+        "EXPO_PUBLIC_STRIPE_PK": "pk_test_51Tki4JPZvMiMVeM7n0bbjc5rJ0dRhxq2WkhSxeQtHbuSGE6rlJdbR7cxY0IKIbRmDmzTh69roJUP41M3iOZBGmir00iotpGdzX"
+      }
+    },
+    "production": {
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_STRIPE_PK": "pk_test_51Tki4JPZvMiMVeM7n0bbjc5rJ0dRhxq2WkhSxeQtHbuSGE6rlJdbR7cxY0IKIbRmDmzTh69roJUP41M3iOZBGmir00iotpGdzX"
+      }
+    },
+    "ios-simulator": {
+      "ios": {
+        "simulator": true
+      },
+      "env": {
+        "EXPO_PUBLIC_STRIPE_PK": "pk_test_51Tki4JPZvMiMVeM7n0bbjc5rJ0dRhxq2WkhSxeQtHbuSGE6rlJdbR7cxY0IKIbRmDmzTh69roJUP41M3iOZBGmir00iotpGdzX"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

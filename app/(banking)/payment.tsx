@@ -15,11 +15,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-// Use your machine's LAN IP so physical devices can reach the server.
-// 10.0.2.2 works for Android emulator; localhost works for iOS simulator.
-const API_URL = __DEV__
-  ? 'http://192.168.0.109:3000'   // ← your Mac's LAN IP (auto-detected)
-  : 'http://192.168.0.109:3000';  // same for production builds
+const API_URL = 'https://bs-banking-app.onrender.com';
 const QUICK_AMOUNTS = [5, 10, 25, 50];
 
 export default function PaymentScreen() {

@@ -1,7 +1,7 @@
+import { StripeProvider } from '@stripe/stripe-react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
-import { StripeProvider } from '@stripe/stripe-react-native';
 
 // Replace with your Stripe publishable key (or load from env)
 const STRIPE_PK = process.env.EXPO_PUBLIC_STRIPE_PK ?? 'pk_test_YOUR_PUBLISHABLE_KEY_HERE';

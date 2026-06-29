@@ -1,9 +1,7 @@
 // Central API client — all backend calls go through here
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export const API_URL = __DEV__
-  ? 'http://192.168.0.109:3000'
-  : 'http://192.168.0.109:3000';
+export const API_URL = 'https://bs-banking-app.onrender.com';
 
 // In-memory token cache — avoids async AsyncStorage reads on every request
 let _memToken: string | null = null;

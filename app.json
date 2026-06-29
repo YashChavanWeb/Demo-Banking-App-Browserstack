@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Demo-Banking-App",
-    "slug": "Demo-Banking-App",
+    "slug": "yash",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -9,9 +9,11 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.browserstackbank.app"
     },
     "android": {
+      "package": "com.browserstackbank.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -50,6 +52,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "4f8cc5de-6594-44ba-b1b8-74980769effe"
+      }
+    },
+    "owner": "yash-bstacks-team"
   }
 }

@@ -12,9 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const API_URL = __DEV__
-  ? 'http://192.168.0.109:3000'
-  : 'http://192.168.0.109:3000';
+const API_URL = 'https://bs-banking-app.onrender.com';
 
 const QUICK_AMOUNTS = [50, 100, 250, 500];
 
