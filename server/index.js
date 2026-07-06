@@ -9,6 +9,7 @@ const accountRoutes = require('./routes/account');
 const transactionRoutes = require('./routes/transactions');
 const cardRoutes = require('./routes/cards');
 const userRoutes = require('./routes/users');
+const shopRoutes = require('./routes/shop');
 
 const app = express();
 app.use(cors());
@@ -24,6 +25,7 @@ app.use('/account', accountRoutes);
 app.use('/transactions', transactionRoutes);
 app.use('/cards', cardRoutes);
 app.use('/users', userRoutes);
+app.use('/shop', shopRoutes);
 
 // ── Stripe Payment Sheet ─────────────────────────────────────────────────────
 app.post('/payment-sheet', async (req, res) => {

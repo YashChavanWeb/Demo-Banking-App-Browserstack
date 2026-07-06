@@ -43,3 +43,6 @@ app-example
 /android
 
 .env
+
+# Test Companion onboarding (local, per-machine)
+.test-companion/

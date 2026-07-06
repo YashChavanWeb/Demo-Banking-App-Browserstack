@@ -70,6 +70,7 @@ export default function BankingLayout() {
       <Tabs.Screen name="network" options={{ href: null }} />
       <Tabs.Screen name="shake" options={{ href: null }} />
       <Tabs.Screen name="shop" options={{ href: null }} />
+      <Tabs.Screen name="currency" options={{ href: null }} />
     </Tabs>
   );
 }

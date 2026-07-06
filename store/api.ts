@@ -66,6 +66,11 @@ export const api = {
   // Users (for transfer recipient list)
   getUsers: () => request<{ users: any[] }>('GET', '/users'),
 
+  // Shop
+  placeOrder: (items: { id: string; name: string; price: number; qty: number }[], total: number, description?: string) =>
+    request<{ order: any; transaction: any; newBalance: number }>('POST', '/shop/order', { items, total, description }),
+  getOrders: () => request<{ orders: any[] }>('GET', '/shop/orders'),
+
   // Cards
   getCards: () => request<{ cards: any[] }>('GET', '/cards'),
   createCard: (card: { label: string; number: string; holder: string; expiry: string; color: string; cardType: string }) =>

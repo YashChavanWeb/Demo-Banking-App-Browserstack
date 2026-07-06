@@ -64,6 +64,19 @@ async function createSchema() {
     )
   `;
 
+  await sql`
+    CREATE TABLE IF NOT EXISTS orders (
+      id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id      UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      account_id   UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+      items        JSONB NOT NULL,
+      total        NUMERIC(15,2) NOT NULL,
+      status       TEXT NOT NULL DEFAULT 'paid',
+      reference_id TEXT UNIQUE NOT NULL,
+      created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+
   console.log('✅ Schema created / verified');
 }
 

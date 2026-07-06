@@ -5,7 +5,6 @@ import { BankStore } from '@/store/banking';
 import { ThemeStore } from '@/store/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
@@ -14,11 +13,19 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+// IP-based currency lookup — ip-api.com works from React Native without browser UA
+const IP_GEO_URL = 'http://ip-api.com/json/?fields=status,currency,country,countryCode,city,query';
+
+const CURRENCY_FLAG: Record<string, string> = {
+  USD: '🇺🇸', EUR: '🇪🇺', GBP: '🇬🇧', INR: '🇮🇳', AUD: '🇦🇺',
+  CAD: '🇨🇦', JPY: '🇯🇵', CNY: '🇨🇳', SGD: '🇸🇬', AED: '🇦🇪',
+  BRL: '🇧🇷', MXN: '🇲🇽', ZAR: '🇿🇦', CHF: '🇨🇭', KRW: '🇰🇷',
+  SEK: '🇸🇪', NOK: '🇳🇴', DKK: '🇩🇰', NZD: '🇳🇿', HKD: '🇭🇰',
+};
+
 export default function HomeScreen() {
   const router = useRouter();
   const [balanceVisible, setBalanceVisible] = useState(true);
-  const [locationName, setLocationName] = useState('Detecting...');
-  const [locationLoading, setLocationLoading] = useState(true);
   const [showQRModal, setShowQRModal] = useState(false);
   const [scanned, setScanned] = useState(false);
   const [balance, setBalance] = useState(BankStore.getBalance());
@@ -27,16 +34,23 @@ export default function HomeScreen() {
   const [userName, setUserName] = useState(AuthStore.getUser()?.fullName || 'Welcome');
   const [dataLoading, setDataLoading] = useState(BankStore.isLoading());
 
+  // GPS location (header badge)
+  const [locationName, setLocationName] = useState('Detecting...');
+  const [locationLoading, setLocationLoading] = useState(true);
+
+  // IP geolocation currency
+  const [ipCurrency, setIpCurrency] = useState<{ code: string; country: string; city: string } | null>(null);
+  const [ipLoading, setIpLoading] = useState(true);
+
   const primaryColor = greenMode ? '#059669' : BSColors.primary;
+  const accentColor = greenMode ? '#10B981' : BSColors.accent;
 
   useEffect(() => {
-    // Sync with backend on mount
     BankStore.sync().then(() => setDataLoading(false)).catch(() => setDataLoading(false));
     const unsub = BankStore.subscribe(() => {
       setBalance(BankStore.getBalance());
       setRecentTxs(BankStore.getTransactions().slice(0, 4));
     });
-    // Load real profile
     import('@/store/api').then(({ api }) => {
       api.getProfile().then(p => { if (p?.fullName) setUserName(p.fullName); }).catch(() => {});
     });
@@ -48,45 +62,49 @@ export default function HomeScreen() {
     return unsub;
   }, []);
 
+  // GPS location for header badge — dynamic import avoids top-level Location name clash
   useEffect(() => {
     (async () => {
       try {
-        const { status } = await Location.requestForegroundPermissionsAsync();
+        const Loc = await import('expo-location');
+        const { status } = await Loc.requestForegroundPermissionsAsync();
         if (status === 'granted') {
-          const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Low });
-          const [place] = await Location.reverseGeocodeAsync({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
+          const loc = await Loc.getCurrentPositionAsync({ accuracy: Loc.Accuracy.Low });
+          const [place] = await Loc.reverseGeocodeAsync({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
           if (place) {
             const city = place.city || place.subregion || place.region || '';
             const country = place.country || '';
             setLocationName(city ? `${city}, ${country}` : country || 'Unknown');
-          } else {
-            setLocationName('Unknown');
-          }
-        } else {
-          setLocationName('Location off');
-        }
+          } else { setLocationName('Unknown'); }
+        } else { setLocationName('Location off'); }
       } catch { setLocationName('Unknown'); }
       setLocationLoading(false);
     })();
   }, []);
 
-  const detectLocation = useCallback(async () => {
-    setLocationLoading(true);
+  // Fetch IP geolocation on mount
+  useEffect(() => {
+    fetchIpCurrency();
+  }, []);
+
+  const fetchIpCurrency = useCallback(async () => {
+    setIpLoading(true);
     try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status === 'granted') {
-        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Low });
-        const [place] = await Location.reverseGeocodeAsync({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
-        if (place) {
-          const city = place.city || place.subregion || place.region || '';
-          const country = place.country || '';
-          setLocationName(city ? `${city}, ${country}` : country || 'Unknown');
-        }
-      } else {
-        Alert.alert('Permission Denied', 'Location permission is required.');
+      const res = await fetch(IP_GEO_URL);
+      const data = await res.json();
+      // ip-api.com returns status:'success' and currency field
+      if (data?.status !== 'fail' && data?.currency) {
+        setIpCurrency({
+          code: data.currency,
+          country: data.country || '',
+          city: data.city || '',
+        });
       }
-    } catch { Alert.alert('Error', 'Could not detect location.'); }
-    setLocationLoading(false);
+    } catch {
+      setIpCurrency(null);
+    } finally {
+      setIpLoading(false);
+    }
   }, []);
 
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
@@ -117,11 +135,25 @@ export default function HomeScreen() {
   const savings = BankStore.getSavings();
   const checking = BankStore.getChecking();
 
+  const currencyFlag = ipCurrency ? (CURRENCY_FLAG[ipCurrency.code] || '💱') : '💱';
+  const currencyLabel = ipCurrency
+    ? `${currencyFlag} ${ipCurrency.code}`
+    : '💱 Currency';
+
   const QUICK_ACTIONS = [
-    { label: 'Transfer', icon: 'swap-horizontal' as const, color: primaryColor, onPress: () => router.push('/(banking)/transfer' as any) },
-    { label: 'Pay Bills', icon: 'receipt-outline' as const, color: '#D97706', onPress: () => router.push('/(banking)/transfer' as any) },
-    { label: 'Scan QR', icon: 'qr-code-outline' as const, color: '#DC2626', onPress: openQRScanner },
-    { label: 'Test Features', icon: 'flask-outline' as const, color: '#7C3AED', onPress: () => router.push('/(banking)/testfeatures' as any) },
+    { label: 'Transfer', icon: 'swap-horizontal' as const, color: primaryColor, bg: primaryColor + '15', onPress: () => router.push('/(banking)/transfer' as any) },
+    { label: 'Pay Bills', icon: 'receipt-outline' as const, color: '#D97706', bg: '#D9770615', onPress: () => router.push('/(banking)/transfer' as any) },
+    { label: 'Scan QR', icon: 'qr-code-outline' as const, color: '#DC2626', bg: '#DC262615', onPress: openQRScanner },
+    { label: 'Shop', icon: 'bag-outline' as const, color: '#059669', bg: '#05966915', onPress: () => router.push('/(banking)/shop' as any) },
+    { label: 'Network', icon: 'wifi-outline' as const, color: '#0891B2', bg: '#0891B215', onPress: () => router.push('/(banking)/network' as any) },
+    { label: 'Shake', icon: 'phone-portrait-outline' as const, color: '#7C3AED', bg: '#7C3AED15', onPress: () => router.push('/(banking)/testfeatures' as any) },
+    {
+      label: currencyLabel,
+      icon: 'globe-outline' as const,
+      color: accentColor,
+      bg: accentColor + '15',
+      onPress: () => router.push({ pathname: '/(banking)/currency' as any, params: ipCurrency ? { code: ipCurrency.code, country: ipCurrency.country, city: ipCurrency.city } : {} }),
+    },
   ];
 
   return (
@@ -132,59 +164,87 @@ export default function HomeScreen() {
         <View style={styles.header}>
           <View>
             <Text style={styles.greeting}>Good morning,</Text>
-            <Text style={styles.userName}>{userName}</Text>
+            <Text style={styles.userName}>{userName} 👋</Text>
           </View>
           <View style={styles.headerRight}>
-            <TouchableOpacity style={styles.locationBadge} onPress={detectLocation}>
-              {locationLoading ? (
-                <ActivityIndicator size="small" color={primaryColor} style={{ marginRight: 4 }} />
-              ) : (
-                <Ionicons name="location-outline" size={12} color={primaryColor} />
-              )}
+            <TouchableOpacity style={styles.locationBadge} onPress={async () => {
+              setLocationLoading(true);
+              try {
+                const Loc = await import('expo-location');
+                const { status } = await Loc.requestForegroundPermissionsAsync();
+                if (status === 'granted') {
+                  const loc = await Loc.getCurrentPositionAsync({ accuracy: Loc.Accuracy.Low });
+                  const [place] = await Loc.reverseGeocodeAsync({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
+                  if (place) {
+                    const city = place.city || place.subregion || place.region || '';
+                    const country = place.country || '';
+                    setLocationName(city ? `${city}, ${country}` : country || 'Unknown');
+                  }
+                }
+              } catch { /* ignore */ }
+              setLocationLoading(false);
+            }}>
+              {locationLoading
+                ? <ActivityIndicator size="small" color={primaryColor} style={{ marginRight: 4 }} />
+                : <Ionicons name="location-outline" size={12} color={primaryColor} />}
               <Text style={[styles.locationText, { color: primaryColor }]} numberOfLines={1}>{locationName}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.notifBtn}>
-              <Ionicons name="notifications-outline" size={22} color="#333" />
-              <View style={[styles.notifDot, { backgroundColor: primaryColor }]} />
+              <Ionicons name="notifications-outline" size={22} color={BSColors.textPrimary} />
+              <View style={[styles.notifDot, { backgroundColor: BSColors.error }]} />
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Theme Toggle */}
-        <View style={[styles.themeToggleRow, { borderColor: primaryColor + '40' }]}>
+        <View style={[styles.themeToggleRow, { borderColor: primaryColor + '30', backgroundColor: primaryColor + '08' }]}>
           <Ionicons name={greenMode ? 'leaf-outline' : 'color-palette-outline'} size={16} color={primaryColor} />
           <Text style={[styles.themeToggleLabel, { color: primaryColor }]}>{greenMode ? 'Green Mode ON' : 'Default Theme'}</Text>
           <Switch
             value={greenMode}
             onValueChange={handleThemeToggle}
-            trackColor={{ false: '#E2E8F0', true: '#6EE7B7' }}
-            thumbColor={greenMode ? '#059669' : '#4F46E5'}
+            trackColor={{ false: BSColors.mediumGray, true: '#6EE7B7' }}
+            thumbColor={greenMode ? '#059669' : primaryColor}
             testID="theme-toggle"
           />
         </View>
 
         {/* Balance Card */}
-        <View style={[styles.balanceCard, { backgroundColor: primaryColor, shadowColor: primaryColor }]}>
+        <View style={[styles.balanceCard, { backgroundColor: primaryColor }]}>
           {dataLoading ? <BalanceShimmer /> : (
             <>
               <View style={styles.balanceCardTop}>
-                <Text style={styles.balanceLabel}>Total Balance (USD)</Text>
+                <View>
+                  <Text style={styles.balanceLabel}>Total Balance</Text>
+                  <Text style={styles.balanceCurrency}>USD</Text>
+                </View>
                 <TouchableOpacity onPress={() => setBalanceVisible(!balanceVisible)} style={styles.eyeBtn}>
-                  <Ionicons name={balanceVisible ? 'eye-outline' : 'eye-off-outline'} size={20} color="rgba(255,255,255,0.8)" />
+                  <Ionicons name={balanceVisible ? 'eye-outline' : 'eye-off-outline'} size={22} color="rgba(255,255,255,0.85)" />
                 </TouchableOpacity>
               </View>
-              <Text style={styles.balanceAmount}>{balanceVisible ? `$${balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '••••••••'}</Text>
+              <Text style={styles.balanceAmount}>
+                {balanceVisible ? `$${balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '••••••••'}
+              </Text>
+              <View style={styles.balanceDividerLine} />
               <View style={styles.balanceRow}>
                 <View style={styles.balanceItem}>
-                  <Ionicons name="arrow-down-circle-outline" size={16} color="rgba(255,255,255,0.7)" />
-                  <Text style={styles.balanceItemLabel}>Savings</Text>
-                  <Text style={styles.balanceItemValue}>{balanceVisible ? `$${savings.toLocaleString()}` : '••••'}</Text>
+                  <View style={styles.balanceItemIcon}>
+                    <Ionicons name="trending-up-outline" size={14} color="rgba(255,255,255,0.9)" />
+                  </View>
+                  <View>
+                    <Text style={styles.balanceItemLabel}>Savings</Text>
+                    <Text style={styles.balanceItemValue}>{balanceVisible ? `$${savings.toLocaleString()}` : '••••'}</Text>
+                  </View>
                 </View>
-                <View style={styles.balanceDivider} />
+                <View style={styles.balanceVertDivider} />
                 <View style={styles.balanceItem}>
-                  <Ionicons name="arrow-up-circle-outline" size={16} color="rgba(255,255,255,0.7)" />
-                  <Text style={styles.balanceItemLabel}>Checking</Text>
-                  <Text style={styles.balanceItemValue}>{balanceVisible ? `$${checking.toLocaleString()}` : '••••'}</Text>
+                  <View style={styles.balanceItemIcon}>
+                    <Ionicons name="wallet-outline" size={14} color="rgba(255,255,255,0.9)" />
+                  </View>
+                  <View>
+                    <Text style={styles.balanceItemLabel}>Checking</Text>
+                    <Text style={styles.balanceItemValue}>{balanceVisible ? `$${checking.toLocaleString()}` : '••••'}</Text>
+                  </View>
                 </View>
               </View>
             </>
@@ -196,10 +256,13 @@ export default function HomeScreen() {
         <View style={styles.quickActions}>
           {QUICK_ACTIONS.map(action => (
             <TouchableOpacity key={action.label} style={styles.quickAction} onPress={action.onPress}>
-              <View style={[styles.quickActionIcon, { backgroundColor: action.color + '18' }]}>
-                <Ionicons name={action.icon} size={22} color={action.color} />
+              <View style={[styles.quickActionIcon, { backgroundColor: action.bg }]}>
+                {action.label === currencyLabel && ipLoading
+                  ? <ActivityIndicator size="small" color={action.color} />
+                  : <Ionicons name={action.icon} size={22} color={action.color} />
+                }
               </View>
-              <Text style={styles.quickActionLabel}>{action.label}</Text>
+              <Text style={styles.quickActionLabel} numberOfLines={1}>{action.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -208,19 +271,20 @@ export default function HomeScreen() {
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Recent Transactions</Text>
           <TouchableOpacity onPress={() => router.push('/(banking)/transactions' as any)}>
-            <Text style={[styles.seeAll, { color: primaryColor }]}>See all</Text>
+            <Text style={[styles.seeAll, { color: primaryColor }]}>See all →</Text>
           </TouchableOpacity>
         </View>
         {dataLoading ? <TransactionShimmer /> : (
           <View style={styles.transactionCard}>
             {recentTxs.length === 0 ? (
-              <View style={{ padding: 20, alignItems: 'center' }}>
-                <Text style={{ color: '#94A3B8', fontSize: 13 }}>No transactions yet</Text>
+              <View style={styles.emptyTx}>
+                <Ionicons name="receipt-outline" size={32} color={BSColors.mediumGray} />
+                <Text style={styles.emptyTxText}>No transactions yet</Text>
               </View>
             ) : recentTxs.map((tx, i) => (
               <View key={tx.id} style={[styles.txRow, i < recentTxs.length - 1 && styles.txBorder]}>
-                <View style={styles.txIconWrap}>
-                  <Ionicons name={tx.icon as any} size={20} color={tx.amount > 0 ? '#059669' : '#666'} />
+                <View style={[styles.txIconWrap, { backgroundColor: tx.amount > 0 ? BSColors.success + '15' : BSColors.error + '10' }]}>
+                  <Ionicons name={tx.icon as any} size={18} color={tx.amount > 0 ? BSColors.success : BSColors.darkGray} />
                 </View>
                 <View style={styles.txInfo}>
                   <Text style={styles.txMerchant}>{tx.merchant}</Text>
@@ -262,46 +326,63 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F8FAFF' },
+  safe: { flex: 1, backgroundColor: BSColors.bgPage },
   container: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 24 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  greeting: { color: '#64748B', fontSize: 13 },
-  userName: { color: '#0F172A', fontSize: 20, fontWeight: '700' },
+  content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32 },
+
+  // Header
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  greeting: { color: BSColors.darkGray, fontSize: 13, fontWeight: '500' },
+  userName: { color: BSColors.textPrimary, fontSize: 22, fontWeight: '800', letterSpacing: -0.3 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  locationBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#fff', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 1, maxWidth: 140 },
+  locationBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: BSColors.white, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 1, maxWidth: 130 },
   locationText: { fontSize: 11, fontWeight: '600', flexShrink: 1 },
-  notifBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
-  notifDot: { position: 'absolute', top: 8, right: 8, width: 8, height: 8, borderRadius: 4, borderWidth: 1.5, borderColor: '#fff' },
-  themeToggleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#fff', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, marginBottom: 16, borderWidth: 1 },
+  notifBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: BSColors.white, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.07, shadowRadius: 6, elevation: 2 },
+  notifDot: { position: 'absolute', top: 9, right: 9, width: 8, height: 8, borderRadius: 4, borderWidth: 1.5, borderColor: BSColors.white },
+
+  // Theme toggle
+  themeToggleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 11, marginBottom: 18, borderWidth: 1 },
   themeToggleLabel: { flex: 1, fontSize: 13, fontWeight: '600' },
-  balanceCard: { borderRadius: 20, padding: 24, marginBottom: 20, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.35, shadowRadius: 16, elevation: 8 },
-  balanceCardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  balanceLabel: { color: 'rgba(255,255,255,0.8)', fontSize: 13, fontWeight: '500' },
+
+  // Balance card
+  balanceCard: { borderRadius: 24, padding: 24, marginBottom: 24, shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 20, elevation: 10 },
+  balanceCardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 },
+  balanceLabel: { color: 'rgba(255,255,255,0.75)', fontSize: 12, fontWeight: '500', marginBottom: 2 },
+  balanceCurrency: { color: 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: '600', letterSpacing: 1 },
   eyeBtn: { padding: 4 },
-  balanceAmount: { color: '#fff', fontSize: 32, fontWeight: '800', marginBottom: 20, letterSpacing: 0.5 },
+  balanceAmount: { color: '#fff', fontSize: 36, fontWeight: '800', letterSpacing: -0.5, marginBottom: 20 },
+  balanceDividerLine: { height: 1, backgroundColor: 'rgba(255,255,255,0.15)', marginBottom: 16 },
   balanceRow: { flexDirection: 'row', alignItems: 'center' },
-  balanceItem: { flex: 1, alignItems: 'center', gap: 4 },
-  balanceDivider: { width: 1, height: 36, backgroundColor: 'rgba(255,255,255,0.3)' },
-  balanceItemLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 11 },
-  balanceItemValue: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  balanceItem: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  balanceItemIcon: { width: 30, height: 30, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center' },
+  balanceItemLabel: { color: 'rgba(255,255,255,0.65)', fontSize: 11, marginBottom: 2 },
+  balanceItemValue: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  balanceVertDivider: { width: 1, height: 36, backgroundColor: 'rgba(255,255,255,0.2)', marginHorizontal: 8 },
+
+  // Quick actions
+  sectionTitle: { color: BSColors.textPrimary, fontSize: 16, fontWeight: '700', marginBottom: 14 },
+  quickActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 28 },
+  quickAction: { width: '18%', alignItems: 'center', gap: 7, flexGrow: 1, maxWidth: '20%' },
+  quickActionIcon: { width: 54, height: 54, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  quickActionLabel: { color: BSColors.textSecondary, fontSize: 10, fontWeight: '600', textAlign: 'center' },
+
+  // Transactions
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  sectionTitle: { color: '#0F172A', fontSize: 16, fontWeight: '700', marginBottom: 12 },
   seeAll: { fontSize: 13, fontWeight: '600' },
-  quickActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 24 },
-  quickAction: { width: '22%', alignItems: 'center', gap: 8 },
-  quickActionIcon: { width: 56, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  quickActionLabel: { color: '#334155', fontSize: 11, fontWeight: '600', textAlign: 'center' },
-  transactionCard: { backgroundColor: '#fff', borderRadius: 16, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
+  transactionCard: { backgroundColor: BSColors.white, borderRadius: 18, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 3 },
   txRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14 },
-  txBorder: { borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
-  txIconWrap: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#F8FAFF', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  txBorder: { borderBottomWidth: 1, borderBottomColor: BSColors.lightGray },
+  txIconWrap: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   txInfo: { flex: 1 },
-  txMerchant: { color: '#0F172A', fontSize: 14, fontWeight: '600', marginBottom: 2 },
-  txCategory: { color: '#94A3B8', fontSize: 12 },
+  txMerchant: { color: BSColors.textPrimary, fontSize: 14, fontWeight: '600', marginBottom: 2 },
+  txCategory: { color: BSColors.darkGray, fontSize: 12 },
   txAmount: { fontSize: 14, fontWeight: '700' },
-  txCredit: { color: '#059669' },
-  txDebit: { color: '#DC2626' },
+  txCredit: { color: BSColors.success },
+  txDebit: { color: BSColors.error },
+  emptyTx: { padding: 32, alignItems: 'center', gap: 10 },
+  emptyTxText: { color: BSColors.darkGray, fontSize: 13 },
+
+  // QR
   qrHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, backgroundColor: '#000' },
   qrClose: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   qrTitle: { color: '#fff', fontSize: 17, fontWeight: '700' },

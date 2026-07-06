@@ -1,21 +1,11 @@
-import { BSColors } from '@/constants/theme';
-import { ThemeStore } from '@/store/theme';
+import { useTheme } from '@/hooks/use-theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTheme } from '@/hooks/use-theme';
 
 const FEATURES = [
-  {
-    id: 'network',
-    title: 'Network Speed',
-    subtitle: 'Check if you are online or offline',
-    icon: 'wifi-outline' as const,
-    color: '#4F46E5',
-    route: '/(banking)/network',
-  },
   {
     id: 'shake',
     title: 'Shake Detection',
@@ -23,14 +13,6 @@ const FEATURES = [
     icon: 'phone-portrait-outline' as const,
     color: '#D97706',
     route: '/(banking)/shake',
-  },
-  {
-    id: 'shop',
-    title: 'Dynamic Data',
-    subtitle: 'Browse products with a live shopping cart',
-    icon: 'cart-outline' as const,
-    color: '#059669',
-    route: '/(banking)/shop',
   },
 ];
 

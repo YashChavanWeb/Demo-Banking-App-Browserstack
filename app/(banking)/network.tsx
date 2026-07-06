@@ -1,24 +1,45 @@
 import { BSColors } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTheme } from '@/hooks/use-theme';
+
+// Download ~500KB from Cloudflare speed test endpoint to measure Mbps
+const SPEED_TEST_URL = 'https://speed.cloudflare.com/__down?bytes=500000';
+
+async function measureSpeedMbps(): Promise<number> {
+  const start = Date.now();
+  const res = await fetch(SPEED_TEST_URL, { cache: 'no-store' });
+  const blob = await res.blob();
+  const elapsed = (Date.now() - start) / 1000;
+  const mbps = (blob.size * 8) / (elapsed * 1_000_000);
+  return Math.round(mbps * 10) / 10;
+}
 
 export default function NetworkScreen() {
-  const { primaryColor, primaryBg, primaryBorder } = useTheme();
+  const { primaryColor } = useTheme();
   const router = useRouter();
   const [online, setOnline] = useState<boolean | null>(null);
+  const [speedMbps, setSpeedMbps] = useState<number | null>(null);
   const [checking, setChecking] = useState(false);
 
   const checkConnection = async () => {
     setChecking(true);
+    setSpeedMbps(null);
+    setOnline(null);
     try {
-      const res = await fetch('https://www.google.com', { method: 'HEAD', cache: 'no-store' });
-      setOnline(res.ok);
+      const speed = await measureSpeedMbps();
+      setOnline(true);
+      setSpeedMbps(speed);
     } catch {
-      setOnline(false);
+      try {
+        const res = await fetch('https://www.google.com', { method: 'HEAD', cache: 'no-store' });
+        setOnline(res.ok);
+      } catch {
+        setOnline(false);
+      }
     }
     setChecking(false);
   };
@@ -26,73 +47,120 @@ export default function NetworkScreen() {
   useEffect(() => { checkConnection(); }, []);
 
   const isOnline = online === true;
-  const statusColor = online === null ? '#94A3B8' : isOnline ? '#059669' : '#DC2626';
-  const statusBg = online === null ? '#F1F5F9' : isOnline ? '#F0FDF4' : '#FEF2F2';
-  const statusIcon = online === null ? 'help-circle-outline' : isOnline ? 'wifi-outline' : 'wifi-outline';
-  const statusText = online === null ? 'Checking...' : isOnline ? 'Online' : 'Offline';
+  const statusColor = online === null ? '#94A3B8' : isOnline ? BSColors.success : BSColors.error;
+  const statusBg = online === null ? BSColors.lightGray : isOnline ? '#F0FDF4' : '#FEF2F2';
+  const statusText = checking ? 'Measuring...' : online === null ? 'Checking...' : isOnline ? 'Online' : 'Offline';
+
+  const speedColor = speedMbps === null ? statusColor
+    : speedMbps >= 25 ? BSColors.success
+    : speedMbps >= 5 ? BSColors.warning
+    : BSColors.error;
+
+  const speedLabel = speedMbps === null ? null
+    : speedMbps >= 100 ? 'Excellent'
+    : speedMbps >= 25 ? 'Good'
+    : speedMbps >= 5 ? 'Fair'
+    : 'Slow';
 
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={22} color="#333" />
+          <Ionicons name="arrow-back" size={22} color={BSColors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.pageTitle}>Network Status</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <View style={styles.content}>
+        {/* Status Card */}
         <View style={[styles.statusCard, { backgroundColor: statusBg, borderColor: statusColor + '40' }]}>
           <View style={[styles.statusIconWrap, { backgroundColor: statusColor + '20' }]}>
-            <Ionicons name={statusIcon as any} size={56} color={statusColor} />
+            {checking
+              ? <ActivityIndicator size="large" color={statusColor} />
+              : <Ionicons name={isOnline ? 'wifi-outline' : 'wifi-outline'} size={48} color={statusColor} />}
           </View>
           <Text style={[styles.statusText, { color: statusColor }]}>{statusText}</Text>
           <Text style={styles.statusDesc}>
-            {online === null
-              ? 'Checking your connection...'
+            {checking
+              ? 'Downloading test data to measure your speed...'
               : isOnline
               ? 'Your device is connected to the internet.'
               : 'Your device is not connected to the internet.'}
           </Text>
         </View>
 
+        {/* Info Card */}
         <View style={styles.infoCard}>
           <View style={styles.infoRow}>
-            <Ionicons name="radio-button-on-outline" size={18} color={statusColor} />
+            <View style={[styles.infoIcon, { backgroundColor: statusColor + '15' }]}>
+              <Ionicons name="radio-button-on-outline" size={16} color={statusColor} />
+            </View>
             <Text style={styles.infoLabel}>Connection Status</Text>
-            <Text style={[styles.infoValue, { color: statusColor }]}>{statusText}</Text>
+            <Text style={[styles.infoValue, { color: statusColor }]}>{checking ? '—' : online === null ? '—' : isOnline ? 'Online' : 'Offline'}</Text>
           </View>
+
+          <View style={[styles.infoRow, styles.infoRowBorder]}>
+            <View style={[styles.infoIcon, { backgroundColor: speedColor + '15' }]}>
+              <Ionicons name="speedometer-outline" size={16} color={speedColor} />
+            </View>
+            <Text style={styles.infoLabel}>Download Speed</Text>
+            <Text style={[styles.infoValue, { color: speedColor }]}>
+              {checking ? 'Measuring...' : speedMbps !== null ? `${speedMbps} Mbps` : '—'}
+            </Text>
+          </View>
+
+          {speedLabel && !checking && (
+            <View style={[styles.infoRow, styles.infoRowBorder]}>
+              <View style={[styles.infoIcon, { backgroundColor: speedColor + '15' }]}>
+                <Ionicons name="bar-chart-outline" size={16} color={speedColor} />
+              </View>
+              <Text style={styles.infoLabel}>Quality</Text>
+              <View style={[styles.qualityBadge, { backgroundColor: speedColor + '20' }]}>
+                <Text style={[styles.qualityText, { color: speedColor }]}>{speedLabel}</Text>
+              </View>
+            </View>
+          )}
         </View>
 
         <TouchableOpacity
-          style={[styles.checkBtn, checking && styles.checkBtnDisabled]}
+          style={[styles.checkBtn, { backgroundColor: primaryColor }, checking && styles.checkBtnDisabled]}
           onPress={checkConnection}
           disabled={checking}
           testID="check-connection-btn"
         >
-          <Ionicons name="refresh-outline" size={18} color="#fff" />
-          <Text style={styles.checkBtnText}>{checking ? 'Checking...' : 'Check Again'}</Text>
+          {checking
+            ? <ActivityIndicator color="#fff" style={{ marginRight: 8 }} />
+            : <Ionicons name="refresh-outline" size={18} color="#fff" style={{ marginRight: 8 }} />}
+          <Text style={styles.checkBtnText}>{checking ? 'Measuring...' : 'Test Again'}</Text>
         </TouchableOpacity>
+
+        <Text style={styles.note}>Speed measured by downloading 500KB from Cloudflare</Text>
       </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F8FAFF' },
+  safe: { flex: 1, backgroundColor: BSColors.bgPage },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 1 },
-  pageTitle: { color: '#0F172A', fontSize: 18, fontWeight: '700' },
+  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: BSColors.white, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 1 },
+  pageTitle: { color: BSColors.textPrimary, fontSize: 18, fontWeight: '700' },
   content: { flex: 1, paddingHorizontal: 20, paddingTop: 24 },
-  statusCard: { borderRadius: 24, padding: 40, alignItems: 'center', marginBottom: 20, borderWidth: 1.5 },
-  statusIconWrap: { width: 100, height: 100, borderRadius: 50, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
-  statusText: { fontSize: 32, fontWeight: '800', marginBottom: 10 },
-  statusDesc: { color: '#64748B', fontSize: 14, textAlign: 'center', lineHeight: 20 },
-  infoCard: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
-  infoRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  infoLabel: { flex: 1, color: '#475569', fontSize: 14 },
+  statusCard: { borderRadius: 24, padding: 36, alignItems: 'center', marginBottom: 20, borderWidth: 1.5 },
+  statusIconWrap: { width: 90, height: 90, borderRadius: 45, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+  statusText: { fontSize: 28, fontWeight: '800', marginBottom: 8 },
+  statusDesc: { color: BSColors.darkGray, fontSize: 13, textAlign: 'center', lineHeight: 20 },
+  infoCard: { backgroundColor: BSColors.white, borderRadius: 18, overflow: 'hidden', marginBottom: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+  infoRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 },
+  infoRowBorder: { borderTopWidth: 1, borderTopColor: BSColors.lightGray },
+  infoIcon: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  infoLabel: { flex: 1, color: BSColors.textSecondary, fontSize: 14 },
   infoValue: { fontSize: 14, fontWeight: '700' },
-  checkBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: BSColors.primary, borderRadius: 14, paddingVertical: 16 },
+  qualityBadge: { borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4 },
+  qualityText: { fontSize: 13, fontWeight: '700' },
+  checkBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 14, paddingVertical: 16, marginBottom: 12 },
   checkBtnDisabled: { opacity: 0.6 },
   checkBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  note: { color: BSColors.darkGray, fontSize: 12, textAlign: 'center' },
 });

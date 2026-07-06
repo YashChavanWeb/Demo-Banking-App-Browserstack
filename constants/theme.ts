@@ -1,43 +1,45 @@
 import { Platform } from 'react-native';
 
-// BrowserStack brand colors — indigo/blue design system (matching browserstack.com)
+// Design system — Urbanist / modern banking palette
 export const BSColors = {
-  // Primary indigo/blue
-  primary: '#4F46E5',
-  primaryLight: '#6366F1',
-  primaryDark: '#3730A3',
-  primaryBg: '#EEF2FF',      // lavender tint background
-  primaryBorder: '#C7D2FE',  // indigo border
+  // Primary navy-blue (--color-primary)
+  primary: '#1E3A8A',
+  primaryLight: '#3B82F6',
+  primaryDark: '#1E3A8A',
+  primaryBg: '#EFF6FF',      // light blue tint
+  primaryBorder: '#BFDBFE',  // blue-200
 
-  // Accent / CTA blue (the "Get started free" button)
-  blue: '#2563EB',
-  blueLight: '#3B82F6',
-  blueDark: '#1D4ED8',
+  // Accent indigo (--color-accent)
+  accent: '#6366F1',
+  accentLight: '#A5B4FC',
 
   // Neutrals
-  navy: '#1E1B4B',
-  navyLight: '#312E81',
+  navy: '#0F172A',
+  navyLight: '#1E293B',
   white: '#FFFFFF',
-  bgPage: '#F8FAFF',         // very light blue-white page background
-  bgCard: '#FFFFFF',
+  bgPage: '#FCFBFC',         // --color-bg
+  bgCard: '#FFFFFF',         // --color-surface
   lightGray: '#F1F5F9',
-  mediumGray: '#E2E8F0',
-  darkGray: '#64748B',
-  textPrimary: '#0F172A',
+  mediumGray: '#E2E8F0',     // --color-border
+  darkGray: '#64748B',       // --color-muted
+  textPrimary: '#0F172A',    // --color-text
   textSecondary: '#475569',
 
   // Semantic
-  error: '#DC2626',
-  success: '#059669',
-  warning: '#D97706',
-  info: '#0891B2',
+  error: '#EF4444',          // --color-danger
+  success: '#10B981',        // --color-success
+  warning: '#F59E0B',        // --color-warning
+  info: '#3B82F6',
 
   // Legacy aliases (keep so existing references don't break)
-  orange: '#4F46E5',
-  orangeLight: '#6366F1',
-  orangeDark: '#3730A3',
-  inputBorder: '#C7D2FE',
-  inputBg: '#F8FAFF',
+  blue: '#3B82F6',
+  blueLight: '#60A5FA',
+  blueDark: '#1D4ED8',
+  orange: '#1E3A8A',
+  orangeLight: '#3B82F6',
+  orangeDark: '#1E3A8A',
+  inputBorder: '#BFDBFE',
+  inputBg: '#EFF6FF',
 };
 
 const tintColorLight = BSColors.primary;
