@@ -13,8 +13,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-// IP-based currency lookup — ip-api.com works from React Native without browser UA
-const IP_GEO_URL = 'http://ip-api.com/json/?fields=status,currency,country,countryCode,city,query';
+// IP-based currency lookup — HTTPS endpoint, works from React Native
+const IP_GEO_URL = 'https://ipapi.co/json/';
 
 const CURRENCY_FLAG: Record<string, string> = {
   USD: '🇺🇸', EUR: '🇪🇺', GBP: '🇬🇧', INR: '🇮🇳', AUD: '🇦🇺',
@@ -33,6 +33,7 @@ export default function HomeScreen() {
   const [greenMode, setGreenMode] = useState(ThemeStore.isGreenMode());
   const [userName, setUserName] = useState(AuthStore.getUser()?.fullName || 'Welcome');
   const [dataLoading, setDataLoading] = useState(BankStore.isLoading());
+  const [showNotifs, setShowNotifs] = useState(false);
 
   // GPS location (header badge)
   const [locationName, setLocationName] = useState('Detecting...');
@@ -90,18 +91,48 @@ export default function HomeScreen() {
   const fetchIpCurrency = useCallback(async () => {
     setIpLoading(true);
     try {
-      const res = await fetch(IP_GEO_URL);
+      const res = await fetch(IP_GEO_URL, { headers: { Accept: 'application/json' } });
       const data = await res.json();
-      // ip-api.com returns status:'success' and currency field
-      if (data?.status !== 'fail' && data?.currency) {
+      // ipapi.co returns currency, country_name, city fields
+      if (!data?.error && data?.currency) {
         setIpCurrency({
           code: data.currency,
-          country: data.country || '',
+          country: data.country_name || '',
           city: data.city || '',
         });
+      } else {
+        // Fallback: derive from device timezone
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const TZ_CC: Record<string, string> = {
+          'Asia/Kolkata': 'IN', 'Asia/Calcutta': 'IN', 'America/New_York': 'US',
+          'America/Los_Angeles': 'US', 'America/Chicago': 'US', 'Europe/London': 'GB',
+          'Europe/Paris': 'FR', 'Europe/Berlin': 'DE', 'Asia/Tokyo': 'JP',
+          'Asia/Shanghai': 'CN', 'Asia/Singapore': 'SG', 'Asia/Dubai': 'AE',
+          'Australia/Sydney': 'AU', 'America/Sao_Paulo': 'BR', 'America/Mexico_City': 'MX',
+        };
+        const CC_CUR: Record<string, string> = {
+          IN: 'INR', US: 'USD', GB: 'GBP', FR: 'EUR', DE: 'EUR',
+          JP: 'JPY', CN: 'CNY', SG: 'SGD', AE: 'AED', AU: 'AUD',
+          BR: 'BRL', MX: 'MXN',
+        };
+        const cc = TZ_CC[tz] || 'US';
+        setIpCurrency({ code: CC_CUR[cc] || 'USD', country: cc, city: '' });
       }
     } catch {
-      setIpCurrency(null);
+      // Fallback to device timezone on any error
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const TZ_CC: Record<string, string> = {
+        'Asia/Kolkata': 'IN', 'Asia/Calcutta': 'IN', 'America/New_York': 'US',
+        'America/Los_Angeles': 'US', 'Europe/London': 'GB', 'Europe/Paris': 'FR',
+        'Asia/Tokyo': 'JP', 'Asia/Shanghai': 'CN', 'Asia/Singapore': 'SG',
+        'Asia/Dubai': 'AE', 'Australia/Sydney': 'AU',
+      };
+      const CC_CUR: Record<string, string> = {
+        IN: 'INR', US: 'USD', GB: 'GBP', FR: 'EUR', JP: 'JPY',
+        CN: 'CNY', SG: 'SGD', AE: 'AED', AU: 'AUD',
+      };
+      const cc = TZ_CC[tz] || 'US';
+      setIpCurrency({ code: CC_CUR[cc] || 'USD', country: cc, city: '' });
     } finally {
       setIpLoading(false);
     }
@@ -142,6 +173,7 @@ export default function HomeScreen() {
 
   const QUICK_ACTIONS = [
     { label: 'Transfer', icon: 'swap-horizontal' as const, color: primaryColor, bg: primaryColor + '15', onPress: () => router.push('/(banking)/transfer' as any) },
+    { label: 'Chat', icon: 'chatbubbles-outline' as const, color: '#7C3AED', bg: '#7C3AED15', onPress: () => router.push('/(banking)/chat' as any) },
     { label: 'Pay Bills', icon: 'receipt-outline' as const, color: '#D97706', bg: '#D9770615', onPress: () => router.push('/(banking)/transfer' as any) },
     { label: 'Scan QR', icon: 'qr-code-outline' as const, color: '#DC2626', bg: '#DC262615', onPress: openQRScanner },
     { label: 'Shop', icon: 'bag-outline' as const, color: '#059669', bg: '#05966915', onPress: () => router.push('/(banking)/shop' as any) },
@@ -189,7 +221,7 @@ export default function HomeScreen() {
                 : <Ionicons name="location-outline" size={12} color={primaryColor} />}
               <Text style={[styles.locationText, { color: primaryColor }]} numberOfLines={1}>{locationName}</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.notifBtn}>
+            <TouchableOpacity style={styles.notifBtn} onPress={() => setShowNotifs(true)} testID="notif-btn">
               <Ionicons name="notifications-outline" size={22} color={BSColors.textPrimary} />
               <View style={[styles.notifDot, { backgroundColor: BSColors.error }]} />
             </TouchableOpacity>
@@ -209,8 +241,8 @@ export default function HomeScreen() {
           />
         </View>
 
-        {/* Balance Card */}
-        <View style={[styles.balanceCard, { backgroundColor: primaryColor }]}>
+        {/* Balance Card — shifts slightly left+top in green mode (Percy visual diff use-case) */}
+        <View style={[styles.balanceCard, { backgroundColor: primaryColor }, greenMode && styles.balanceCardGreen]}>
           {dataLoading ? <BalanceShimmer /> : (
             <>
               <View style={styles.balanceCardTop}>
@@ -271,7 +303,9 @@ export default function HomeScreen() {
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Recent Transactions</Text>
           <TouchableOpacity onPress={() => router.push('/(banking)/transactions' as any)}>
-            <Text style={[styles.seeAll, { color: primaryColor }]}>See all →</Text>
+            <Text style={[styles.seeAll, { color: primaryColor }]}>
+              {greenMode ? 'See all' : 'See all →'}
+            </Text>
           </TouchableOpacity>
         </View>
         {dataLoading ? <TransactionShimmer /> : (
@@ -299,6 +333,38 @@ export default function HomeScreen() {
         )}
 
       </ScrollView>
+
+      {/* Notifications Modal */}
+      <Modal visible={showNotifs} animationType="slide" presentationStyle="pageSheet">
+        <SafeAreaView style={{ flex: 1, backgroundColor: BSColors.bgPage }}>
+          <View style={styles.notifHeader}>
+            <Text style={styles.notifTitle}>Notifications</Text>
+            <TouchableOpacity onPress={() => setShowNotifs(false)} style={styles.notifCloseBtn}>
+              <Ionicons name="close" size={22} color={BSColors.textPrimary} />
+            </TouchableOpacity>
+          </View>
+          <ScrollView contentContainerStyle={{ padding: 20, gap: 12 }}>
+            {[
+              { icon: 'checkmark-circle-outline', color: BSColors.success, title: 'Transfer Successful', body: 'Your transfer of $250.00 was completed.', time: '2 min ago' },
+              { icon: 'card-outline', color: primaryColor, title: 'Card Payment', body: 'A payment of $45.99 was made with your card.', time: '1 hr ago' },
+              { icon: 'alert-circle-outline', color: BSColors.warning, title: 'Low Balance Alert', body: 'Your checking account balance is below $100.', time: '3 hr ago' },
+              { icon: 'gift-outline', color: '#7C3AED', title: 'Cashback Earned', body: 'You earned $5.00 cashback on your last purchase.', time: 'Yesterday' },
+              { icon: 'shield-checkmark-outline', color: BSColors.info, title: 'Security Update', body: 'Your account password was changed successfully.', time: '2 days ago' },
+            ].map((n, i) => (
+              <View key={i} style={styles.notifItem}>
+                <View style={[styles.notifIconWrap, { backgroundColor: n.color + '15' }]}>
+                  <Ionicons name={n.icon as any} size={20} color={n.color} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.notifItemTitle}>{n.title}</Text>
+                  <Text style={styles.notifItemBody}>{n.body}</Text>
+                  <Text style={styles.notifItemTime}>{n.time}</Text>
+                </View>
+              </View>
+            ))}
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
 
       {/* QR Scanner Modal */}
       <Modal visible={showQRModal} animationType="slide">
@@ -346,6 +412,7 @@ const styles = StyleSheet.create({
 
   // Balance card
   balanceCard: { borderRadius: 24, padding: 24, marginBottom: 24, shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 20, elevation: 10 },
+  balanceCardGreen: { marginLeft: -6, marginTop: -4 },
   balanceCardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 },
   balanceLabel: { color: 'rgba(255,255,255,0.75)', fontSize: 12, fontWeight: '500', marginBottom: 2 },
   balanceCurrency: { color: 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: '600', letterSpacing: 1 },
@@ -381,6 +448,16 @@ const styles = StyleSheet.create({
   txDebit: { color: BSColors.error },
   emptyTx: { padding: 32, alignItems: 'center', gap: 10 },
   emptyTxText: { color: BSColors.darkGray, fontSize: 13 },
+
+  // Notifications
+  notifHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: BSColors.mediumGray },
+  notifTitle: { color: BSColors.textPrimary, fontSize: 20, fontWeight: '800' },
+  notifCloseBtn: { width: 36, height: 36, borderRadius: 12, backgroundColor: BSColors.lightGray, alignItems: 'center', justifyContent: 'center' },
+  notifItem: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, backgroundColor: BSColors.white, borderRadius: 16, padding: 14, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 },
+  notifIconWrap: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  notifItemTitle: { color: BSColors.textPrimary, fontSize: 14, fontWeight: '700', marginBottom: 3 },
+  notifItemBody: { color: BSColors.textSecondary, fontSize: 12, lineHeight: 17, marginBottom: 4 },
+  notifItemTime: { color: BSColors.darkGray, fontSize: 11 },
 
   // QR
   qrHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, backgroundColor: '#000' },

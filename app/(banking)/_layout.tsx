@@ -23,8 +23,8 @@ export default function BankingLayout() {
           backgroundColor: '#fff',
           borderTopColor: '#E2E8F0',
           borderTopWidth: 1,
-          height: 64,
-          paddingBottom: 10,
+          height: 72,
+          paddingBottom: 16,
           paddingTop: 6,
         },
         tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
@@ -71,6 +71,7 @@ export default function BankingLayout() {
       <Tabs.Screen name="shake" options={{ href: null }} />
       <Tabs.Screen name="shop" options={{ href: null }} />
       <Tabs.Screen name="currency" options={{ href: null }} />
+      <Tabs.Screen name="chat" options={{ href: null }} />
     </Tabs>
   );
 }

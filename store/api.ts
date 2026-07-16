@@ -1,7 +1,10 @@
 // Central API client — all backend calls go through here
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export const API_URL = 'https://bs-banking-app.onrender.com';
+// ── Backend URL — read from env (EXPO_PUBLIC_API_URL) ────────────────────────
+// Set in eas.json per build profile, or in a local .env file for dev.
+// EXPO_PUBLIC_ prefix makes it available at runtime in Expo (no server needed).
+export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://bs-banking-app.onrender.com';
 
 // In-memory token cache — avoids async AsyncStorage reads on every request
 let _memToken: string | null = null;
@@ -78,6 +81,20 @@ export const api = {
   updateCard: (id: string, updates: { frozen?: boolean; label?: string; color?: string }) =>
     request<{ card: any }>('PATCH', `/cards/${id}`, updates),
   deleteCard: (id: string) => request<{ deleted: boolean }>('DELETE', `/cards/${id}`),
+
+  // Chat / Messages
+  sendMessage: (recipientId: string, body: string) =>
+    request<{ message: any }>('POST', '/messages', { recipientId, body }),
+  getConversation: (userId: string) =>
+    request<{ messages: any[] }>('GET', `/messages/conversation/${userId}`),
+  getInbox: () =>
+    request<{ conversations: any[] }>('GET', '/messages/inbox'),
+  getUnreadCount: () =>
+    request<{ count: number }>('GET', '/messages/unread-count'),
+
+  // Push tokens
+  registerPushToken: (token: string, platform: string) =>
+    request<{ ok: boolean }>('POST', '/push-tokens', { token, platform }),
 
   // Token management
   saveToken: async (token: string) => {

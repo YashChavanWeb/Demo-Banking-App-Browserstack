@@ -39,7 +39,8 @@ const PRODUCTS = [
 
 type CartMap = Record<string, number>;
 
-const API_URL = 'https://bs-banking-app.onrender.com';
+// Use the shared API_URL from store/api (reads from EXPO_PUBLIC_API_URL env var)
+import { API_URL } from '@/store/api';
 
 export default function ShopScreen() {
   const { primaryColor } = useTheme();
@@ -203,21 +204,23 @@ export default function ShopScreen() {
       </View>
 
       {/* Category Filter */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.catRow}>
-        {CATEGORIES.map(cat => (
-          <TouchableOpacity
-            key={cat}
-            style={[styles.catChip, activeCategory === cat && { backgroundColor: primaryColor, borderColor: primaryColor }]}
-            onPress={() => setActiveCategory(cat)}
-            testID={`cat-${cat}`}
-          >
-            <Text style={[styles.catChipText, activeCategory === cat && { color: '#fff' }]}>{cat}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      <View style={styles.catFilterWrap}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.catRow}>
+          {CATEGORIES.map(cat => (
+            <TouchableOpacity
+              key={cat}
+              style={[styles.catChip, activeCategory === cat && { backgroundColor: primaryColor, borderColor: primaryColor }]}
+              onPress={() => setActiveCategory(cat)}
+              testID={`cat-${cat}`}
+            >
+              <Text style={[styles.catChipText, activeCategory === cat && { color: '#fff' }]}>{cat}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
 
       {/* Product Grid */}
-      <ScrollView contentContainerStyle={styles.grid} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={styles.grid} showsVerticalScrollIndicator={false} style={styles.gridScroll}>
         {filteredProducts.length === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons name="search-outline" size={40} color={BSColors.mediumGray} />
@@ -433,9 +436,11 @@ const styles = StyleSheet.create({
   cartBadgeText: { color: '#fff', fontSize: 10, fontWeight: '800' },
   searchRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: BSColors.white, marginHorizontal: 20, marginBottom: 12, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1, borderColor: BSColors.mediumGray },
   searchInput: { flex: 1, fontSize: 14, color: BSColors.textPrimary },
+  catFilterWrap: { flexShrink: 0 },
   catRow: { paddingHorizontal: 20, paddingBottom: 12, gap: 8, flexDirection: 'row' },
   catChip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, backgroundColor: BSColors.white, borderWidth: 1.5, borderColor: BSColors.mediumGray, flexShrink: 0 },
   catChipText: { color: BSColors.textSecondary, fontSize: 12, fontWeight: '600' },
+  gridScroll: { flex: 1 },
   grid: { paddingHorizontal: 20 },
   gridRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   productCard: { width: CARD_W, backgroundColor: BSColors.white, borderRadius: 18, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.07, shadowRadius: 8, elevation: 3 },

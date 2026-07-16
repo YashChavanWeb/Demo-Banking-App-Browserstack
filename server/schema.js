@@ -77,6 +77,36 @@ async function createSchema() {
     )
   `;
 
+  // Push tokens — one row per user device
+  await sql`
+    CREATE TABLE IF NOT EXISTS push_tokens (
+      id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      token      TEXT NOT NULL,
+      platform   TEXT NOT NULL DEFAULT 'unknown',
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(user_id)
+    )
+  `;
+
+  // Messages — 2-way chat between users
+  await sql`
+    CREATE TABLE IF NOT EXISTS messages (
+      id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      sender_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      recipient_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      body         TEXT NOT NULL CHECK (char_length(body) <= 100),
+      read         BOOLEAN NOT NULL DEFAULT FALSE,
+      created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+
+  // Index for fast conversation lookup
+  await sql`
+    CREATE INDEX IF NOT EXISTS idx_messages_sender_recipient
+    ON messages(sender_id, recipient_id)
+  `;
+
   console.log('✅ Schema created / verified');
 }
 

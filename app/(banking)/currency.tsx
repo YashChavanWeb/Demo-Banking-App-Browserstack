@@ -1,16 +1,78 @@
+import { CurrencyShimmer } from '@/components/shimmer';
 import { BSColors } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator, ScrollView, StyleSheet,
+  ScrollView, StyleSheet,
   Text, TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-// ip-api.com: free, no auth, works from React Native (no browser UA required)
-const IP_GEO_URL = 'http://ip-api.com/json/?fields=status,message,country,countryCode,regionName,city,timezone,offset,org,lat,lon,currency,query';
+// Map IANA timezone → ISO country code (covers major zones)
+const TZ_TO_COUNTRY: Record<string, string> = {
+  'America/New_York': 'US', 'America/Chicago': 'US', 'America/Denver': 'US',
+  'America/Los_Angeles': 'US', 'America/Phoenix': 'US', 'America/Anchorage': 'US',
+  'Pacific/Honolulu': 'US', 'America/Toronto': 'CA', 'America/Vancouver': 'CA',
+  'America/Winnipeg': 'CA', 'America/Halifax': 'CA', 'America/St_Johns': 'CA',
+  'Europe/London': 'GB', 'Europe/Dublin': 'IE', 'Europe/Paris': 'FR',
+  'Europe/Berlin': 'DE', 'Europe/Rome': 'IT', 'Europe/Madrid': 'ES',
+  'Europe/Amsterdam': 'NL', 'Europe/Brussels': 'BE', 'Europe/Zurich': 'CH',
+  'Europe/Vienna': 'AT', 'Europe/Stockholm': 'SE', 'Europe/Oslo': 'NO',
+  'Europe/Copenhagen': 'DK', 'Europe/Helsinki': 'FI', 'Europe/Warsaw': 'PL',
+  'Europe/Prague': 'CZ', 'Europe/Budapest': 'HU', 'Europe/Bucharest': 'RO',
+  'Europe/Athens': 'GR', 'Europe/Lisbon': 'PT', 'Europe/Moscow': 'RU',
+  'Europe/Istanbul': 'TR', 'Asia/Kolkata': 'IN', 'Asia/Calcutta': 'IN',
+  'Asia/Tokyo': 'JP', 'Asia/Shanghai': 'CN', 'Asia/Hong_Kong': 'HK',
+  'Asia/Singapore': 'SG', 'Asia/Seoul': 'KR', 'Asia/Dubai': 'AE',
+  'Asia/Riyadh': 'SA', 'Asia/Kuwait': 'KW', 'Asia/Qatar': 'QA',
+  'Asia/Karachi': 'PK', 'Asia/Dhaka': 'BD', 'Asia/Colombo': 'LK',
+  'Asia/Kathmandu': 'NP', 'Asia/Yangon': 'MM', 'Asia/Bangkok': 'TH',
+  'Asia/Jakarta': 'ID', 'Asia/Manila': 'PH', 'Asia/Kuala_Lumpur': 'MY',
+  'Asia/Taipei': 'TW', 'Asia/Beirut': 'LB', 'Asia/Jerusalem': 'IL',
+  'Asia/Amman': 'JO', 'Asia/Baghdad': 'IQ', 'Asia/Tehran': 'IR',
+  'Asia/Tashkent': 'UZ', 'Asia/Almaty': 'KZ', 'Asia/Baku': 'AZ',
+  'Africa/Cairo': 'EG', 'Africa/Lagos': 'NG', 'Africa/Nairobi': 'KE',
+  'Africa/Johannesburg': 'ZA', 'Africa/Casablanca': 'MA', 'Africa/Accra': 'GH',
+  'Africa/Addis_Ababa': 'ET', 'Africa/Dar_es_Salaam': 'TZ',
+  'Australia/Sydney': 'AU', 'Australia/Melbourne': 'AU', 'Australia/Brisbane': 'AU',
+  'Australia/Perth': 'AU', 'Australia/Adelaide': 'AU', 'Pacific/Auckland': 'NZ',
+  'Pacific/Fiji': 'FJ', 'America/Sao_Paulo': 'BR', 'America/Buenos_Aires': 'AR',
+  'America/Argentina/Buenos_Aires': 'AR', 'America/Bogota': 'CO',
+  'America/Lima': 'PE', 'America/Santiago': 'CL', 'America/Caracas': 'VE',
+  'America/Mexico_City': 'MX', 'America/Monterrey': 'MX',
+};
+
+const COUNTRY_TO_CURRENCY: Record<string, string> = {
+  US: 'USD', CA: 'CAD', GB: 'GBP', IE: 'EUR', FR: 'EUR', DE: 'EUR',
+  IT: 'EUR', ES: 'EUR', NL: 'EUR', BE: 'EUR', AT: 'EUR', FI: 'EUR',
+  PT: 'EUR', GR: 'EUR', CH: 'CHF', SE: 'SEK', NO: 'NOK', DK: 'DKK',
+  PL: 'PLN', CZ: 'CZK', HU: 'HUF', RO: 'RON', TR: 'TRY', RU: 'RUB',
+  IN: 'INR', JP: 'JPY', CN: 'CNY', HK: 'HKD', SG: 'SGD', KR: 'KRW',
+  AE: 'AED', SA: 'SAR', KW: 'KWD', QA: 'QAR', PK: 'PKR', BD: 'BDT',
+  LK: 'LKR', NP: 'NPR', MM: 'MMK', TH: 'THB', ID: 'IDR', PH: 'PHP',
+  MY: 'MYR', TW: 'TWD', LB: 'LBP', IL: 'ILS', JO: 'JOD', IQ: 'IQD',
+  IR: 'IRR', UZ: 'UZS', KZ: 'KZT', AZ: 'AZN', EG: 'EGP', NG: 'NGN',
+  KE: 'KES', ZA: 'ZAR', MA: 'MAD', GH: 'GHS', ET: 'ETB', TZ: 'TZS',
+  AU: 'AUD', NZ: 'NZD', FJ: 'FJD', BR: 'BRL', AR: 'ARS', CO: 'COP',
+  PE: 'PEN', CL: 'CLP', VE: 'VES', MX: 'MXN',
+};
+
+const COUNTRY_NAME_MAP: Record<string, string> = {
+  US: 'United States', CA: 'Canada', GB: 'United Kingdom', IE: 'Ireland',
+  FR: 'France', DE: 'Germany', IT: 'Italy', ES: 'Spain', NL: 'Netherlands',
+  BE: 'Belgium', AT: 'Austria', FI: 'Finland', PT: 'Portugal', GR: 'Greece',
+  CH: 'Switzerland', SE: 'Sweden', NO: 'Norway', DK: 'Denmark', PL: 'Poland',
+  CZ: 'Czech Republic', HU: 'Hungary', RO: 'Romania', TR: 'Turkey', RU: 'Russia',
+  IN: 'India', JP: 'Japan', CN: 'China', HK: 'Hong Kong', SG: 'Singapore',
+  KR: 'South Korea', AE: 'UAE', SA: 'Saudi Arabia', KW: 'Kuwait', QA: 'Qatar',
+  PK: 'Pakistan', BD: 'Bangladesh', LK: 'Sri Lanka', NP: 'Nepal', TH: 'Thailand',
+  ID: 'Indonesia', PH: 'Philippines', MY: 'Malaysia', TW: 'Taiwan', EG: 'Egypt',
+  NG: 'Nigeria', KE: 'Kenya', ZA: 'South Africa', MA: 'Morocco', GH: 'Ghana',
+  AU: 'Australia', NZ: 'New Zealand', BR: 'Brazil', AR: 'Argentina',
+  CO: 'Colombia', PE: 'Peru', CL: 'Chile', MX: 'Mexico',
+};
 
 const CURRENCY_FLAG: Record<string, string> = {
   USD: '🇺🇸', EUR: '🇪🇺', GBP: '🇬🇧', INR: '🇮🇳', AUD: '🇦🇺',
@@ -33,20 +95,29 @@ const CURRENCY_NAME: Record<string, string> = {
   SAR: 'Saudi Riyal', QAR: 'Qatari Riyal', KWD: 'Kuwaiti Dinar', EGP: 'Egyptian Pound',
 };
 
-interface GeoData {
-  query: string;       // IP address
-  city: string;
-  regionName: string;
-  country: string;     // country name
-  countryCode: string;
-  currency: string;
+interface LocaleInfo {
   timezone: string;
-  offset: number;      // UTC offset in seconds
-  org: string;
-  lat: number;
-  lon: number;
-  status: string;
-  message?: string;
+  countryCode: string;
+  countryName: string;
+  currencyCode: string;
+  currencyName: string;
+  flag: string;
+}
+
+function detectLocaleInfo(overrideCode?: string, overrideCountry?: string): LocaleInfo {
+  // Use Intl API (available in Hermes/JSC) to get device timezone
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  const countryCode = TZ_TO_COUNTRY[timezone] || 'US';
+  const currencyCode = overrideCode || COUNTRY_TO_CURRENCY[countryCode] || 'USD';
+  const countryName = overrideCountry || COUNTRY_NAME_MAP[countryCode] || countryCode;
+  return {
+    timezone,
+    countryCode,
+    countryName,
+    currencyCode,
+    currencyName: CURRENCY_NAME[currencyCode] || currencyCode,
+    flag: CURRENCY_FLAG[currencyCode] || '💱',
+  };
 }
 
 export default function CurrencyScreen() {
@@ -54,42 +125,31 @@ export default function CurrencyScreen() {
   const { primaryColor } = useTheme();
   const params = useLocalSearchParams<{ code?: string; country?: string; city?: string }>();
 
-  const [geoData, setGeoData] = useState<GeoData | null>(null);
+  // Simulate a brief "detecting" shimmer so the screen doesn't flash instantly
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [localeInfo, setLocaleInfo] = useState<LocaleInfo | null>(null);
 
-  const fetchGeo = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const res = await fetch(IP_GEO_URL);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data: GeoData = await res.json();
-      if (data.status === 'fail') throw new Error(data.message || 'Geolocation failed');
-      setGeoData(data);
-    } catch (e: any) {
-      setError(e.message || 'Failed to fetch location data');
-    } finally {
+  useEffect(() => {
+    // Detect synchronously but show shimmer for UX polish
+    const info = detectLocaleInfo(params.code, params.country);
+    const timer = setTimeout(() => {
+      setLocaleInfo(info);
       setLoading(false);
-    }
-  };
+    }, 600);
+    return () => clearTimeout(timer);
+  }, []);
 
-  useEffect(() => { fetchGeo(); }, []);
+  const currencyCode = localeInfo?.currencyCode || '—';
+  const flag = localeInfo?.flag || '💱';
+  const currencyName = localeInfo?.currencyName || '—';
 
-  const currencyCode = geoData?.currency || params.code || '—';
-  const flag = CURRENCY_FLAG[currencyCode] || '💱';
-  const currencyName = CURRENCY_NAME[currencyCode] || currencyCode;
-
-  const utcOffsetHours = geoData ? (geoData.offset >= 0 ? `+${geoData.offset / 3600}` : `${geoData.offset / 3600}`) : '';
-
-  const INFO_ROWS = geoData ? [
-    { icon: 'globe-outline', label: 'IP Address', value: geoData.query || '—' },
-    { icon: 'map-outline', label: 'City', value: geoData.city || '—' },
-    { icon: 'flag-outline', label: 'Region', value: geoData.regionName || '—' },
-    { icon: 'earth-outline', label: 'Country', value: geoData.country || '—' },
-    { icon: 'time-outline', label: 'Timezone', value: `${geoData.timezone} (UTC${utcOffsetHours})` },
-    { icon: 'business-outline', label: 'ISP / Org', value: geoData.org || '—' },
-    { icon: 'navigate-outline', label: 'Coordinates', value: `${geoData.lat?.toFixed(4)}, ${geoData.lon?.toFixed(4)}` },
+  const INFO_ROWS = localeInfo ? [
+    { icon: 'earth-outline', label: 'Country', value: localeInfo.countryName },
+    { icon: 'flag-outline', label: 'Country Code', value: localeInfo.countryCode },
+    { icon: 'time-outline', label: 'Timezone', value: localeInfo.timezone },
+    { icon: 'cash-outline', label: 'Currency Code', value: currencyCode },
+    { icon: 'pricetag-outline', label: 'Currency Name', value: currencyName },
+    { icon: 'globe-outline', label: 'Detection Method', value: 'Device timezone' },
   ] : [];
 
   return (
@@ -98,26 +158,13 @@ export default function CurrencyScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={20} color={BSColors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.pageTitle}>IP Currency</Text>
-        <TouchableOpacity onPress={fetchGeo} style={styles.refreshBtn}>
-          <Ionicons name="refresh-outline" size={20} color={primaryColor} />
-        </TouchableOpacity>
+        <Text style={styles.pageTitle}>Local Currency</Text>
+        <View style={styles.refreshBtn} />
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {loading ? (
-          <View style={styles.loadingWrap}>
-            <ActivityIndicator size="large" color={primaryColor} />
-            <Text style={styles.loadingText}>Detecting your location via IP...</Text>
-          </View>
-        ) : error ? (
-          <View style={styles.errorWrap}>
-            <Ionicons name="warning-outline" size={40} color={BSColors.error} />
-            <Text style={styles.errorText}>{error}</Text>
-            <TouchableOpacity style={[styles.retryBtn, { backgroundColor: primaryColor }]} onPress={fetchGeo}>
-              <Text style={styles.retryBtnText}>Retry</Text>
-            </TouchableOpacity>
-          </View>
+          <CurrencyShimmer />
         ) : (
           <>
             <View style={[styles.heroCard, { backgroundColor: primaryColor }]}>
@@ -125,8 +172,8 @@ export default function CurrencyScreen() {
               <Text style={styles.heroCode}>{currencyCode}</Text>
               <Text style={styles.heroName}>{currencyName}</Text>
               <View style={styles.heroBadge}>
-                <Ionicons name="globe-outline" size={12} color="rgba(255,255,255,0.8)" />
-                <Text style={styles.heroBadgeText}>Detected from your IP address</Text>
+                <Ionicons name="phone-portrait-outline" size={12} color="rgba(255,255,255,0.8)" />
+                <Text style={styles.heroBadgeText}>Detected from device timezone</Text>
               </View>
             </View>
 
@@ -148,7 +195,7 @@ export default function CurrencyScreen() {
             <View style={styles.noteCard}>
               <Ionicons name="information-circle-outline" size={16} color={BSColors.info} />
               <Text style={styles.noteText}>
-                Currency is determined by your IP geolocation — not your device GPS or SIM card. This reflects the country your internet request originates from.
+                Currency is determined by your device's timezone setting. Users in different regions will see their local currency automatically.
               </Text>
             </View>
           </>
@@ -163,14 +210,8 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 12, paddingBottom: 10 },
   backBtn: { width: 38, height: 38, borderRadius: 12, backgroundColor: BSColors.white, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 1 },
   pageTitle: { color: BSColors.textPrimary, fontSize: 18, fontWeight: '800' },
-  refreshBtn: { width: 38, height: 38, borderRadius: 12, backgroundColor: BSColors.white, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 1 },
+  refreshBtn: { width: 38, height: 38 },
   content: { paddingHorizontal: 20, paddingBottom: 40 },
-  loadingWrap: { alignItems: 'center', paddingTop: 80, gap: 16 },
-  loadingText: { color: BSColors.darkGray, fontSize: 14 },
-  errorWrap: { alignItems: 'center', paddingTop: 80, gap: 16 },
-  errorText: { color: BSColors.error, fontSize: 14, textAlign: 'center' },
-  retryBtn: { borderRadius: 12, paddingHorizontal: 28, paddingVertical: 12 },
-  retryBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
   heroCard: { borderRadius: 24, padding: 32, alignItems: 'center', marginBottom: 24, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 16, elevation: 8 },
   heroFlag: { fontSize: 56, marginBottom: 8 },
   heroCode: { color: '#fff', fontSize: 36, fontWeight: '800', letterSpacing: 2 },
