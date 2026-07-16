@@ -1,6 +1,6 @@
 import { BSColors } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { api } from '@/store/api';
+import { api, API_URL } from '@/store/api';
 import { BankStore } from '@/store/banking';
 import { Ionicons } from '@expo/vector-icons';
 import { useStripe } from '@stripe/stripe-react-native';
@@ -38,9 +38,6 @@ const PRODUCTS = [
 ];
 
 type CartMap = Record<string, number>;
-
-// Use the shared API_URL from store/api (reads from EXPO_PUBLIC_API_URL env var)
-import { API_URL } from '@/store/api';
 
 export default function ShopScreen() {
   const { primaryColor } = useTheme();
