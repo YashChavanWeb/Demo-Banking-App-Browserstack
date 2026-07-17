@@ -165,13 +165,20 @@ async function sendPushToUser(userId, senderEmail, body) {
     const [row] = await sql`
       SELECT token FROM push_tokens WHERE user_id = ${userId}
     `;
-    if (!row?.token) return;
+    if (!row?.token) {
+      console.log(`[Push] No token found for user ${userId} — skipping push`);
+      return;
+    }
+    console.log(`[Push] Sending to token: ${row.token.slice(0, 30)}...`);
 
     // Use global fetch (Node 18+) or skip silently on older runtimes
     const fetchFn = typeof fetch !== 'undefined' ? fetch : null;
-    if (!fetchFn) return;
+    if (!fetchFn) {
+      console.error('[Push] fetch not available on this Node version');
+      return;
+    }
 
-    await fetchFn('https://exp.host/--/api/v2/push/send', {
+    const res = await fetchFn('https://exp.host/--/api/v2/push/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify({
@@ -182,8 +189,10 @@ async function sendPushToUser(userId, senderEmail, body) {
         data: { type: 'chat', senderEmail },
       }),
     });
+    const result = await res.json();
+    console.log('[Push] Expo response:', JSON.stringify(result));
   } catch (err) {
-    console.error('Push send error:', err.message);
+    console.error('[Push] Error:', err.message);
   }
 }
 

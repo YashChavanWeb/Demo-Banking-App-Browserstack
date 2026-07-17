@@ -148,12 +148,32 @@ export default function ProfileScreen() {
           ))}
         </View>
 
+        {/* Market Insights card */}
+        <TouchableOpacity
+          style={[styles.insightsCard, { backgroundColor: primaryColor }]}
+          onPress={() => router.push({ pathname: '/(banking)/webview' as any, params: { url: 'https://finance.yahoo.com/', title: 'Market Insights' } })}
+          testID="market-insights-btn"
+          activeOpacity={0.85}
+        >
+          <View style={styles.insightsLeft}>
+            <View style={styles.insightsIconWrap}>
+              <Ionicons name="trending-up" size={22} color={primaryColor} />
+            </View>
+            <View>
+              <Text style={styles.insightsTitle}>Market Insights</Text>
+              <Text style={styles.insightsSub}>Live financial news & markets</Text>
+            </View>
+          </View>
+          <Ionicons name="open-outline" size={18} color="rgba(255,255,255,0.8)" />
+        </TouchableOpacity>
+
         {/* Settings */}
         <Text style={styles.sectionTitle}>Settings</Text>
         <View style={styles.infoCard}>
           {[
             { icon: 'notifications-outline', label: 'Notifications', onPress: () => Alert.alert('Notifications', 'Notification settings coming soon.') },
             { icon: 'lock-closed-outline', label: 'Security & Privacy', onPress: () => Alert.alert('Security', 'Security settings coming soon.') },
+            { icon: 'newspaper-outline', label: 'Financial News', onPress: () => router.push({ pathname: '/(banking)/webview' as any, params: { url: 'https://www.reuters.com/finance/', title: 'Financial News' } }) },
             { icon: 'help-circle-outline', label: 'Help & Support', onPress: () => Alert.alert('Support', 'Contact support@browserstackbank.com') },
           ].map((item, i, arr) => (
             <TouchableOpacity key={item.label} style={[styles.infoRow, i === arr.length - 1 && { borderBottomWidth: 0 }]} onPress={item.onPress}>
@@ -200,6 +220,11 @@ const styles = StyleSheet.create({
   infoContent: { flex: 1 },
   infoLabel: { color: '#94A3B8', fontSize: 11, marginBottom: 2 },
   infoValue: { color: '#0F172A', fontSize: 14, fontWeight: '500' },
+  insightsCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderRadius: 18, padding: 18, marginBottom: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.2, shadowRadius: 12, elevation: 6 },
+  insightsLeft: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  insightsIconWrap: { width: 44, height: 44, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
+  insightsTitle: { color: '#fff', fontSize: 15, fontWeight: '800', marginBottom: 2 },
+  insightsSub: { color: 'rgba(255,255,255,0.75)', fontSize: 12 },
   logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#FEF2F2', borderRadius: 14, paddingVertical: 16, borderWidth: 1.5, borderColor: '#FECACA' },
   logoutText: { color: '#DC2626', fontSize: 16, fontWeight: '700' },
 });

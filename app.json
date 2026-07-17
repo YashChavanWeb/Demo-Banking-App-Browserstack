@@ -13,7 +13,7 @@
       "bundleIdentifier": "com.browserstackbank.app"
     },
     "android": {
-      "package": "com.browserstackbank.app",
+      "package": "com.yash.bankingapp",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",

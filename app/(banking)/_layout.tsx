@@ -1,13 +1,37 @@
 import { ThemeStore } from '@/store/theme';
 import { Ionicons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
 import { Tabs } from 'expo-router';
 import React, { useEffect, useState } from 'react';
+import { Platform } from 'react-native';
+
+// Register push token after login (auth token is available here)
+async function registerPushTokenAfterLogin() {
+  try {
+    const Notifications = await import('expo-notifications');
+    const { status } = await Notifications.getPermissionsAsync();
+    if (status !== 'granted') return;
+    const projectId =
+      Constants?.expoConfig?.extra?.eas?.projectId ??
+      (Constants as any)?.easConfig?.projectId;
+    if (!projectId) return;
+    const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
+    if (!token) return;
+    const { api } = await import('@/store/api');
+    await api.registerPushToken(token, Platform.OS);
+    console.log('[PushToken] Registered:', token.slice(0, 40));
+  } catch (e: any) {
+    console.log('[PushToken] Registration failed:', e?.message);
+  }
+}
 
 export default function BankingLayout() {
   const [greenMode, setGreenMode] = useState(ThemeStore.isGreenMode());
 
   useEffect(() => {
     const unsub = ThemeStore.subscribe(() => setGreenMode(ThemeStore.isGreenMode()));
+    // Register push token now that user is logged in
+    registerPushTokenAfterLogin();
     return unsub;
   }, []);
 
@@ -72,6 +96,7 @@ export default function BankingLayout() {
       <Tabs.Screen name="shop" options={{ href: null }} />
       <Tabs.Screen name="currency" options={{ href: null }} />
       <Tabs.Screen name="chat" options={{ href: null }} />
+      <Tabs.Screen name="webview" options={{ href: null }} />
     </Tabs>
   );
 }

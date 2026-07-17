@@ -50,20 +50,8 @@ export default function RootLayout() {
           finalStatus = status;
         }
 
-        if (finalStatus === 'granted') {
-          const projectId =
-            Constants?.expoConfig?.extra?.eas?.projectId ??
-            (Constants as any)?.easConfig?.projectId;
-          if (projectId) {
-            const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
-            if (token && mounted) {
-              try {
-                const { api } = await import('@/store/api');
-                await api.registerPushToken(token, Platform.OS);
-              } catch { /* best-effort */ }
-            }
-          }
-        }
+        // Token registration is handled in (banking)/_layout.tsx after login
+        // so the auth token is available when calling the server
 
         // Listeners
         notifListener.current = Notifications.addNotificationReceivedListener(() => {});
