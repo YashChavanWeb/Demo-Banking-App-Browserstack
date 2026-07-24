@@ -58,35 +58,35 @@ export default function BankingLayout() {
         name="home"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color, size }) => <Ionicons name="home" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="home" size={greenMode ? size + 6 : size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="transfer"
         options={{
           title: 'Transfer',
-          tabBarIcon: ({ color, size }) => <Ionicons name="swap-horizontal" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="swap-horizontal" size={greenMode ? size + 6 : size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="cards"
         options={{
           title: 'Cards',
-          tabBarIcon: ({ color, size }) => <Ionicons name="card" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="card" size={greenMode ? size + 6 : size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="transactions"
         options={{
           title: 'Transactions',
-          tabBarIcon: ({ color, size }) => <Ionicons name="list" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="list" size={greenMode ? size + 6 : size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color, size }) => <Ionicons name="person" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="person" size={greenMode ? size + 6 : size} color={color} />,
         }}
       />
       <Tabs.Screen name="payment" options={{ href: null }} />

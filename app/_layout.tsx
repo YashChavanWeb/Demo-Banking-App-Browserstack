@@ -25,6 +25,7 @@ export default function RootLayout() {
         // Show banners when app is foregrounded
         Notifications.setNotificationHandler({
           handleNotification: async () => ({
+            shouldShowAlert: true,
             shouldPlaySound: true,
             shouldSetBadge: true,
             shouldShowBanner: true,

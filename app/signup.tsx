@@ -21,8 +21,15 @@ export default function SignupScreen() {
   const [error, setError] = useState('');
 
   const autoFillNewUser = () => {
-    setFullName('Alex Johnson');
-    setEmail('alex.johnson@example.com');
+    const firstNames = ['Alex', 'Jordan', 'Morgan', 'Taylor', 'Casey', 'Riley', 'Jamie', 'Avery', 'Quinn', 'Blake'];
+    const lastNames = ['Johnson', 'Smith', 'Williams', 'Brown', 'Davis', 'Miller', 'Wilson', 'Moore', 'Anderson', 'Thomas'];
+    const first = firstNames[Math.floor(Math.random() * firstNames.length)];
+    const last = lastNames[Math.floor(Math.random() * lastNames.length)];
+    const suffix = Math.floor(1000 + Math.random() * 9000);
+    const name = `${first} ${last}`;
+    const email = `${first.toLowerCase()}.${last.toLowerCase()}${suffix}@example.com`;
+    setFullName(name);
+    setEmail(email);
     setPassword('SecurePass@123');
     setConfirmPassword('SecurePass@123');
     setError('');

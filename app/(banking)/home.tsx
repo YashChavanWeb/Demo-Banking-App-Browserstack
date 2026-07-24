@@ -13,15 +13,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-// IP-based currency lookup — HTTPS endpoint, works from React Native
-const IP_GEO_URL = 'https://ipapi.co/json/';
-
-const CURRENCY_FLAG: Record<string, string> = {
-  USD: '🇺🇸', EUR: '🇪🇺', GBP: '🇬🇧', INR: '🇮🇳', AUD: '🇦🇺',
-  CAD: '🇨🇦', JPY: '🇯🇵', CNY: '🇨🇳', SGD: '🇸🇬', AED: '🇦🇪',
-  BRL: '🇧🇷', MXN: '🇲🇽', ZAR: '🇿🇦', CHF: '🇨🇭', KRW: '🇰🇷',
-  SEK: '🇸🇪', NOK: '🇳🇴', DKK: '🇩🇰', NZD: '🇳🇿', HKD: '🇭🇰',
-};
+// IP-based geolocation — ip-api.com is free, no key, works from mobile
+const IP_GEO_URL = 'http://ip-api.com/json/?fields=status,country,countryCode,regionName,city,currency,timezone,org,lat,lon,query,callingCodes';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -75,10 +68,15 @@ export default function HomeScreen() {
           if (place) {
             const city = place.city || place.subregion || place.region || '';
             const country = place.country || '';
-            setLocationName(city ? `${city}, ${country}` : country || 'Unknown');
-          } else { setLocationName('Unknown'); }
+            if (city || country) {
+              setLocationName(city ? `${city}, ${country}` : country);
+            } else {
+              // GPS gave no useful data — will be overridden by IP fallback below
+              setLocationName('Detecting...');
+            }
+          } else { setLocationName('Detecting...'); }
         } else { setLocationName('Location off'); }
-      } catch { setLocationName('Unknown'); }
+      } catch { setLocationName('Detecting...'); }
       setLocationLoading(false);
     })();
   }, []);
@@ -91,48 +89,22 @@ export default function HomeScreen() {
   const fetchIpCurrency = useCallback(async () => {
     setIpLoading(true);
     try {
-      const res = await fetch(IP_GEO_URL, { headers: { Accept: 'application/json' } });
+      // ip-api.com: free, no key, works from mobile (HTTP allowed on Android)
+      const res = await fetch(IP_GEO_URL);
       const data = await res.json();
-      // ipapi.co returns currency, country_name, city fields
-      if (!data?.error && data?.currency) {
-        setIpCurrency({
-          code: data.currency,
-          country: data.country_name || '',
-          city: data.city || '',
-        });
-      } else {
-        // Fallback: derive from device timezone
-        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        const TZ_CC: Record<string, string> = {
-          'Asia/Kolkata': 'IN', 'Asia/Calcutta': 'IN', 'America/New_York': 'US',
-          'America/Los_Angeles': 'US', 'America/Chicago': 'US', 'Europe/London': 'GB',
-          'Europe/Paris': 'FR', 'Europe/Berlin': 'DE', 'Asia/Tokyo': 'JP',
-          'Asia/Shanghai': 'CN', 'Asia/Singapore': 'SG', 'Asia/Dubai': 'AE',
-          'Australia/Sydney': 'AU', 'America/Sao_Paulo': 'BR', 'America/Mexico_City': 'MX',
-        };
-        const CC_CUR: Record<string, string> = {
-          IN: 'INR', US: 'USD', GB: 'GBP', FR: 'EUR', DE: 'EUR',
-          JP: 'JPY', CN: 'CNY', SG: 'SGD', AE: 'AED', AU: 'AUD',
-          BR: 'BRL', MX: 'MXN',
-        };
-        const cc = TZ_CC[tz] || 'US';
-        setIpCurrency({ code: CC_CUR[cc] || 'USD', country: cc, city: '' });
+      if (data?.status === 'success' && data?.currency) {
+        const city = data.city || '';
+        const country = data.country || '';
+        setIpCurrency({ code: data.currency, country, city });
+        // Use IP location as fallback for the location badge if GPS gave nothing useful
+        setLocationName(prev =>
+          (prev === 'Detecting...' || prev === 'Unknown' || prev === 'Location off')
+            ? (city ? `${city}, ${country}` : country || 'Unknown')
+            : prev
+        );
       }
     } catch {
-      // Fallback to device timezone on any error
-      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      const TZ_CC: Record<string, string> = {
-        'Asia/Kolkata': 'IN', 'Asia/Calcutta': 'IN', 'America/New_York': 'US',
-        'America/Los_Angeles': 'US', 'Europe/London': 'GB', 'Europe/Paris': 'FR',
-        'Asia/Tokyo': 'JP', 'Asia/Shanghai': 'CN', 'Asia/Singapore': 'SG',
-        'Asia/Dubai': 'AE', 'Australia/Sydney': 'AU',
-      };
-      const CC_CUR: Record<string, string> = {
-        IN: 'INR', US: 'USD', GB: 'GBP', FR: 'EUR', JP: 'JPY',
-        CN: 'CNY', SG: 'SGD', AE: 'AED', AU: 'AUD',
-      };
-      const cc = TZ_CC[tz] || 'US';
-      setIpCurrency({ code: CC_CUR[cc] || 'USD', country: cc, city: '' });
+      // Silent — location badge stays as-is
     } finally {
       setIpLoading(false);
     }
@@ -166,10 +138,9 @@ export default function HomeScreen() {
   const savings = BankStore.getSavings();
   const checking = BankStore.getChecking();
 
-  const currencyFlag = ipCurrency ? (CURRENCY_FLAG[ipCurrency.code] || '💱') : '💱';
   const currencyLabel = ipCurrency
-    ? `${currencyFlag} ${ipCurrency.code}`
-    : '💱 Currency';
+    ? `🌍 ${ipCurrency.city || ipCurrency.country || 'Region'}`
+    : '🌍 Region';
 
   const QUICK_ACTIONS = [
     { label: 'Transfer', icon: 'swap-horizontal' as const, color: primaryColor, bg: primaryColor + '15', onPress: () => router.push('/(banking)/transfer' as any) },
