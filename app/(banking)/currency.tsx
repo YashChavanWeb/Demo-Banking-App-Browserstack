@@ -27,26 +27,52 @@ interface RegionInfo {
 }
 
 async function fetchRegionInfo(): Promise<RegionInfo> {
-  // ip-api.com: free, no key, no 403 on mobile devices
-  const res = await fetch(
-    'http://ip-api.com/json/?fields=status,message,query,country,countryCode,regionName,city,timezone,currency,org,lat,lon'
-  );
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const d = await res.json();
-  if (d.status !== 'success') throw new Error(d.message || 'Lookup failed');
+  // Try ipapi.co (HTTPS, works on BrowserStack devices) then fall back to ip-api.com
+  let d: any = null;
+  try {
+    const res = await fetch('https://ipapi.co/json/', { headers: { Accept: 'application/json' } });
+    if (res.ok) {
+      const j = await res.json();
+      if (j && j.ip) {
+        d = {
+          status: 'success',
+          query: j.ip,
+          country: j.country_name,
+          countryCode: j.country_code,
+          regionName: j.region,
+          city: j.city,
+          timezone: j.timezone,
+          currency: j.currency,
+          org: j.org,
+          lat: j.latitude,
+          lon: j.longitude,
+        };
+      }
+    }
+  } catch { /* fall through to ip-api */ }
+
+  if (!d) {
+    const res2 = await fetch(
+      'http://ip-api.com/json/?fields=status,message,query,country,countryCode,regionName,city,timezone,currency,org,lat,lon'
+    );
+    if (!res2.ok) throw new Error(`HTTP ${res2.status}`);
+    d = await res2.json();
+  }
+
+  if (d.status !== 'success' && !d.ip) throw new Error(d.message || 'Lookup failed');
   return {
-    ip: d.query ?? '—',
+    ip: d.query ?? d.ip ?? '—',
     city: d.city ?? '—',
-    region: d.regionName ?? '—',
+    region: d.regionName ?? d.region ?? '—',
     country: d.countryCode ?? '—',
-    countryName: d.country ?? '—',
-    continent: '—',          // ip-api free tier doesn't return continent
+    countryName: d.country ?? d.country_name ?? '—',
+    continent: '—',
     timezone: d.timezone ?? '—',
     currency: d.currency ?? '—',
-    callingCode: '—',        // not in free tier fields
-    languages: '—',          // not in free tier fields
-    latitude: d.lat != null ? String(d.lat) : '—',
-    longitude: d.lon != null ? String(d.lon) : '—',
+    callingCode: '—',
+    languages: '—',
+    latitude: d.lat != null ? String(d.lat) : d.latitude != null ? String(d.latitude) : '—',
+    longitude: d.lon != null ? String(d.lon) : d.longitude != null ? String(d.longitude) : '—',
     org: d.org ?? '—',
   };
 }

@@ -1,11 +1,12 @@
 import { BSColors } from '@/constants/theme';
+import { AuthStore } from '@/store/auth';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import * as LegacyFS from 'expo-file-system/legacy';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { Alert, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Alert, Modal, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function KYCScreen() {
@@ -18,8 +19,18 @@ export default function KYCScreen() {
   const [downloading, setDownloading] = useState(false);
   const [downloadDone, setDownloadDone] = useState(false);
 
+  const flowConfig = AuthStore.getFlowConfig();
+
+  // Skip this step if fileUpload is disabled in flow config
+  useEffect(() => {
+    if (!flowConfig.fileUpload) {
+      import('@/store/api').then(({ api }) => api.markKyc().catch(() => {})).finally(() => {
+        router.replace('/(banking)/home' as any);
+      });
+    }
+  }, []);
+
   const handlePickDocument = () => {
-    // Show consent modal before picking
     setShowConsent(true);
   };
 
@@ -27,12 +38,24 @@ export default function KYCScreen() {
     setShowConsent(false);
     setError('');
     try {
+      // iOS: use '*/*' to open the Files app broadly, then validate PDF client-side
+      // Android: restrict to application/pdf directly
+      const mimeType = Platform.OS === 'ios' ? '*/*' : 'application/pdf';
       const result = await DocumentPicker.getDocumentAsync({
-        type: 'application/pdf',
+        type: mimeType,
         copyToCacheDirectory: true,
       });
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
+        // Validate PDF on iOS (since we opened with */* to avoid the blank picker bug)
+        if (Platform.OS === 'ios') {
+          const name = asset.name?.toLowerCase() ?? '';
+          const mime = asset.mimeType?.toLowerCase() ?? '';
+          if (!name.endsWith('.pdf') && !mime.includes('pdf')) {
+            setError('Only PDF files are accepted. Please select a PDF document.');
+            return;
+          }
+        }
         setDocName(asset.name);
         setDocUri(asset.uri);
         setDocSize(asset.size ?? null);
@@ -61,6 +84,10 @@ export default function KYCScreen() {
   const handleComplete = async () => {
     if (!docName) { setError('Please upload your identity document to continue.'); return; }
     try { await (await import('@/store/api')).api.markKyc(); } catch { /* ignore */ }
+    router.replace('/(banking)/home' as any);
+  };
+
+  const handleSkip = () => {
     router.replace('/(banking)/home' as any);
   };
 
@@ -124,6 +151,23 @@ export default function KYCScreen() {
           )}
         </TouchableOpacity>
 
+        {/* PDF file preview card */}
+        {docName && docUri && (
+          <View style={s.pdfPreview} testID="pdf-preview">
+            <View style={s.pdfPreviewIcon}>
+              <Ionicons name="document-text" size={28} color="#DC2626" />
+            </View>
+            <View style={s.pdfPreviewInfo}>
+              <Text style={s.pdfPreviewLabel}>PDF Preview</Text>
+              <Text style={s.pdfPreviewName} numberOfLines={1}>{docName}</Text>
+              {docSize && <Text style={s.pdfPreviewSize}>{formatSize(docSize)} · PDF Document</Text>}
+            </View>
+            <View style={s.pdfPreviewBadge}>
+              <Text style={s.pdfPreviewBadgeText}>PDF</Text>
+            </View>
+          </View>
+        )}
+
         {docName && (
           <View style={s.docActions}>
             <TouchableOpacity style={s.reuploadBtn} onPress={handlePickDocument}>
@@ -153,6 +197,10 @@ export default function KYCScreen() {
         >
           <Ionicons name="checkmark-circle-outline" size={18} color="#fff" style={{ marginRight: 8 }} />
           <Text style={s.completeBtnText}>Complete Registration</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={s.skipBtn} onPress={handleSkip} testID="skip-kyc-btn">
+          <Text style={s.skipBtnText}>Skip this step</Text>
         </TouchableOpacity>
 
         <View style={s.secureNote}>
@@ -241,4 +289,14 @@ const s = StyleSheet.create({
   consentDeclineText: { color: '#666', fontSize: 15, fontWeight: '600' },
   consentAccept: { flex: 2, paddingVertical: 14, borderRadius: 12, alignItems: 'center', backgroundColor: BSColors.primary },
   consentAcceptText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  pdfPreview: { flexDirection: 'row', alignItems: 'center', width: '100%', backgroundColor: '#FFF5F5', borderRadius: 14, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: '#FECACA', gap: 12 },
+  pdfPreviewIcon: { width: 48, height: 48, borderRadius: 12, backgroundColor: '#FEE2E2', alignItems: 'center', justifyContent: 'center' },
+  pdfPreviewInfo: { flex: 1 },
+  pdfPreviewLabel: { color: '#DC2626', fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 },
+  pdfPreviewName: { color: '#111', fontSize: 13, fontWeight: '600', marginBottom: 2 },
+  pdfPreviewSize: { color: '#888', fontSize: 11 },
+  pdfPreviewBadge: { backgroundColor: '#DC2626', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+  pdfPreviewBadgeText: { color: '#fff', fontSize: 10, fontWeight: '800' },
+  skipBtn: { marginTop: 4, marginBottom: 8, paddingVertical: 8, paddingHorizontal: 20, alignSelf: 'center' },
+  skipBtnText: { color: '#94A3B8', fontSize: 13, fontWeight: '600', textDecorationLine: 'underline' },
 });

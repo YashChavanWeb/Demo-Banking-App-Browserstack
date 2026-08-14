@@ -65,10 +65,27 @@ export default function RootLayout() {
       } catch { /* expo-notifications not available (Expo Go / web) */ }
     })();
 
+    // Deep-link handler: demobankingapp://verified → profile verified state
+    const { Linking } = require('react-native') as typeof import('react-native');
+    const handleDeepLink = ({ url }: { url: string }) => {
+      if (!mounted) return;
+      if (url.startsWith('demobankingapp://verified')) {
+        router.push({ pathname: '/(banking)/profile' as any, params: { deeplink_verified: '1' } });
+      }
+    };
+    const linkingSub = Linking.addEventListener('url', handleDeepLink);
+    // Handle cold-start deep link
+    Linking.getInitialURL().then((url: string | null) => {
+      if (url && url.startsWith('demobankingapp://verified') && mounted) {
+        router.push({ pathname: '/(banking)/profile' as any, params: { deeplink_verified: '1' } });
+      }
+    }).catch(() => {});
+
     return () => {
       mounted = false;
       notifListener.current?.remove?.();
       responseListener.current?.remove?.();
+      linkingSub.remove();
     };
   }, []);
 

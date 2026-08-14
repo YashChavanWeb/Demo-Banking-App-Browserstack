@@ -138,7 +138,8 @@ router.post('/verify-otp', async (req, res) => {
 
     if (!otp) return res.status(400).json({ error: 'Invalid or expired OTP' });
 
-    await sql`UPDATE otps SET used = TRUE WHERE id = ${otp.id}`;
+    // Delete OTP from DB after successful verification (no reuse possible)
+    await sql`DELETE FROM otps WHERE id = ${otp.id}`;
 
     res.json({ verified: true });
   } catch (err) {

@@ -4,8 +4,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import {
-    ActivityIndicator, StyleSheet, Text,
-    TouchableOpacity, View,
+  ActivityIndicator,
+  StyleSheet, Text,
+  TouchableOpacity, View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
@@ -13,17 +14,24 @@ import { WebView } from 'react-native-webview';
 export default function WebViewScreen() {
   const router = useRouter();
   const { primaryColor } = useTheme();
-  const params = useLocalSearchParams<{ url?: string; title?: string }>();
+  const params = useLocalSearchParams<{ url?: string; title?: string; html?: string }>();
 
-  const url = params.url || 'https://www.moneycontrol.com/news/business/markets/';
+  const rawUrl = params.url || 'https://www.moneycontrol.com/news/business/markets/';
   const title = params.title || 'Financial News';
+  // Support inline HTML passed as param (for deep-link verification page)
+  const inlineHtml = params.html || null;
+  // Detect data: URIs and extract HTML from them (legacy support)
+  const isDataUri = rawUrl.startsWith('data:text/html');
+  const extractedHtml = isDataUri ? decodeURIComponent(rawUrl.replace(/^data:text\/html,/, '')) : null;
+  const url = isDataUri ? 'about:blank' : rawUrl;
+  const htmlSource = inlineHtml || extractedHtml;
 
   const webRef = useRef<WebView>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [canGoBack, setCanGoBack] = useState(false);
   const [canGoForward, setCanGoForward] = useState(false);
-  const [currentUrl, setCurrentUrl] = useState(url);
+  const [currentUrl, setCurrentUrl] = useState(rawUrl);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -66,7 +74,7 @@ export default function WebViewScreen() {
       ) : (
         <WebView
           ref={webRef}
-          source={{ uri: url }}
+          source={htmlSource ? { html: htmlSource } : { uri: url }}
           style={styles.webview}
           onLoadStart={() => { setLoading(true); setError(false); }}
           onLoadEnd={() => setLoading(false)}
@@ -75,6 +83,12 @@ export default function WebViewScreen() {
             setCanGoBack(state.canGoBack);
             setCanGoForward(state.canGoForward);
             setCurrentUrl(state.url);
+            // Intercept deep links (e.g. demobankingapp://verified) — iOS blocks these in WKWebView
+            if (state.url && state.url.startsWith('demobankingapp://')) {
+              const { Linking: L } = require('react-native') as typeof import('react-native');
+              L.openURL(state.url).catch(() => {});
+              router.back();
+            }
           }}
           javaScriptEnabled
           domStorageEnabled

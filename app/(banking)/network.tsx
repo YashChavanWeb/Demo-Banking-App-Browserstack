@@ -24,15 +24,27 @@ export default function NetworkScreen() {
   const [online, setOnline] = useState<boolean | null>(null);
   const [speedMbps, setSpeedMbps] = useState<number | null>(null);
   const [checking, setChecking] = useState(false);
+  const [networkProfile, setNetworkProfile] = useState<string | null>(null);
+
+  const deriveNetworkProfile = (mbps: number): string => {
+    if (mbps >= 100) return '5G / Fibre';
+    if (mbps >= 25) return '4G LTE';
+    if (mbps >= 10) return '4G';
+    if (mbps >= 3) return '3G';
+    if (mbps >= 0.5) return '2G / Edge';
+    return 'Very Slow';
+  };
 
   const checkConnection = async () => {
     setChecking(true);
     setSpeedMbps(null);
     setOnline(null);
+    setNetworkProfile(null);
     try {
       const speed = await measureSpeedMbps();
       setOnline(true);
       setSpeedMbps(speed);
+      setNetworkProfile(deriveNetworkProfile(speed));
     } catch {
       try {
         const res = await fetch('https://www.google.com', { method: 'HEAD', cache: 'no-store' });
@@ -118,6 +130,18 @@ export default function NetworkScreen() {
               <Text style={styles.infoLabel}>Quality</Text>
               <View style={[styles.qualityBadge, { backgroundColor: speedColor + '20' }]}>
                 <Text style={[styles.qualityText, { color: speedColor }]}>{speedLabel}</Text>
+              </View>
+            </View>
+          )}
+
+          {networkProfile && !checking && (
+            <View style={[styles.infoRow, styles.infoRowBorder]}>
+              <View style={[styles.infoIcon, { backgroundColor: primaryColor + '15' }]}>
+                <Ionicons name="cellular-outline" size={16} color={primaryColor} />
+              </View>
+              <Text style={styles.infoLabel}>Network Profile</Text>
+              <View style={[styles.qualityBadge, { backgroundColor: primaryColor + '20' }]}>
+                <Text style={[styles.qualityText, { color: primaryColor }]}>{networkProfile}</Text>
               </View>
             </View>
           )}

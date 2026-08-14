@@ -1,16 +1,29 @@
 import { BSColors } from '@/constants/theme';
 import { api } from '@/store/api';
 import { AuthStore } from '@/store/auth';
+import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
+  Modal,
   ScrollView,
   StyleSheet,
-  Text, TextInput, TouchableOpacity,
+  Switch,
+  Text,
+  TextInput,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+type FlowConfig = { biometric: boolean; fileUpload: boolean; cameraInjection: boolean };
+
+const FLOW_OPTIONS: { key: keyof FlowConfig; label: string; desc: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { key: 'cameraInjection', label: 'Camera Injection (Liveness)', desc: 'Face video verification step', icon: 'videocam-outline' },
+  { key: 'biometric', label: 'Biometric Setup', desc: 'Fingerprint / Face ID setup step', icon: 'finger-print-outline' },
+  { key: 'fileUpload', label: 'File Upload (KYC)', desc: 'Identity document upload step', icon: 'document-outline' },
+];
 
 export default function SignupScreen() {
   const router = useRouter();
@@ -19,17 +32,20 @@ export default function SignupScreen() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [showCustomize, setShowCustomize] = useState(false);
+  const [flowConfig, setFlowConfig] = useState<FlowConfig>({ biometric: true, fileUpload: true, cameraInjection: true });
 
   const autoFillNewUser = () => {
     const firstNames = ['Alex', 'Jordan', 'Morgan', 'Taylor', 'Casey', 'Riley', 'Jamie', 'Avery', 'Quinn', 'Blake'];
     const lastNames = ['Johnson', 'Smith', 'Williams', 'Brown', 'Davis', 'Miller', 'Wilson', 'Moore', 'Anderson', 'Thomas'];
     const first = firstNames[Math.floor(Math.random() * firstNames.length)];
     const last = lastNames[Math.floor(Math.random() * lastNames.length)];
-    const suffix = Math.floor(1000 + Math.random() * 9000);
+    // timestamp + random guarantees uniqueness across runs — no duplicate emails
+    const suffix = Date.now().toString().slice(-5) + Math.floor(10 + Math.random() * 90);
     const name = `${first} ${last}`;
-    const email = `${first.toLowerCase()}.${last.toLowerCase()}${suffix}@example.com`;
+    const generatedEmail = `${first.toLowerCase()}.${last.toLowerCase()}${suffix}@example.com`;
     setFullName(name);
-    setEmail(email);
+    setEmail(generatedEmail);
     setPassword('SecurePass@123');
     setConfirmPassword('SecurePass@123');
     setError('');
@@ -48,7 +64,6 @@ export default function SignupScreen() {
       await AuthStore.setToken(res.token);
       AuthStore.setUser(res.user);
     } catch (err: any) {
-      // If already registered, try login
       if (err.message?.includes('already')) {
         try {
           const res = await api.login(email, password);
@@ -56,11 +71,11 @@ export default function SignupScreen() {
           AuthStore.setUser(res.user);
         } catch { /* proceed anyway in demo mode */ }
       }
-      // Don't block flow for demo
     }
     AuthStore.setRole('user');
     AuthStore.setFlow('signup');
     AuthStore.setEmail(email);
+    AuthStore.setFlowConfig(flowConfig);
     router.replace('/otp' as any);
   };
 
@@ -68,7 +83,6 @@ export default function SignupScreen() {
     <SafeAreaView style={styles.safe}>
       <ScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
 
-        {/* Logo */}
         <View style={styles.logoContainer}>
           <Image source={require('@/assets/images/browserstack-logo.png')} style={styles.logo} contentFit="contain" testID="bs-logo-signup" />
         </View>
@@ -123,15 +137,63 @@ export default function SignupScreen() {
           <Text style={styles.linkText}>Already have an account? <Text style={styles.link}>Sign In</Text></Text>
         </TouchableOpacity>
 
-        {/* Mock Data Controller Bar — bottom */}
+        {/* Mock Data Controller Bar */}
         <View style={styles.mockBar}>
           <Text style={styles.mockBarTitle}>⚡ Mock Data Controller</Text>
-          <TouchableOpacity style={styles.mockBtn} onPress={autoFillNewUser} testID="autofill-new-user">
-            <Text style={styles.mockBtnText}>Auto-fill New User</Text>
-          </TouchableOpacity>
+          <View style={styles.mockBtnRow}>
+            <TouchableOpacity style={[styles.mockBtn, { flex: 1 }]} onPress={autoFillNewUser} testID="autofill-new-user">
+              <Text style={styles.mockBtnText}>Auto-fill New User</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.mockBtn, styles.customizeBtn]}
+              onPress={() => setShowCustomize(true)}
+              testID="customize-signup-btn"
+            >
+              <Ionicons name="settings-outline" size={14} color="#fff" style={{ marginRight: 4 }} />
+              <Text style={styles.mockBtnText}>Customize Signup</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
       </ScrollView>
+
+      {/* Customize Signup Modal */}
+      <Modal visible={showCustomize} transparent animationType="slide">
+        <View style={styles.overlay}>
+          <View style={styles.customizeModal}>
+            <View style={styles.customizeHeader}>
+              <Text style={styles.customizeTitle}>Customize Signup Flow</Text>
+              <TouchableOpacity onPress={() => setShowCustomize(false)} testID="customize-close">
+                <Ionicons name="close" size={22} color="#333" />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.customizeSub}>Toggle steps to include or skip in the signup flow</Text>
+
+            {FLOW_OPTIONS.map(opt => (
+              <View key={opt.key} style={styles.flowRow}>
+                <View style={[styles.flowIcon, { backgroundColor: flowConfig[opt.key] ? BSColors.primary + '15' : '#F1F5F9' }]}>
+                  <Ionicons name={opt.icon} size={20} color={flowConfig[opt.key] ? BSColors.primary : '#94A3B8'} />
+                </View>
+                <View style={styles.flowText}>
+                  <Text style={styles.flowLabel}>{opt.label}</Text>
+                  <Text style={styles.flowDesc}>{opt.desc}</Text>
+                </View>
+                <Switch
+                  value={flowConfig[opt.key]}
+                  onValueChange={() => setFlowConfig(prev => ({ ...prev, [opt.key]: !prev[opt.key] }))}
+                  trackColor={{ false: '#E2E8F0', true: BSColors.primary + '80' }}
+                  thumbColor={flowConfig[opt.key] ? BSColors.primary : '#94A3B8'}
+                  testID={`toggle-${opt.key}`}
+                />
+              </View>
+            ))}
+
+            <TouchableOpacity style={styles.customizeDone} onPress={() => setShowCustomize(false)} testID="customize-done">
+              <Text style={styles.customizeDoneText}>Done</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -161,11 +223,23 @@ const styles = StyleSheet.create({
   linkRow: { marginBottom: 36 },
   linkText: { color: '#666', textAlign: 'center', fontSize: 14 },
   link: { color: BSColors.primary, fontWeight: '700' },
-  mockBar: {
-    backgroundColor: '#EEF2FF', borderRadius: 14, padding: 16,
-    borderWidth: 1.5, borderColor: BSColors.primary, marginTop: 8,
-  },
+  mockBar: { backgroundColor: '#EEF2FF', borderRadius: 14, padding: 16, borderWidth: 1.5, borderColor: BSColors.primary, marginTop: 8 },
   mockBarTitle: { color: BSColors.primary, fontWeight: '700', fontSize: 11, marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1 },
-  mockBtn: { backgroundColor: BSColors.primary, borderRadius: 8, paddingVertical: 11, alignItems: 'center' },
+  mockBtnRow: { flexDirection: 'row', gap: 8 },
+  mockBtn: { backgroundColor: BSColors.primary, borderRadius: 8, paddingVertical: 11, alignItems: 'center', justifyContent: 'center' },
+  customizeBtn: { flexDirection: 'row', paddingHorizontal: 12 },
   mockBtnText: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  // Modal
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
+  customizeModal: { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 36 },
+  customizeHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
+  customizeTitle: { color: '#0F172A', fontSize: 18, fontWeight: '800' },
+  customizeSub: { color: '#64748B', fontSize: 13, marginBottom: 20 },
+  flowRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F1F5F9', gap: 12 },
+  flowIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  flowText: { flex: 1 },
+  flowLabel: { color: '#0F172A', fontSize: 14, fontWeight: '700', marginBottom: 2 },
+  flowDesc: { color: '#64748B', fontSize: 12 },
+  customizeDone: { backgroundColor: BSColors.primary, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 20 },
+  customizeDoneText: { color: '#fff', fontSize: 15, fontWeight: '700' },
 });

@@ -125,9 +125,12 @@ export default function HomeScreen() {
   }, [cameraPermission, requestCameraPermission]);
 
   const handleBarCodeScanned = ({ data }: { data: string }) => {
+    if (scanned) return; // guard against duplicate fires from continuous scanning
     setScanned(true);
-    setShowQRModal(false);
-    Alert.alert('QR Code Scanned', `Data: ${data}`, [{ text: 'OK' }]);
+    Alert.alert('QR Code Scanned', `Data: ${data}`, [
+      { text: 'Scan Again', onPress: () => setScanned(false) },
+      { text: 'Close', onPress: () => { setScanned(false); setShowQRModal(false); } },
+    ]);
   };
 
   const handleThemeToggle = () => {
@@ -166,8 +169,8 @@ export default function HomeScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.greeting}>Good morning,</Text>
-            <Text style={styles.userName}>{userName} 👋</Text>
+          <Text style={styles.greeting}>{greenMode ? 'Good green,' : 'Good morning,'}</Text>
+          <Text style={styles.userName}>{userName} {greenMode ? '🌳' : '👋'}</Text>
           </View>
           <View style={styles.headerRight}>
             <TouchableOpacity style={styles.locationBadge} onPress={async () => {
@@ -338,23 +341,33 @@ export default function HomeScreen() {
       </Modal>
 
       {/* QR Scanner Modal */}
-      <Modal visible={showQRModal} animationType="slide">
+      <Modal visible={showQRModal} animationType="slide" onShow={() => setScanned(false)}>
         <SafeAreaView style={{ flex: 1, backgroundColor: '#000' }}>
           <View style={styles.qrHeader}>
-            <TouchableOpacity onPress={() => setShowQRModal(false)} style={styles.qrClose}>
+            <TouchableOpacity onPress={() => { setShowQRModal(false); setScanned(false); }} style={styles.qrClose}>
               <Ionicons name="close" size={24} color="#fff" />
             </TouchableOpacity>
             <Text style={styles.qrTitle}>Scan QR Code</Text>
-            <View style={{ width: 40 }} />
+            {scanned ? (
+              <TouchableOpacity onPress={() => setScanned(false)} style={styles.qrClose} testID="scan-again-btn">
+                <Ionicons name="refresh" size={22} color="#fff" />
+              </TouchableOpacity>
+            ) : (
+              <View style={{ width: 40 }} />
+            )}
           </View>
           <CameraView
             style={{ flex: 1 }}
             facing="back"
-            onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+            onBarcodeScanned={handleBarCodeScanned}
             barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+            testID="qr-camera-view"
           />
           <View style={styles.qrHint}>
-            <Text style={styles.qrHintText}>Point camera at a QR code to scan</Text>
+            {scanned
+              ? <Text style={[styles.qrHintText, { color: '#4ADE80' }]}>QR scanned! Tap ↻ to scan again.</Text>
+              : <Text style={styles.qrHintText}>Point camera at a QR code to scan</Text>
+            }
           </View>
         </SafeAreaView>
       </Modal>

@@ -79,7 +79,19 @@ export default function OTPScreen() {
 
           <Text style={s.title}>OTP Verification</Text>
           <Text style={s.subtitle}>Enter the 6-digit code sent to your email</Text>
-          {serverOtp && <Text style={s.hint}>Demo OTP: <Text style={s.hintCode}>{serverOtp}</Text></Text>}
+          {serverOtp && (
+            <View style={s.hintRow}>
+              <Text style={s.hint}>Demo OTP: <Text style={s.hintCode}>{serverOtp}</Text></Text>
+              <TouchableOpacity
+                style={s.autoFillBtn}
+                onPress={() => { setOtp(serverOtp); setError(''); }}
+                testID="autofill-otp-btn"
+              >
+                <Ionicons name="flash" size={14} color="#fff" style={{ marginRight: 4 }} />
+                <Text style={s.autoFillBtnText}>Auto-fill</Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
           <TouchableOpacity activeOpacity={1} onPress={() => inputRef.current?.focus()} style={s.otpRow} testID="otp-display">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -130,8 +142,11 @@ const s = StyleSheet.create({
   stepBadgeText: { color: BSColors.primary, fontSize: 12, fontWeight: '600' },
   title: { color: '#111', fontSize: 24, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
   subtitle: { color: '#888', fontSize: 14, textAlign: 'center', marginBottom: 6 },
-  hint: { color: '#888', fontSize: 13, marginBottom: 28 },
+  hintRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 28 },
+  hint: { color: '#888', fontSize: 13 },
   hintCode: { color: BSColors.primary, fontWeight: '700' },
+  autoFillBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: BSColors.primary, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 },
+  autoFillBtnText: { color: '#fff', fontSize: 12, fontWeight: '700' },
   otpRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
   otpBox: { width: 46, height: 56, borderRadius: 12, borderWidth: 2, borderColor: '#C7D2FE', backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
   otpBoxFilled: { borderColor: BSColors.primary, backgroundColor: '#EEF2FF' },

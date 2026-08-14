@@ -7,6 +7,7 @@ let _flow: 'login' | 'signup' = 'login';
 let _token: string | null = null;
 let _user: { id: string; fullName: string; email: string; role: string; kycStatus: string } | null = null;
 let _email: string = ''; // temp storage during OTP flow
+let _flowConfig = { biometric: true, fileUpload: true, cameraInjection: true };
 
 export const AuthStore = {
   // Role / flow (kept for backward compat)
@@ -18,6 +19,11 @@ export const AuthStore = {
   // Email (used during OTP verification)
   setEmail: (email: string) => { _email = email; },
   getEmail: () => _email,
+
+  // Signup flow config (which steps to show)
+  setFlowConfig: (cfg: Partial<typeof _flowConfig>) => { _flowConfig = { ..._flowConfig, ...cfg }; },
+  getFlowConfig: () => _flowConfig,
+  resetFlowConfig: () => { _flowConfig = { biometric: true, fileUpload: true, cameraInjection: true }; },
 
   // Token
   setToken: async (token: string) => {
@@ -45,6 +51,7 @@ export const AuthStore = {
     _token = null;
     _user = null;
     _role = 'user';
+    _flowConfig = { biometric: true, fileUpload: true, cameraInjection: true };
     await api.clearToken();
     await AsyncStorage.removeItem('auth_token');
   },
