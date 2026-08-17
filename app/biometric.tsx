@@ -1,12 +1,12 @@
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
-import * as LocalAuthentication from 'expo-local-authentication';
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { BSColors } from '@/constants/theme';
 import { AuthStore } from '@/store/auth';
+import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
+import * as LocalAuthentication from 'expo-local-authentication';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function BiometricScreen() {
   const router = useRouter();
@@ -18,7 +18,12 @@ export default function BiometricScreen() {
     const flow = AuthStore.getFlow();
     const role = AuthStore.getRole();
     if (flow === 'signup') {
-      router.replace('/kyc' as any);
+      const cfg = AuthStore.getFlowConfig();
+      if (cfg.fileUpload) {
+        router.replace('/kyc' as any);
+      } else {
+        router.replace('/(banking)/home' as any);
+      }
     } else {
       router.replace(role === 'admin' ? '/(admin)/users' as any : '/(banking)/home' as any);
     }

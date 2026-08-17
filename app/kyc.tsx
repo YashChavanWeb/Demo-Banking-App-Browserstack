@@ -106,8 +106,8 @@ export default function KYCScreen() {
           <Text style={s.stepBadgeText}>Step 5 of 5 — KYC Verification</Text>
         </View>
 
-        <Text style={s.title}>Identity Verification</Text>
-        <Text style={s.subtitle}>Upload a government-issued ID document to complete your registration</Text>
+        <Text style={s.title}>KYC Verification</Text>
+        <Text style={s.subtitle}>Upload a government-issued ID document to complete your KYC</Text>
 
         <View style={s.requirementsCard}>
           <Text style={s.requirementsTitle}>Document Requirements</Text>
@@ -151,22 +151,26 @@ export default function KYCScreen() {
           )}
         </TouchableOpacity>
 
-        {/* PDF file preview card */}
-        {docName && docUri && (
-          <View style={s.pdfPreview} testID="pdf-preview">
-            <View style={s.pdfPreviewIcon}>
-              <Ionicons name="document-text" size={28} color="#DC2626" />
+        {/* PDF WebView preview */}
+        {docName && docUri && (() => {
+          const { WebView: WV } = require('react-native-webview');
+          return (
+            <View style={s.pdfPreviewContainer} testID="pdf-preview">
+              <View style={s.pdfPreviewHeader}>
+                <Ionicons name="document-text" size={16} color="#DC2626" />
+                <Text style={s.pdfPreviewTitle} numberOfLines={1}>{docName}</Text>
+                {docSize && <Text style={s.pdfPreviewSize}>{formatSize(docSize)}</Text>}
+              </View>
+              <WV
+                source={{ uri: docUri }}
+                style={s.pdfWebView}
+                originWhitelist={['*']}
+                scrollEnabled
+                testID="pdf-webview"
+              />
             </View>
-            <View style={s.pdfPreviewInfo}>
-              <Text style={s.pdfPreviewLabel}>PDF Preview</Text>
-              <Text style={s.pdfPreviewName} numberOfLines={1}>{docName}</Text>
-              {docSize && <Text style={s.pdfPreviewSize}>{formatSize(docSize)} · PDF Document</Text>}
-            </View>
-            <View style={s.pdfPreviewBadge}>
-              <Text style={s.pdfPreviewBadgeText}>PDF</Text>
-            </View>
-          </View>
-        )}
+          );
+        })()}
 
         {docName && (
           <View style={s.docActions}>
@@ -289,14 +293,11 @@ const s = StyleSheet.create({
   consentDeclineText: { color: '#666', fontSize: 15, fontWeight: '600' },
   consentAccept: { flex: 2, paddingVertical: 14, borderRadius: 12, alignItems: 'center', backgroundColor: BSColors.primary },
   consentAcceptText: { color: '#fff', fontSize: 15, fontWeight: '700' },
-  pdfPreview: { flexDirection: 'row', alignItems: 'center', width: '100%', backgroundColor: '#FFF5F5', borderRadius: 14, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: '#FECACA', gap: 12 },
-  pdfPreviewIcon: { width: 48, height: 48, borderRadius: 12, backgroundColor: '#FEE2E2', alignItems: 'center', justifyContent: 'center' },
-  pdfPreviewInfo: { flex: 1 },
-  pdfPreviewLabel: { color: '#DC2626', fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 },
-  pdfPreviewName: { color: '#111', fontSize: 13, fontWeight: '600', marginBottom: 2 },
+  pdfPreviewContainer: { width: '100%', borderRadius: 14, overflow: 'hidden', borderWidth: 1, borderColor: '#FECACA', marginBottom: 12, backgroundColor: '#FFF5F5' },
+  pdfPreviewHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: '#FEE2E2' },
+  pdfPreviewTitle: { flex: 1, color: '#DC2626', fontSize: 12, fontWeight: '700' },
   pdfPreviewSize: { color: '#888', fontSize: 11 },
-  pdfPreviewBadge: { backgroundColor: '#DC2626', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
-  pdfPreviewBadgeText: { color: '#fff', fontSize: 10, fontWeight: '800' },
+  pdfWebView: { width: '100%', height: 320 },
   skipBtn: { marginTop: 4, marginBottom: 8, paddingVertical: 8, paddingHorizontal: 20, alignSelf: 'center' },
   skipBtnText: { color: '#94A3B8', fontSize: 13, fontWeight: '600', textDecorationLine: 'underline' },
 });

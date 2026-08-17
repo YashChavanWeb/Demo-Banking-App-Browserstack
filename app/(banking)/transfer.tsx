@@ -1,3 +1,4 @@
+import { TransactionAuthModal } from '@/components/TransactionAuthModal';
 import { RecipientShimmer } from '@/components/shimmer';
 import { BSColors } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -36,6 +37,10 @@ export default function TransferScreen() {
   const [lastTx, setLastTx] = useState<{ amount: string; name: string; ref: string } | null>(null);
   const [sendError, setSendError] = useState('');
 
+  // Transaction auth modal
+  const [showAuth, setShowAuth] = useState(false);
+  const [pendingAction, setPendingAction] = useState<'send' | 'pay' | null>(null);
+
   // Stripe Pay state — recipient + amount shared above
   const [payDesc, setPayDesc] = useState('');
   const [payLoading, setPayLoading] = useState(false);
@@ -65,16 +70,26 @@ export default function TransferScreen() {
   const recipient = recipients.find(r => r.id === selectedRecipient);
 
   // ── Send Money ──────────────────────────────────────────────────────────────
-  const handleSend = async () => {
+  const handleSend = () => {
     if (!selectedRecipient) { setSendError('Please select a recipient.'); return; }
     const amt = parseFloat(amount);
     if (!amount || isNaN(amt) || amt <= 0) { setSendError('Please enter a valid amount.'); return; }
     if (!BankStore.canAfford(amt)) { setSendError(`Insufficient balance. Available: $${BankStore.getBalance().toLocaleString()}`); return; }
     setSendError('');
-    const tx = await BankStore.transfer(recipient!.name, amt, remarks || undefined, recipient!.id);
-    setBalance(BankStore.getBalance());
-    setLastTx({ amount: amt.toFixed(2), name: recipient!.name, ref: tx.referenceId });
-    setShowSuccess(true);
+    setPendingAction('send');
+    setShowAuth(true);
+  };
+
+  const executeSend = async () => {
+    const amt = parseFloat(amount);
+    try {
+      const tx = await BankStore.transfer(recipient!.name, amt, remarks || undefined, recipient!.id);
+      setBalance(BankStore.getBalance());
+      setLastTx({ amount: amt.toFixed(2), name: recipient!.name, ref: tx.referenceId });
+      setShowSuccess(true);
+    } catch {
+      setSendError('Transaction could not be completed. Please try again.');
+    }
   };
 
   const handleDone = () => {
@@ -122,10 +137,15 @@ export default function TransferScreen() {
     }
   };
 
-  const handlePresent = async () => {
+  const handlePresent = () => {
+    setPendingAction('pay');
+    setShowAuth(true);
+  };
+
+  const executePresent = async () => {
     const { error } = await presentPaymentSheet();
     if (error) {
-      if (error.code !== 'Canceled') Alert.alert('Payment Failed', error.message);
+      if (error.code !== 'Canceled') setPayError('Transaction could not be completed. ' + error.message);
     } else {
       const amt = parseFloat(amount);
       await BankStore.recordPayment(amt, payDesc || undefined);
@@ -382,6 +402,24 @@ export default function TransferScreen() {
           </View>
         </View>
       </Modal>
+
+      <TransactionAuthModal
+        visible={showAuth}
+        amount={amount ? `$${parseFloat(amount).toFixed(2)}` : undefined}
+        description={pendingAction === 'send' ? `to ${recipient?.name}` : 'card payment'}
+        onSuccess={() => {
+          setShowAuth(false);
+          if (pendingAction === 'send') executeSend();
+          else if (pendingAction === 'pay') executePresent();
+          setPendingAction(null);
+        }}
+        onCancel={() => {
+          setShowAuth(false);
+          setPendingAction(null);
+          if (pendingAction === 'send') setSendError('Transaction could not be completed.');
+          else if (pendingAction === 'pay') setPayError('Transaction could not be completed.');
+        }}
+      />
     </SafeAreaView>
   );
 }

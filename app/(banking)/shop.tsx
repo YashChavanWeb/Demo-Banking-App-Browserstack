@@ -49,6 +49,7 @@ export default function ShopScreen() {
   const [showCart, setShowCart] = useState(false);
   const [showOrders, setShowOrders] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showAuth, setShowAuth] = useState(false);
 
   // Orders state
   const [orders, setOrders] = useState<any[]>([]);
@@ -87,12 +88,17 @@ export default function ShopScreen() {
     return matchCat && matchSearch;
   });
 
-  const handleCheckout = async () => {
+  const handleCheckout = () => {
     if (cartCount === 0) return;
     if (!BankStore.canAfford(cartTotal)) {
       setCheckoutError(`Insufficient balance. Available: $${BankStore.getBalance().toLocaleString()}`);
       return;
     }
+    setCheckoutError('');
+    setShowAuth(true);
+  };
+
+  const executeCheckout = async () => {
     setCheckoutLoading(true);
     setCheckoutError('');
     try {
@@ -418,6 +424,19 @@ export default function ShopScreen() {
           )}
         </SafeAreaView>
       </Modal>
+
+      {(() => {
+        const { TransactionAuthModal: TAM } = require('@/components/TransactionAuthModal');
+        return (
+          <TAM
+            visible={showAuth}
+            amount={`$${cartTotal.toFixed(2)}`}
+            description={`${cartCount} item${cartCount !== 1 ? 's' : ''}`}
+            onSuccess={() => { setShowAuth(false); executeCheckout(); }}
+            onCancel={() => { setShowAuth(false); setCheckoutError('Transaction could not be completed.'); }}
+          />
+        );
+      })()}
     </SafeAreaView>
   );
 }

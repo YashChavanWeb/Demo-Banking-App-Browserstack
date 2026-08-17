@@ -9,10 +9,44 @@ const STRIPE_PK = process.env.EXPO_PUBLIC_STRIPE_PK ?? 'pk_test_YOUR_PUBLISHABLE
 
 export default function RootLayout() {
   const router = useRouter();
-  // Use refs typed as any — expo-notifications is loaded dynamically to avoid
-  // bundler issues when the native module isn't linked in Expo Go / web.
   const notifListener = useRef<any>(null);
   const responseListener = useRef<any>(null);
+
+  // Persistent login — restore token from AsyncStorage on cold start
+  useEffect(() => {
+    (async () => {
+      try {
+        const { AuthStore } = await import('@/store/auth');
+        // Don't auto-login if user is mid-signup flow
+        if (AuthStore.getFlow() === 'signup') return;
+        const token = await AuthStore.loadToken();
+        if (token) {
+          // Validate token is not expired by decoding it (no verify — just check exp)
+          const parts = token.split('.');
+          if (parts.length === 3) {
+            const payload = JSON.parse(atob(parts[1]));
+            const isExpired = payload.exp && payload.exp * 1000 < Date.now();
+            if (!isExpired) {
+              // Restore user info from API
+              const { api } = await import('@/store/api');
+              api.setMemToken(token);
+              try {
+                const profile = await api.getProfile();
+                if (profile) {
+                  AuthStore.setUser({ id: profile.id, fullName: profile.fullName, email: profile.email, role: profile.role ?? 'user', kycStatus: profile.kycStatus ?? 'pending' });
+                  AuthStore.setRole(profile.role === 'admin' ? 'admin' : 'user');
+                }
+              } catch { /* use token without profile */ }
+              router.replace('/(banking)/home' as any);
+              return;
+            }
+          }
+          // Token expired — clear it
+          await AuthStore.clearToken();
+        }
+      } catch { /* ignore restore errors */ }
+    })();
+  }, []);
 
   useEffect(() => {
     let mounted = true;

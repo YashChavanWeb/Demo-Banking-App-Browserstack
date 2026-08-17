@@ -18,6 +18,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 const API_URL = 'https://bs-banking-app.onrender.com';
 const QUICK_AMOUNTS = [5, 10, 25, 50];
 
+const { TransactionAuthModal } = require('@/components/TransactionAuthModal');
+
 export default function PaymentScreen() {
   const router = useRouter();
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
@@ -26,6 +28,7 @@ export default function PaymentScreen() {
   const [amount, setAmount] = useState('10.99');
   const [description, setDescription] = useState('');
   const [serverError, setServerError] = useState('');
+  const [showAuth, setShowAuth] = useState(false);
 
   const fetchAndInit = async (amountCents: number) => {
     setLoading(true);
@@ -64,10 +67,14 @@ export default function PaymentScreen() {
     await fetchAndInit(cents);
   };
 
-  const handlePresent = async () => {
+  const handlePresent = () => {
+    setShowAuth(true);
+  };
+
+  const executePresent = async () => {
     const { error } = await presentPaymentSheet();
     if (error) {
-      if (error.code !== 'Canceled') Alert.alert('Payment Failed', error.message);
+      if (error.code !== 'Canceled') setServerError('Transaction could not be completed. ' + error.message);
     } else {
       Alert.alert('Payment Successful!', `$${parseFloat(amount).toFixed(2)} processed successfully.`, [
         { text: 'Done', onPress: () => { setReady(false); setAmount('10.99'); router.back(); } },
@@ -176,6 +183,14 @@ export default function PaymentScreen() {
           <Text style={s.testCardNote}>Any future expiry · Any CVC · Any postal code</Text>
         </View>
       </ScrollView>
+
+      <TransactionAuthModal
+        visible={showAuth}
+        amount={`$${parseFloat(amount || '0').toFixed(2)}`}
+        description={description || 'payment'}
+        onSuccess={() => { setShowAuth(false); executePresent(); }}
+        onCancel={() => { setShowAuth(false); setServerError('Transaction could not be completed.'); }}
+      />
     </SafeAreaView>
   );
 }

@@ -45,7 +45,20 @@ export default function OTPScreen() {
         // fallback
         if (otp !== '123456') throw new Error('Invalid OTP');
       }
-      router.replace(isSignup ? '/liveness' as any : '/(banking)/home' as any);
+      if (isSignup) {
+        const cfg = AuthStore.getFlowConfig();
+        if (cfg.cameraInjection) {
+          router.replace('/liveness' as any);
+        } else if (cfg.biometric) {
+          router.replace('/biometric' as any);
+        } else if (cfg.fileUpload) {
+          router.replace('/kyc' as any);
+        } else {
+          router.replace('/(banking)/home' as any);
+        }
+      } else {
+        router.replace('/(banking)/home' as any);
+      }
     } catch (err: any) {
       setError(err.message || 'Invalid OTP. Please try again.');
       setOtp('');

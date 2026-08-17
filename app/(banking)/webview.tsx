@@ -22,7 +22,15 @@ export default function WebViewScreen() {
   const inlineHtml = params.html || null;
   // Detect data: URIs and extract HTML from them (legacy support)
   const isDataUri = rawUrl.startsWith('data:text/html');
-  const extractedHtml = isDataUri ? decodeURIComponent(rawUrl.replace(/^data:text\/html,/, '')) : null;
+  let extractedHtml: string | null = null;
+  if (isDataUri) {
+    try {
+      extractedHtml = decodeURIComponent(rawUrl.replace(/^data:text\/html,/, ''));
+    } catch {
+      // If decoding fails, use the raw string as-is
+      extractedHtml = rawUrl.replace(/^data:text\/html,/, '');
+    }
+  }
   const url = isDataUri ? 'about:blank' : rawUrl;
   const htmlSource = inlineHtml || extractedHtml;
 
