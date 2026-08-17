@@ -5,8 +5,15 @@ const admin = require('firebase-admin');
 const { getMessaging } = require('firebase-admin/messaging');
 
 // Initialise Firebase Admin once (idempotent)
+// On Render (and other hosts), set FIREBASE_SERVICE_ACCOUNT env var to the JSON string.
+// Locally, the file at the repo root is used as a fallback.
 if (!admin.getApps().length) {
-  const serviceAccount = require('../../yash-demo-banking-app-firebase-adminsdk-fbsvc-a1594354a1.json');
+  let serviceAccount;
+  if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+  } else {
+    serviceAccount = require('../../yash-demo-banking-app-firebase-adminsdk-fbsvc-a1594354a1.json');
+  }
   admin.initializeApp({ credential: admin.cert(serviceAccount) });
 }
 
