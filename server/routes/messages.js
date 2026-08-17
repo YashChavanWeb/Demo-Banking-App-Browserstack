@@ -1,6 +1,14 @@
 const express = require('express');
 const { sql } = require('../db');
 const { authMiddleware } = require('../middleware/auth');
+const admin = require('firebase-admin');
+const { getMessaging } = require('firebase-admin/messaging');
+
+// Initialise Firebase Admin once (idempotent)
+if (!admin.getApps().length) {
+  const serviceAccount = require('../../yash-demo-banking-app-firebase-adminsdk-fbsvc-a1594354a1.json');
+  admin.initializeApp({ credential: admin.cert(serviceAccount) });
+}
 
 const router = express.Router();
 
@@ -159,7 +167,7 @@ router.get('/unread-count', authMiddleware, async (req, res) => {
   }
 });
 
-// ── Push helper ───────────────────────────────────────────────────────────────
+// ── Push helper (FCM via Firebase Admin SDK) ──────────────────────────────────
 async function sendPushToUser(userId, senderEmail, body) {
   try {
     const [row] = await sql`
@@ -169,30 +177,35 @@ async function sendPushToUser(userId, senderEmail, body) {
       console.log(`[Push] No token found for user ${userId} — skipping push`);
       return;
     }
-    console.log(`[Push] Sending to token: ${row.token.slice(0, 30)}...`);
+    console.log(`[Push] Sending FCM to token: ${row.token.slice(0, 30)}...`);
 
-    // Use global fetch (Node 18+) or skip silently on older runtimes
-    const fetchFn = typeof fetch !== 'undefined' ? fetch : null;
-    if (!fetchFn) {
-      console.error('[Push] fetch not available on this Node version');
-      return;
-    }
+    const truncatedBody = body.length > 60 ? body.slice(0, 57) + '...' : body;
 
-    const res = await fetchFn('https://exp.host/--/api/v2/push/send', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({
-        to: row.token,
+    const fcmMessage = {
+      token: row.token,
+      notification: {
         title: `New message from ${senderEmail}`,
-        body: body.length > 60 ? body.slice(0, 57) + '...' : body,
-        sound: 'default',
-        data: { type: 'chat', senderEmail },
-      }),
-    });
-    const result = await res.json();
-    console.log('[Push] Expo response:', JSON.stringify(result));
+        body: truncatedBody,
+      },
+      android: {
+        priority: 'high',
+        notification: {
+          sound: 'default',
+          channelId: 'default',
+        },
+      },
+      apns: {
+        payload: {
+          aps: { sound: 'default', badge: 1 },
+        },
+      },
+      data: { type: 'chat', senderEmail },
+    };
+
+    const result = await getMessaging().send(fcmMessage);
+    console.log('[Push] FCM message sent:', result);
   } catch (err) {
-    console.error('[Push] Error:', err.message);
+    console.error('[Push] FCM Error:', err.message);
   }
 }
 

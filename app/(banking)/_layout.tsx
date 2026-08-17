@@ -1,25 +1,22 @@
 import { ThemeStore } from '@/store/theme';
 import { Ionicons } from '@expo/vector-icons';
-import Constants from 'expo-constants';
 import { Tabs } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 
-// Register push token after login (auth token is available here)
+// Register native FCM/APNs device token after login (auth token is available here)
 async function registerPushTokenAfterLogin() {
   try {
     const Notifications = await import('expo-notifications');
     const { status } = await Notifications.getPermissionsAsync();
     if (status !== 'granted') return;
-    const projectId =
-      Constants?.expoConfig?.extra?.eas?.projectId ??
-      (Constants as any)?.easConfig?.projectId;
-    if (!projectId) return;
-    const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
+    // getDevicePushTokenAsync returns the raw FCM token on Android and APNs token on iOS
+    // This is what Firebase Admin SDK expects directly
+    const { data: token } = await Notifications.getDevicePushTokenAsync();
     if (!token) return;
     const { api } = await import('@/store/api');
     await api.registerPushToken(token, Platform.OS);
-    console.log('[PushToken] Registered:', token.slice(0, 40));
+    console.log('[PushToken] FCM device token registered:', String(token).slice(0, 40));
   } catch (e: any) {
     console.log('[PushToken] Registration failed:', e?.message);
   }
