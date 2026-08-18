@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   ScrollView, StyleSheet,
   Text, TouchableOpacity, View,
 } from 'react-native';
@@ -123,12 +124,16 @@ export default function RegionScreen() {
   const [info, setInfo] = useState<RegionInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const loadData = () => {
+    setLoading(true);
+    setError(null);
     fetchRegionInfo()
       .then(setInfo)
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { loadData(); }, []);
 
   const INFO_ROWS = info ? [
     { icon: 'location-outline',       label: 'City',           value: info.city },
@@ -151,7 +156,11 @@ export default function RegionScreen() {
           <Ionicons name="arrow-back" size={20} color={BSColors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.pageTitle}>Region Info</Text>
-        <View style={styles.refreshBtn} />
+        <TouchableOpacity onPress={loadData} style={styles.refreshBtn} disabled={loading} testID="refresh-region-btn">
+          {loading
+            ? <ActivityIndicator size="small" color={primaryColor} />
+            : <Ionicons name="refresh-outline" size={20} color={primaryColor} />}
+        </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>

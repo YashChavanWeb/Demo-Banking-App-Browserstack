@@ -21,6 +21,9 @@ export default function HomeScreen() {
   const [balanceVisible, setBalanceVisible] = useState(true);
   const [showQRModal, setShowQRModal] = useState(false);
   const [scanned, setScanned] = useState(false);
+  const [qrScanActive, setQrScanActive] = useState(false);
+  const [qrStatus, setQrStatus] = useState<'idle' | 'detecting' | 'detected' | 'not_detected'>('idle');
+  const qrTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const [balance, setBalance] = useState(BankStore.getBalance());
   const [recentTxs, setRecentTxs] = useState(BankStore.getTransactions().slice(0, 4));
   const [greenMode, setGreenMode] = useState(ThemeStore.isGreenMode());
@@ -124,12 +127,28 @@ export default function HomeScreen() {
     setShowQRModal(true);
   }, [cameraPermission, requestCameraPermission]);
 
+  const startQrScan = () => {
+    setScanned(false);
+    setQrStatus('detecting');
+    setQrScanActive(true);
+    if (qrTimeoutRef.current) clearTimeout(qrTimeoutRef.current);
+    qrTimeoutRef.current = setTimeout(() => {
+      setQrScanActive(prev => {
+        if (prev) { setQrStatus('not_detected'); return false; }
+        return prev;
+      });
+    }, 3000);
+  };
+
   const handleBarCodeScanned = ({ data }: { data: string }) => {
-    if (scanned) return; // guard against duplicate fires from continuous scanning
+    if (scanned || !qrScanActive) return;
+    if (qrTimeoutRef.current) clearTimeout(qrTimeoutRef.current);
+    setQrScanActive(false);
     setScanned(true);
+    setQrStatus('detected');
     Alert.alert('QR Code Scanned', `Data: ${data}`, [
-      { text: 'Scan Again', onPress: () => setScanned(false) },
-      { text: 'Close', onPress: () => { setScanned(false); setShowQRModal(false); } },
+      { text: 'Scan Again', onPress: () => { setScanned(false); setQrStatus('idle'); } },
+      { text: 'Close', onPress: () => { setScanned(false); setShowQRModal(false); setQrStatus('idle'); } },
     ]);
   };
 
@@ -148,7 +167,6 @@ export default function HomeScreen() {
   const QUICK_ACTIONS = [
     { label: 'Transfer', icon: 'swap-horizontal' as const, color: primaryColor, bg: primaryColor + '15', onPress: () => router.push('/(banking)/transfer' as any) },
     { label: 'Chat', icon: 'chatbubbles-outline' as const, color: '#7C3AED', bg: '#7C3AED15', onPress: () => router.push('/(banking)/chat' as any) },
-    { label: 'Pay Bills', icon: 'receipt-outline' as const, color: '#D97706', bg: '#D9770615', onPress: () => router.push('/(banking)/transfer' as any) },
     { label: 'Scan QR', icon: 'qr-code-outline' as const, color: '#DC2626', bg: '#DC262615', onPress: openQRScanner },
     { label: 'Shop', icon: 'bag-outline' as const, color: '#059669', bg: '#05966915', onPress: () => router.push('/(banking)/shop' as any) },
     { label: 'Network', icon: 'wifi-outline' as const, color: '#0891B2', bg: '#0891B215', onPress: () => router.push('/(banking)/network' as any) },
@@ -341,35 +359,48 @@ export default function HomeScreen() {
       </Modal>
 
       {/* QR Scanner Modal */}
-      <Modal visible={showQRModal} animationType="slide" onShow={() => setScanned(false)}>
+      <Modal visible={showQRModal} animationType="slide" onShow={() => { setScanned(false); setQrStatus('idle'); setQrScanActive(false); }}>
         <SafeAreaView style={{ flex: 1, backgroundColor: '#000' }}>
           <View style={styles.qrHeader}>
-            <TouchableOpacity onPress={() => { setShowQRModal(false); setScanned(false); }} style={styles.qrClose}>
+            <TouchableOpacity onPress={() => { setShowQRModal(false); setScanned(false); setQrStatus('idle'); setQrScanActive(false); if (qrTimeoutRef.current) clearTimeout(qrTimeoutRef.current); }} style={styles.qrClose}>
               <Ionicons name="close" size={24} color="#fff" />
             </TouchableOpacity>
             <Text style={styles.qrTitle}>Scan QR Code</Text>
-            {scanned ? (
-              <TouchableOpacity onPress={() => setScanned(false)} style={styles.qrClose} testID="scan-again-btn">
-                <Ionicons name="refresh" size={22} color="#fff" />
-              </TouchableOpacity>
-            ) : (
-              <View style={{ width: 40 }} />
-            )}
+            <View style={{ width: 40 }} />
           </View>
           <CameraView
             key={showQRModal ? 'qr-active' : 'qr-inactive'}
             style={{ flex: 1 }}
             facing="back"
-            active={showQRModal}
-            onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+            active={showQRModal && qrScanActive}
+            onBarcodeScanned={qrScanActive && !scanned ? handleBarCodeScanned : undefined}
             barcodeScannerSettings={{ barcodeTypes: ['qr', 'aztec', 'datamatrix', 'pdf417', 'code128', 'code39', 'ean13', 'ean8', 'upc_e'] }}
             testID="qr-camera-view"
           />
           <View style={styles.qrHint}>
-            {scanned
-              ? <Text style={[styles.qrHintText, { color: '#4ADE80' }]}>QR scanned! Tap ↻ to scan again.</Text>
-              : <Text style={styles.qrHintText}>Point camera at a QR code to scan</Text>
-            }
+            {qrStatus === 'idle' && <Text style={styles.qrHintText}>Tap Scan to start scanning</Text>}
+            {qrStatus === 'detecting' && <Text style={[styles.qrHintText, { color: '#FCD34D' }]}>🔍 Detecting...</Text>}
+            {qrStatus === 'detected' && <Text style={[styles.qrHintText, { color: '#4ADE80' }]}>✅ QR Code Detected!</Text>}
+            {qrStatus === 'not_detected' && <Text style={[styles.qrHintText, { color: '#F87171' }]}>❌ Not detected. Try again.</Text>}
+          </View>
+          <View style={styles.qrActions}>
+            {(qrStatus === 'idle' || qrStatus === 'not_detected') && (
+              <TouchableOpacity style={styles.qrScanBtn} onPress={startQrScan} testID="qr-scan-btn">
+                <Ionicons name="qr-code-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
+                <Text style={styles.qrScanBtnText}>Scan</Text>
+              </TouchableOpacity>
+            )}
+            {qrStatus === 'detecting' && (
+              <TouchableOpacity style={[styles.qrScanBtn, { backgroundColor: '#374151' }]} onPress={() => { if (qrTimeoutRef.current) clearTimeout(qrTimeoutRef.current); setQrScanActive(false); setQrStatus('idle'); }} testID="qr-cancel-btn">
+                <Text style={styles.qrScanBtnText}>Cancel</Text>
+              </TouchableOpacity>
+            )}
+            {qrStatus === 'detected' && (
+              <TouchableOpacity style={[styles.qrScanBtn, { backgroundColor: '#059669' }]} onPress={() => { setScanned(false); setQrStatus('idle'); }} testID="scan-again-btn">
+                <Ionicons name="refresh" size={18} color="#fff" style={{ marginRight: 8 }} />
+                <Text style={styles.qrScanBtnText}>Scan Again</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </SafeAreaView>
       </Modal>
@@ -451,4 +482,7 @@ const styles = StyleSheet.create({
   qrTitle: { color: '#fff', fontSize: 17, fontWeight: '700' },
   qrHint: { backgroundColor: '#000', padding: 20, alignItems: 'center' },
   qrHintText: { color: 'rgba(255,255,255,0.7)', fontSize: 14 },
+  qrActions: { backgroundColor: '#000', paddingHorizontal: 24, paddingBottom: 32, paddingTop: 8, alignItems: 'center' },
+  qrScanBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#DC2626', borderRadius: 14, paddingVertical: 14, paddingHorizontal: 40, minWidth: 160 },
+  qrScanBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 });

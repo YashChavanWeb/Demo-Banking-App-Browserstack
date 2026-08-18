@@ -18,9 +18,13 @@ if (!admin.getApps().length) {
 
 async function sendOtpPushToUser(email, otp) {
   try {
-    const [user] = await sql`SELECT id FROM users WHERE email = ${email}`;
-    if (!user) return;
-    const [row] = await sql`SELECT token FROM push_tokens WHERE user_id = ${user.id}`;
+    // Single JOIN query — avoids two round-trips to the DB
+    const [row] = await sql`
+      SELECT pt.token FROM push_tokens pt
+      JOIN users u ON u.id = pt.user_id
+      WHERE u.email = ${email}
+      LIMIT 1
+    `;
     if (!row?.token) return;
     await getMessaging().send({
       token: row.token,
@@ -29,7 +33,7 @@ async function sendOtpPushToUser(email, otp) {
       apns: { payload: { aps: { sound: 'default', badge: 1 } } },
       data: { type: 'otp', otp },
     });
-    console.log(`[OTP Push] Sent to user ${email}`);
+    console.log(`[OTP Push] Sent to ${email}`);
   } catch (err) {
     console.error('[OTP Push] Error:', err.message);
   }
