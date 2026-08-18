@@ -2,6 +2,38 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { sql } = require('../db');
+const admin = require('firebase-admin');
+const { getMessaging } = require('firebase-admin/messaging');
+
+// Initialise Firebase Admin once (idempotent — messages.js may have done it first)
+if (!admin.getApps().length) {
+  let serviceAccount;
+  if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+  } else {
+    serviceAccount = require('../../yash-demo-banking-app-firebase-adminsdk-fbsvc-a1594354a1.json');
+  }
+  admin.initializeApp({ credential: admin.cert(serviceAccount) });
+}
+
+async function sendOtpPushToUser(email, otp) {
+  try {
+    const [user] = await sql`SELECT id FROM users WHERE email = ${email}`;
+    if (!user) return;
+    const [row] = await sql`SELECT token FROM push_tokens WHERE user_id = ${user.id}`;
+    if (!row?.token) return;
+    await getMessaging().send({
+      token: row.token,
+      notification: { title: 'Your OTP Code', body: `Your verification code is: ${otp}` },
+      android: { priority: 'high', notification: { sound: 'default', channelId: 'default' } },
+      apns: { payload: { aps: { sound: 'default', badge: 1 } } },
+      data: { type: 'otp', otp },
+    });
+    console.log(`[OTP Push] Sent to user ${email}`);
+  } catch (err) {
+    console.error('[OTP Push] Error:', err.message);
+  }
+}
 
 const router = express.Router();
 
@@ -117,6 +149,9 @@ router.post('/send-otp', async (req, res) => {
     `;
 
     // In production: send via email. For demo, return in response.
+    // Also send as FCM push notification (fire-and-forget)
+    sendOtpPushToUser(email, code).catch(() => {});
+
     res.json({ message: 'OTP sent', otp: code, expiresAt });
   } catch (err) {
     console.error('OTP error:', err.message);

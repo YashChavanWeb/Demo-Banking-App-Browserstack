@@ -151,26 +151,28 @@ export default function KYCScreen() {
           )}
         </TouchableOpacity>
 
-        {/* PDF WebView preview */}
-        {docName && docUri && (() => {
-          const { WebView: WV } = require('react-native-webview');
-          return (
-            <View style={s.pdfPreviewContainer} testID="pdf-preview">
-              <View style={s.pdfPreviewHeader}>
-                <Ionicons name="document-text" size={16} color="#DC2626" />
-                <Text style={s.pdfPreviewTitle} numberOfLines={1}>{docName}</Text>
-                {docSize && <Text style={s.pdfPreviewSize}>{formatSize(docSize)}</Text>}
-              </View>
-              <WV
-                source={{ uri: docUri }}
-                style={s.pdfWebView}
-                originWhitelist={['*']}
-                scrollEnabled
-                testID="pdf-webview"
-              />
+        {/* PDF preview — show a styled info card (WebView can't load local file:// URIs on Android) */}
+        {docName && docUri && (
+          <View style={s.pdfPreviewContainer} testID="pdf-preview">
+            <View style={s.pdfPreviewHeader}>
+              <Ionicons name="document-text" size={16} color="#DC2626" />
+              <Text style={s.pdfPreviewTitle} numberOfLines={1}>{docName}</Text>
+              {docSize && <Text style={s.pdfPreviewSize}>{formatSize(docSize)}</Text>}
             </View>
-          );
-        })()}
+            <View style={s.pdfReadyBody}>
+              <View style={s.pdfReadyIcon}>
+                <Ionicons name="document-text-outline" size={48} color="#DC2626" />
+              </View>
+              <Text style={s.pdfReadyTitle}>Document Ready</Text>
+              <Text style={s.pdfReadyName} numberOfLines={2}>{docName}</Text>
+              {docSize && <Text style={s.pdfReadySize}>{formatSize(docSize)}</Text>}
+              <View style={s.pdfReadyBadge}>
+                <Ionicons name="checkmark-circle" size={14} color="#059669" />
+                <Text style={s.pdfReadyBadgeText}>PDF selected successfully</Text>
+              </View>
+            </View>
+          </View>
+        )}
 
         {docName && (
           <View style={s.docActions}>
@@ -297,7 +299,13 @@ const s = StyleSheet.create({
   pdfPreviewHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: '#FEE2E2' },
   pdfPreviewTitle: { flex: 1, color: '#DC2626', fontSize: 12, fontWeight: '700' },
   pdfPreviewSize: { color: '#888', fontSize: 11 },
-  pdfWebView: { width: '100%', height: 320 },
+  pdfReadyBody: { alignItems: 'center', paddingVertical: 24, paddingHorizontal: 16, gap: 8 },
+  pdfReadyIcon: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#FEE2E2', alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
+  pdfReadyTitle: { color: '#111', fontSize: 16, fontWeight: '700' },
+  pdfReadyName: { color: '#555', fontSize: 13, textAlign: 'center' },
+  pdfReadySize: { color: '#888', fontSize: 12 },
+  pdfReadyBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#D1FAE5', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, marginTop: 4 },
+  pdfReadyBadgeText: { color: '#059669', fontSize: 12, fontWeight: '600' },
   skipBtn: { marginTop: 4, marginBottom: 8, paddingVertical: 8, paddingHorizontal: 20, alignSelf: 'center' },
   skipBtnText: { color: '#94A3B8', fontSize: 13, fontWeight: '600', textDecorationLine: 'underline' },
 });

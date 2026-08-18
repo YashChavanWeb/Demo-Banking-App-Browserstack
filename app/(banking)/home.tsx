@@ -357,10 +357,12 @@ export default function HomeScreen() {
             )}
           </View>
           <CameraView
+            key={showQRModal ? 'qr-active' : 'qr-inactive'}
             style={{ flex: 1 }}
             facing="back"
-            onBarcodeScanned={handleBarCodeScanned}
-            barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+            active={showQRModal}
+            onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+            barcodeScannerSettings={{ barcodeTypes: ['qr', 'aztec', 'datamatrix', 'pdf417', 'code128', 'code39', 'ean13', 'ean8', 'upc_e'] }}
             testID="qr-camera-view"
           />
           <View style={styles.qrHint}>

@@ -27,13 +27,15 @@ interface RegionInfo {
 }
 
 async function fetchRegionInfo(): Promise<RegionInfo> {
-  // Try ipapi.co (HTTPS, works on BrowserStack devices) then fall back to ip-api.com
+  // Try multiple HTTPS-only providers in order (HTTP is blocked on BrowserStack devices)
   let d: any = null;
+
+  // 1. ipapi.co — HTTPS, reliable on BrowserStack
   try {
     const res = await fetch('https://ipapi.co/json/', { headers: { Accept: 'application/json' } });
     if (res.ok) {
       const j = await res.json();
-      if (j && j.ip) {
+      if (j && j.ip && !j.error) {
         d = {
           status: 'success',
           query: j.ip,
@@ -49,16 +51,47 @@ async function fetchRegionInfo(): Promise<RegionInfo> {
         };
       }
     }
-  } catch { /* fall through to ip-api */ }
+  } catch { /* fall through */ }
 
+  // 2. ipwho.is — HTTPS, no API key needed
   if (!d) {
-    const res2 = await fetch(
-      'http://ip-api.com/json/?fields=status,message,query,country,countryCode,regionName,city,timezone,currency,org,lat,lon'
-    );
-    if (!res2.ok) throw new Error(`HTTP ${res2.status}`);
-    d = await res2.json();
+    try {
+      const res = await fetch('https://ipwho.is/', { headers: { Accept: 'application/json' } });
+      if (res.ok) {
+        const j = await res.json();
+        if (j && j.ip && j.success !== false) {
+          d = {
+            status: 'success',
+            query: j.ip,
+            country: j.country,
+            countryCode: j.country_code,
+            regionName: j.region,
+            city: j.city,
+            timezone: j.timezone?.id ?? j.timezone,
+            currency: j.currency?.code ?? '—',
+            org: j.connection?.org ?? j.connection?.isp ?? '—',
+            lat: j.latitude,
+            lon: j.longitude,
+          };
+        }
+      }
+    } catch { /* fall through */ }
   }
 
+  // 3. ip-api.com HTTPS (requires pro for HTTPS, but try anyway)
+  if (!d) {
+    try {
+      const res = await fetch(
+        'https://ip-api.com/json/?fields=status,message,query,country,countryCode,regionName,city,timezone,currency,org,lat,lon'
+      );
+      if (res.ok) {
+        const j = await res.json();
+        if (j && j.status === 'success') d = j;
+      }
+    } catch { /* fall through */ }
+  }
+
+  if (!d) throw new Error('Network request failed');
   if (d.status !== 'success' && !d.ip) throw new Error(d.message || 'Lookup failed');
   return {
     ip: d.query ?? d.ip ?? '—',

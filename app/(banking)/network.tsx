@@ -6,15 +6,31 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-// Download ~500KB from Cloudflare speed test endpoint to measure Mbps
-const SPEED_TEST_URL = 'https://speed.cloudflare.com/__down?bytes=500000';
+// Use multiple small non-CDN endpoints to get a realistic speed reading
+// that reflects BrowserStack network throttling
+const SPEED_TEST_URLS = [
+  'https://httpbin.org/bytes/200000',       // 200KB, non-CDN
+  'https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png',
+  'https://speed.cloudflare.com/__down?bytes=200000',
+];
 
 async function measureSpeedMbps(): Promise<number> {
-  const start = Date.now();
-  const res = await fetch(SPEED_TEST_URL, { cache: 'no-store' });
-  const blob = await res.blob();
-  const elapsed = (Date.now() - start) / 1000;
-  const mbps = (blob.size * 8) / (elapsed * 1_000_000);
+  let totalBits = 0;
+  let totalSecs = 0;
+  for (const url of SPEED_TEST_URLS) {
+    try {
+      const start = Date.now();
+      const res = await fetch(url, { cache: 'no-store' });
+      const blob = await res.blob();
+      const elapsed = (Date.now() - start) / 1000;
+      if (elapsed > 0 && blob.size > 0) {
+        totalBits += blob.size * 8;
+        totalSecs += elapsed;
+      }
+    } catch { /* skip failed endpoint */ }
+  }
+  if (totalSecs === 0) throw new Error('All speed test endpoints failed');
+  const mbps = totalBits / (totalSecs * 1_000_000);
   return Math.round(mbps * 10) / 10;
 }
 

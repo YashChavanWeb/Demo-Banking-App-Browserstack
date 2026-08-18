@@ -213,6 +213,7 @@ export default function ChatScreen() {
   // ── CONVERSATION VIEW ───────────────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.safe}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => { setView('inbox'); loadInbox(); }} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={20} color={BSColors.textPrimary} />
@@ -264,7 +265,6 @@ export default function ChatScreen() {
         </View>
       ) : null}
 
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
         <View style={styles.inputRow}>
           <TextInput
             style={styles.msgInput}

@@ -6,6 +6,7 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
+  ActivityIndicator,
   Modal,
   ScrollView,
   StyleSheet,
@@ -13,7 +14,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -32,6 +33,7 @@ export default function SignupScreen() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const [showCustomize, setShowCustomize] = useState(false);
   const [flowConfig, setFlowConfig] = useState<FlowConfig>({ biometric: true, fileUpload: true, cameraInjection: true });
 
@@ -59,6 +61,7 @@ export default function SignupScreen() {
       setError('Passwords do not match.'); return;
     }
     setError('');
+    setLoading(true);
     try {
       const res = await api.signup(fullName, email, password);
       await AuthStore.setToken(res.token);
@@ -77,6 +80,7 @@ export default function SignupScreen() {
     AuthStore.setEmail(email);
     AuthStore.setFlowConfig(flowConfig);
     router.replace('/otp' as any);
+    setLoading(false);
   };
 
   return (
@@ -129,8 +133,10 @@ export default function SignupScreen() {
 
         {error ? <Text style={styles.error} testID="signup-error">{error}</Text> : null}
 
-        <TouchableOpacity style={styles.primaryBtn} onPress={handleSignup} testID="signup-btn">
-          <Text style={styles.primaryBtnText}>Create Account</Text>
+        <TouchableOpacity style={[styles.primaryBtn, loading && { opacity: 0.7 }]} onPress={handleSignup} disabled={loading} testID="signup-btn">
+          {loading
+            ? <ActivityIndicator color="#fff" />
+            : <Text style={styles.primaryBtnText}>Create Account</Text>}
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.linkRow} onPress={() => router.replace('/' as any)} testID="goto-login">

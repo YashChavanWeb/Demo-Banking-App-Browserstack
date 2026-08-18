@@ -201,6 +201,7 @@ export default function TransferScreen() {
           value={amount}
           onChangeText={v => { setAmount(v); setErrorState(''); setPayReady(false); }}
           keyboardType="decimal-pad"
+          returnKeyType="done"
           testID="amount-input"
         />
       </View>
@@ -271,6 +272,7 @@ export default function TransferScreen() {
               placeholderTextColor="#94A3B8"
               value={remarks}
               onChangeText={setRemarks}
+              returnKeyType="done"
               testID="remarks-input"
             />
 
