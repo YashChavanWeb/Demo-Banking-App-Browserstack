@@ -141,7 +141,7 @@ export default function HomeScreen() {
   };
 
   const handleBarCodeScanned = ({ data }: { data: string }) => {
-    if (scanned || !qrScanActive) return;
+    if (scanned) return;
     if (qrTimeoutRef.current) clearTimeout(qrTimeoutRef.current);
     setQrScanActive(false);
     setScanned(true);
@@ -372,8 +372,8 @@ export default function HomeScreen() {
             key={showQRModal ? 'qr-active' : 'qr-inactive'}
             style={{ flex: 1 }}
             facing="back"
-            active={showQRModal && qrScanActive}
-            onBarcodeScanned={qrScanActive && !scanned ? handleBarCodeScanned : undefined}
+            active={showQRModal}
+            onBarcodeScanned={!scanned ? handleBarCodeScanned : undefined}
             barcodeScannerSettings={{ barcodeTypes: ['qr', 'aztec', 'datamatrix', 'pdf417', 'code128', 'code39', 'ean13', 'ean8', 'upc_e'] }}
             testID="qr-camera-view"
           />

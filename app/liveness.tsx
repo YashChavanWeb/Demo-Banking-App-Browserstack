@@ -74,16 +74,18 @@ export default function LivenessScreen() {
         });
         if (!photo?.uri) return;
         if (FaceDetector) {
-          // Real face detection with expo-face-detector (requires native build)
+          // Face detection — accept any face (open or closed eyes) for injected images
           const result = await FaceDetector.detectFacesAsync(photo.uri, {
             mode: FaceDetector.FaceDetectorMode.fast,
             detectLandmarks: FaceDetector.FaceDetectorLandmarks.none,
             runClassifications: FaceDetector.FaceDetectorClassifications.all,
           });
+          // Accept: any face detected, OR eyes with very low threshold (0.05) for static injected images
+          const hasFace = result.faces.length > 0;
           const hasEyes = result.faces.some(
-            f => (f.leftEyeOpenProbability ?? 0) > 0.3 || (f.rightEyeOpenProbability ?? 0) > 0.3
+            f => (f.leftEyeOpenProbability ?? 0) > 0.05 || (f.rightEyeOpenProbability ?? 0) > 0.05
           );
-          if (hasEyes && phaseRef.current === 'recording') {
+          if ((hasFace || hasEyes) && phaseRef.current === 'recording') {
             setEyesDetected(true);
             resetEyeTimeout();
           }

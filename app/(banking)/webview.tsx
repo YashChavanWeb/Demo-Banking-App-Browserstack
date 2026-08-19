@@ -129,6 +129,23 @@ export default function WebViewScreen() {
         <TouchableOpacity style={styles.navBtn} onPress={() => router.back()}>
           <Ionicons name="home-outline" size={20} color={BSColors.textPrimary} />
         </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.navBtn}
+          onPress={() => {
+            const { Linking: L } = require('react-native') as typeof import('react-native');
+            // Try Chrome first (Android), fall back to default browser
+            const chromeUrl = `googlechrome://${currentUrl.replace(/^https?:\/\//, '')}`;
+            L.canOpenURL(chromeUrl)
+              .then((supported: boolean) => {
+                if (supported) return L.openURL(chromeUrl);
+                return L.openURL(currentUrl);
+              })
+              .catch(() => L.openURL(currentUrl));
+          }}
+          testID="open-in-chrome-btn"
+        >
+          <Ionicons name="open-outline" size={20} color={BSColors.textPrimary} />
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
