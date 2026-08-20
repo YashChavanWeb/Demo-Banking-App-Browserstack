@@ -35,6 +35,8 @@ export default function SignupScreen() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showCustomize, setShowCustomize] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [flowConfig, setFlowConfig] = useState<FlowConfig>({ biometric: true, fileUpload: true, cameraInjection: true });
 
   const autoFillNewUser = () => {
@@ -115,20 +117,30 @@ export default function SignupScreen() {
 
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Password</Text>
-          <TextInput
-            style={styles.input} placeholder="Create a password"
-            placeholderTextColor="#AAA" value={password}
-            onChangeText={setPassword} secureTextEntry testID="password-input"
-          />
+          <View style={styles.passwordWrap}>
+            <TextInput
+              style={styles.passwordInput} placeholder="Create a password"
+              placeholderTextColor="#AAA" value={password}
+              onChangeText={setPassword} secureTextEntry={!showPassword} testID="password-input"
+            />
+            <TouchableOpacity onPress={() => setShowPassword(v => !v)} style={styles.eyeBtn} testID="toggle-password-visibility">
+              <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#94A3B8" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Confirm Password</Text>
-          <TextInput
-            style={styles.input} placeholder="Confirm your password"
-            placeholderTextColor="#AAA" value={confirmPassword}
-            onChangeText={setConfirmPassword} secureTextEntry testID="confirm-password-input"
-          />
+          <View style={styles.passwordWrap}>
+            <TextInput
+              style={styles.passwordInput} placeholder="Confirm your password"
+              placeholderTextColor="#AAA" value={confirmPassword}
+              onChangeText={setConfirmPassword} secureTextEntry={!showConfirmPassword} testID="confirm-password-input"
+            />
+            <TouchableOpacity onPress={() => setShowConfirmPassword(v => !v)} style={styles.eyeBtn} testID="toggle-confirm-password-visibility">
+              <Ionicons name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#94A3B8" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {error ? <Text style={styles.error} testID="signup-error">{error}</Text> : null}
@@ -219,6 +231,12 @@ const styles = StyleSheet.create({
     borderColor: '#C7D2FE', paddingHorizontal: 16, paddingVertical: 14,
     fontSize: 15, color: '#111',
   },
+  passwordWrap: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#fff', borderRadius: 12, borderWidth: 1.5, borderColor: '#C7D2FE',
+  },
+  passwordInput: { flex: 1, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, color: '#111' },
+  eyeBtn: { paddingHorizontal: 14, paddingVertical: 14 },
   error: { color: '#D32F2F', fontSize: 13, marginBottom: 14, textAlign: 'center' },
   primaryBtn: {
     backgroundColor: BSColors.primary, borderRadius: 12, paddingVertical: 16,

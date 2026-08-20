@@ -8,6 +8,7 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, Modal, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { WebView } from 'react-native-webview';
 
 export default function KYCScreen() {
   const router = useRouter();
@@ -18,6 +19,7 @@ export default function KYCScreen() {
   const [showConsent, setShowConsent] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [downloadDone, setDownloadDone] = useState(false);
+  const [pdfBase64, setPdfBase64] = useState<string | null>(null);
 
   const flowConfig = AuthStore.getFlowConfig();
 
@@ -60,6 +62,12 @@ export default function KYCScreen() {
         setDocUri(asset.uri);
         setDocSize(asset.size ?? null);
         setDownloadDone(false);
+        setPdfBase64(null);
+        // Read PDF as base64 for in-app preview via WebView
+        try {
+          const b64 = await LegacyFS.readAsStringAsync(asset.uri, { encoding: LegacyFS.EncodingType.Base64 });
+          setPdfBase64(b64);
+        } catch { /* preview unavailable */ }
       }
     } catch {
       setError('Failed to pick document. Please try again.');
@@ -151,7 +159,7 @@ export default function KYCScreen() {
           )}
         </TouchableOpacity>
 
-        {/* PDF preview — show a styled info card (WebView can't load local file:// URIs on Android) */}
+        {/* PDF preview — render actual PDF pages via WebView using base64 data URI */}
         {docName && docUri && (
           <View style={s.pdfPreviewContainer} testID="pdf-preview">
             <View style={s.pdfPreviewHeader}>
@@ -159,18 +167,30 @@ export default function KYCScreen() {
               <Text style={s.pdfPreviewTitle} numberOfLines={1}>{docName}</Text>
               {docSize && <Text style={s.pdfPreviewSize}>{formatSize(docSize)}</Text>}
             </View>
-            <View style={s.pdfReadyBody}>
-              <View style={s.pdfReadyIcon}>
-                <Ionicons name="document-text-outline" size={48} color="#DC2626" />
+            {pdfBase64 ? (
+              <WebView
+                style={s.pdfWebView}
+                originWhitelist={['*']}
+                scalesPageToFit
+                testID="pdf-webview"
+                source={{
+                  html: `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>*{margin:0;padding:0;box-sizing:border-box}body{background:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh}embed,iframe{width:100vw;height:100vh;border:none}</style></head><body><embed src="data:application/pdf;base64,${pdfBase64}" type="application/pdf" width="100%" height="100%"/></body></html>`,
+                }}
+              />
+            ) : (
+              <View style={s.pdfReadyBody}>
+                <View style={s.pdfReadyIcon}>
+                  <Ionicons name="document-text-outline" size={48} color="#DC2626" />
+                </View>
+                <Text style={s.pdfReadyTitle}>Document Ready</Text>
+                <Text style={s.pdfReadyName} numberOfLines={2}>{docName}</Text>
+                {docSize && <Text style={s.pdfReadySize}>{formatSize(docSize)}</Text>}
+                <View style={s.pdfReadyBadge}>
+                  <Ionicons name="checkmark-circle" size={14} color="#059669" />
+                  <Text style={s.pdfReadyBadgeText}>PDF selected successfully</Text>
+                </View>
               </View>
-              <Text style={s.pdfReadyTitle}>Document Ready</Text>
-              <Text style={s.pdfReadyName} numberOfLines={2}>{docName}</Text>
-              {docSize && <Text style={s.pdfReadySize}>{formatSize(docSize)}</Text>}
-              <View style={s.pdfReadyBadge}>
-                <Ionicons name="checkmark-circle" size={14} color="#059669" />
-                <Text style={s.pdfReadyBadgeText}>PDF selected successfully</Text>
-              </View>
-            </View>
+            )}
           </View>
         )}
 
@@ -295,7 +315,17 @@ const s = StyleSheet.create({
   consentDeclineText: { color: '#666', fontSize: 15, fontWeight: '600' },
   consentAccept: { flex: 2, paddingVertical: 14, borderRadius: 12, alignItems: 'center', backgroundColor: BSColors.primary },
   consentAcceptText: { color: '#fff', fontSize: 15, fontWeight: '700' },
-  pdfPreviewContainer: { width: '100%', borderRadius: 14, overflow: 'hidden', borderWidth: 1, borderColor: '#FECACA', marginBottom: 12, backgroundColor: '#FFF5F5' },
+  pdfPreviewContainer: {
+    width: '100%',
+    borderRadius: 14,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    marginBottom: 12,
+    backgroundColor: '#FFF5F5',
+    minHeight: 320,
+  },
+  pdfWebView: { width: '100%', height: 280 },
   pdfPreviewHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: '#FEE2E2' },
   pdfPreviewTitle: { flex: 1, color: '#DC2626', fontSize: 12, fontWeight: '700' },
   pdfPreviewSize: { color: '#888', fontSize: 11 },

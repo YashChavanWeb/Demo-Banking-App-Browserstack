@@ -1,36 +1,48 @@
 import { BSColors } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
+import { BankStore } from '@/store/banking';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Animated, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTheme } from '@/hooks/use-theme';
 
 export default function ShakeScreen() {
-  const { primaryColor, primaryBg, primaryBorder } = useTheme();
+  const { primaryColor } = useTheme();
   const router = useRouter();
   const [shakeEnabled, setShakeEnabled] = useState(false);
-  const [shakeCount, setShakeCount] = useState(0);
   const [showModal, setShowModal] = useState(false);
+  const [suspiciousTx, setSuspiciousTx] = useState<{ merchant: string; amount: number; date: string } | null>(null);
+  const [reported, setReported] = useState<string[]>([]);
   const shakeAnim = useRef(new Animated.Value(0)).current;
   const lastAccel = useRef({ x: 0, y: 0, z: 0 });
   const lastShakeTime = useRef(0);
 
+  // Pick a random recent transaction to flag as suspicious
+  const pickSuspiciousTx = useCallback(() => {
+    const txs = BankStore.getTransactions().filter(t => t.amount < 0);
+    if (txs.length === 0) return null;
+    const idx = Math.floor(Math.random() * Math.min(txs.length, 5));
+    const t = txs[idx];
+    return { merchant: t.merchant, amount: Math.abs(t.amount), date: t.date };
+  }, []);
+
   const triggerShakeEffect = useCallback(() => {
     const now = Date.now();
-    if (now - lastShakeTime.current < 1500) return;
+    if (now - lastShakeTime.current < 2000) return;
     lastShakeTime.current = now;
-    setShakeCount(c => c + 1);
+    const tx = pickSuspiciousTx();
+    setSuspiciousTx(tx);
     setShowModal(true);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     Animated.sequence([
-      Animated.timing(shakeAnim, { toValue: 12, duration: 60, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: -12, duration: 60, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 8, duration: 60, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 10, duration: 60, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: -10, duration: 60, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 6, duration: 60, useNativeDriver: true }),
       Animated.timing(shakeAnim, { toValue: 0, duration: 60, useNativeDriver: true }),
     ]).start();
-  }, [shakeAnim]);
+  }, [shakeAnim, pickSuspiciousTx]);
 
   useEffect(() => {
     if (!shakeEnabled) return;
@@ -47,8 +59,17 @@ export default function ShakeScreen() {
     return () => sub.remove();
   }, [shakeEnabled, triggerShakeEffect]);
 
-  const EMOJIS = ['🎉', '🚀', '⚡', '🎊', '🔥', '💥', '🌟', '🎯'];
-  const emoji = EMOJIS[shakeCount % EMOJIS.length];
+  const handleReport = () => {
+    if (suspiciousTx) {
+      setReported(prev => [...prev, suspiciousTx.merchant]);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+    setShowModal(false);
+  };
+
+  const handleDismiss = () => {
+    setShowModal(false);
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -56,48 +77,101 @@ export default function ShakeScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={22} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.pageTitle}>Shake Detection</Text>
+        <Text style={styles.pageTitle}>Fraud Alert</Text>
         <View style={{ width: 40 }} />
       </View>
 
-      <View style={styles.content}>
-        <Animated.View style={[styles.phoneCard, { transform: [{ translateX: shakeAnim }] }]}>
-          <Ionicons name="phone-portrait-outline" size={80} color={shakeEnabled ? '#D97706' : '#94A3B8'} />
-          <Text style={styles.phoneLabel}>{shakeEnabled ? 'Shake me!' : 'Enable detection first'}</Text>
+      <ScrollView contentContainerStyle={styles.content}>
+        <Animated.View style={[styles.alertCard, { transform: [{ translateX: shakeAnim }] }]}>
+          <View style={styles.alertIconWrap}>
+            <Ionicons name="shield-outline" size={48} color={shakeEnabled ? '#DC2626' : '#94A3B8'} />
+          </View>
+          <Text style={styles.alertTitle}>Shake to Report Fraud</Text>
+          <Text style={styles.alertSub}>
+            {shakeEnabled
+              ? 'Shake your device if you spot a suspicious transaction below'
+              : 'Enable detection, then shake to flag a suspicious transaction'}
+          </Text>
         </Animated.View>
 
-        <View style={styles.countCard}>
-          <Text style={styles.countLabel}>Shakes Detected</Text>
-          <Text style={styles.countValue}>{shakeCount}</Text>
-        </View>
-
         <TouchableOpacity
-          style={[styles.toggleBtn, { backgroundColor: shakeEnabled ? '#DC2626' : '#D97706' }]}
+          style={[styles.toggleBtn, { backgroundColor: shakeEnabled ? '#DC2626' : BSColors.primary }]}
           onPress={() => setShakeEnabled(e => !e)}
           testID="shake-toggle-btn"
         >
           <Ionicons name={shakeEnabled ? 'stop-circle-outline' : 'radio-outline'} size={20} color="#fff" />
-          <Text style={styles.toggleBtnText}>{shakeEnabled ? 'Stop Detection' : 'Enable Shake Detection'}</Text>
+          <Text style={styles.toggleBtnText}>{shakeEnabled ? 'Stop Monitoring' : 'Enable Fraud Detection'}</Text>
         </TouchableOpacity>
 
         {shakeEnabled && (
           <View style={styles.hintCard}>
             <Ionicons name="information-circle-outline" size={16} color="#D97706" />
-            <Text style={styles.hintText}>Shake your device to trigger the effect!</Text>
+            <Text style={styles.hintText}>Shake your device to flag a suspicious transaction for review</Text>
           </View>
         )}
-      </View>
 
-      <Modal visible={showModal} transparent animationType="fade">
+        {/* Recent transactions list */}
+        <Text style={styles.sectionTitle}>Recent Transactions</Text>
+        <View style={styles.txCard}>
+          {BankStore.getTransactions().filter(t => t.amount < 0).slice(0, 5).map((tx, i, arr) => (
+            <View key={tx.id} style={[styles.txRow, i < arr.length - 1 && styles.txBorder]}>
+              <View style={[styles.txIcon, { backgroundColor: reported.includes(tx.merchant) ? '#FEE2E2' : '#F1F5F9' }]}>
+                <Ionicons
+                  name={reported.includes(tx.merchant) ? 'flag' : (tx.icon as any)}
+                  size={16}
+                  color={reported.includes(tx.merchant) ? '#DC2626' : '#64748B'}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.txMerchant}>{tx.merchant}</Text>
+                <Text style={styles.txDate}>{tx.category} · {tx.date}</Text>
+              </View>
+              <View style={{ alignItems: 'flex-end' }}>
+                <Text style={styles.txAmount}>-${Math.abs(tx.amount).toLocaleString()}</Text>
+                {reported.includes(tx.merchant) && (
+                  <Text style={styles.reportedBadge}>Reported</Text>
+                )}
+              </View>
+            </View>
+          ))}
+          {BankStore.getTransactions().filter(t => t.amount < 0).length === 0 && (
+            <View style={styles.emptyTx}>
+              <Text style={styles.emptyTxText}>No transactions yet</Text>
+            </View>
+          )}
+        </View>
+      </ScrollView>
+
+      {/* Fraud Alert Modal */}
+      <Modal visible={showModal} transparent animationType="slide">
         <View style={styles.modalOverlay}>
-          <Animated.View style={[styles.modalCard, { transform: [{ translateX: shakeAnim }] }]}>
-            <Text style={styles.modalEmoji}>{emoji}</Text>
-            <Text style={styles.modalTitle}>Shake #{shakeCount}!</Text>
-            <Text style={styles.modalDesc}>Great shake! Keep going for more surprises.</Text>
-            <TouchableOpacity style={styles.modalBtn} onPress={() => setShowModal(false)}>
-              <Text style={styles.modalBtnText}>Awesome!</Text>
-            </TouchableOpacity>
-          </Animated.View>
+          <View style={styles.modalCard}>
+            <View style={styles.modalIconWrap}>
+              <Ionicons name="warning" size={40} color="#DC2626" />
+            </View>
+            <Text style={styles.modalTitle}>Suspicious Transaction?</Text>
+            {suspiciousTx ? (
+              <>
+                <Text style={styles.modalDesc}>You flagged this transaction as suspicious:</Text>
+                <View style={styles.modalTxBox}>
+                  <Text style={styles.modalTxMerchant}>{suspiciousTx.merchant}</Text>
+                  <Text style={styles.modalTxAmount}>-${suspiciousTx.amount.toLocaleString()}</Text>
+                  <Text style={styles.modalTxDate}>{suspiciousTx.date}</Text>
+                </View>
+              </>
+            ) : (
+              <Text style={styles.modalDesc}>No recent debit transactions found to flag.</Text>
+            )}
+            <View style={styles.modalBtns}>
+              <TouchableOpacity style={styles.modalDismissBtn} onPress={handleDismiss} testID="dismiss-fraud-btn">
+                <Text style={styles.modalDismissText}>Not Suspicious</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalReportBtn} onPress={handleReport} testID="report-fraud-btn">
+                <Ionicons name="flag" size={16} color="#fff" style={{ marginRight: 6 }} />
+                <Text style={styles.modalReportText}>Report Fraud</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
       </Modal>
     </SafeAreaView>
@@ -109,21 +183,38 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
   backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 1 },
   pageTitle: { color: '#0F172A', fontSize: 18, fontWeight: '700' },
-  content: { flex: 1, paddingHorizontal: 20, paddingTop: 24, alignItems: 'center' },
-  phoneCard: { backgroundColor: '#fff', borderRadius: 24, padding: 40, alignItems: 'center', marginBottom: 24, width: '100%', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 4 },
-  phoneLabel: { color: '#64748B', fontSize: 16, marginTop: 12, fontWeight: '600' },
-  countCard: { backgroundColor: '#FEF3C7', borderRadius: 16, padding: 20, alignItems: 'center', marginBottom: 24, width: '100%', borderWidth: 1, borderColor: '#FDE68A' },
-  countLabel: { color: '#92400E', fontSize: 13, fontWeight: '600', marginBottom: 4 },
-  countValue: { color: '#D97706', fontSize: 48, fontWeight: '800' },
-  toggleBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, borderRadius: 14, paddingVertical: 16, width: '100%', marginBottom: 12 },
-  toggleBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  hintCard: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#FEF3C7', borderRadius: 12, padding: 14, width: '100%', borderWidth: 1, borderColor: '#FDE68A' },
-  hintText: { color: '#92400E', fontSize: 13, flex: 1 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: 32 },
-  modalCard: { backgroundColor: '#fff', borderRadius: 24, padding: 32, width: '100%', alignItems: 'center' },
-  modalEmoji: { fontSize: 64, marginBottom: 12 },
-  modalTitle: { color: '#0F172A', fontSize: 26, fontWeight: '800', marginBottom: 8 },
-  modalDesc: { color: '#64748B', fontSize: 14, textAlign: 'center', marginBottom: 24 },
-  modalBtn: { backgroundColor: BSColors.primary, borderRadius: 14, paddingVertical: 14, paddingHorizontal: 40 },
-  modalBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 40 },
+  alertCard: { backgroundColor: '#fff', borderRadius: 20, padding: 24, alignItems: 'center', marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.07, shadowRadius: 10, elevation: 3 },
+  alertIconWrap: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#FEF2F2', alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
+  alertTitle: { color: '#0F172A', fontSize: 18, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
+  alertSub: { color: '#64748B', fontSize: 13, textAlign: 'center', lineHeight: 19 },
+  toggleBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 14, paddingVertical: 14, marginBottom: 14 },
+  toggleBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  hintCard: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, backgroundColor: '#FFFBEB', borderRadius: 12, padding: 12, marginBottom: 20, borderWidth: 1, borderColor: '#FDE68A' },
+  hintText: { color: '#92400E', fontSize: 13, flex: 1, lineHeight: 18 },
+  sectionTitle: { color: '#0F172A', fontSize: 15, fontWeight: '700', marginBottom: 10 },
+  txCard: { backgroundColor: '#fff', borderRadius: 16, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+  txRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, gap: 12 },
+  txBorder: { borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  txIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  txMerchant: { color: '#0F172A', fontSize: 14, fontWeight: '600', marginBottom: 2 },
+  txDate: { color: '#94A3B8', fontSize: 12 },
+  txAmount: { color: '#DC2626', fontSize: 14, fontWeight: '700' },
+  reportedBadge: { color: '#DC2626', fontSize: 10, fontWeight: '700', marginTop: 2 },
+  emptyTx: { padding: 24, alignItems: 'center' },
+  emptyTxText: { color: '#94A3B8', fontSize: 13 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  modalCard: { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
+  modalIconWrap: { width: 72, height: 72, borderRadius: 36, backgroundColor: '#FEE2E2', alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 16 },
+  modalTitle: { color: '#0F172A', fontSize: 20, fontWeight: '700', textAlign: 'center', marginBottom: 8 },
+  modalDesc: { color: '#64748B', fontSize: 14, textAlign: 'center', marginBottom: 16 },
+  modalTxBox: { backgroundColor: '#FEF2F2', borderRadius: 14, padding: 16, alignItems: 'center', marginBottom: 20, borderWidth: 1, borderColor: '#FECACA' },
+  modalTxMerchant: { color: '#0F172A', fontSize: 16, fontWeight: '700', marginBottom: 4 },
+  modalTxAmount: { color: '#DC2626', fontSize: 20, fontWeight: '800', marginBottom: 4 },
+  modalTxDate: { color: '#94A3B8', fontSize: 12 },
+  modalBtns: { flexDirection: 'row', gap: 12 },
+  modalDismissBtn: { flex: 1, paddingVertical: 14, borderRadius: 12, alignItems: 'center', backgroundColor: '#F1F5F9' },
+  modalDismissText: { color: '#64748B', fontSize: 15, fontWeight: '600' },
+  modalReportBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: 12, backgroundColor: '#DC2626' },
+  modalReportText: { color: '#fff', fontSize: 15, fontWeight: '700' },
 });

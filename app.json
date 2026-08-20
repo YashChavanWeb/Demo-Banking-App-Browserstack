@@ -1,9 +1,9 @@
 {
   "expo": {
-    "name": "Demo-Banking-App",
-    "slug": "yash",
-    "version": "1.1.0",
-    "orientation": "portrait",
+    "name": "BrowserStack Bank",
+    "slug": "browserstack-bank",
+    "version": "2.0.0",
+    "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "demobankingapp",
     "userInterfaceStyle": "automatic",
@@ -34,7 +34,7 @@
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
+          "imageWidth": 120,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
           "dark": {

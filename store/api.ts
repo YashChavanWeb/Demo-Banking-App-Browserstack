@@ -105,6 +105,9 @@ export const api = {
     _memToken = null;
     return AsyncStorage.removeItem('auth_token');
   },
+  // Account deletion
+  deleteAccount: () => request<{ deleted: boolean }>('DELETE', '/account'),
+
   setMemToken: (token: string) => { _memToken = token; },
   getToken,
 };

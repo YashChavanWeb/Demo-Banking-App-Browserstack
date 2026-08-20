@@ -94,6 +94,7 @@ export default function BankingLayout() {
       <Tabs.Screen name="currency" options={{ href: null }} />
       <Tabs.Screen name="chat" options={{ href: null }} />
       <Tabs.Screen name="webview" options={{ href: null }} />
+      <Tabs.Screen name="coming-soon" options={{ href: null }} />
     </Tabs>
   );
 }

@@ -5,46 +5,10 @@ import { api } from '@/store/api';
 import { AuthStore } from '@/store/auth';
 import { BankStore } from '@/store/banking';
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-// Self-contained HTML verification page — no server needed
-// The "Verify & Return to App" button fires the deep link demobankingapp://verified
-const VERIFY_HTML = `<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<style>
-  body{font-family:-apple-system,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#F8FAFF;padding:24px;box-sizing:border-box}
-  .card{background:#fff;border-radius:20px;padding:36px 28px;max-width:360px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,0.08);text-align:center}
-  .logo{font-size:40px;margin-bottom:16px}
-  h1{color:#0F172A;font-size:22px;margin:0 0 8px}
-  p{color:#64748B;font-size:14px;line-height:1.6;margin:0 0 28px}
-  .badge{display:inline-flex;align-items:center;gap:6px;background:#EEF2FF;color:#4F46E5;border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;margin-bottom:24px}
-  button{background:#4F46E5;color:#fff;border:none;border-radius:12px;padding:16px 32px;font-size:16px;font-weight:700;cursor:pointer;width:100%;transition:opacity 0.2s}
-  button:active{opacity:0.8}
-  .success{display:none;color:#059669;font-size:18px;font-weight:700;margin-top:20px}
-</style>
-</head>
-<body>
-<div class="card">
-  <div class="logo">🔐</div>
-  <h1>Email Verification</h1>
-  <p>Click the button below to verify your identity and return to the BrowserStack Bank app automatically.</p>
-  <div class="badge">✓ Secure · One-tap verification</div>
-  <button onclick="verify()">Verify &amp; Return to App</button>
-  <div class="success" id="ok">✅ Verified! Returning to app...</div>
-</div>
-<script>
-function verify(){
-  document.getElementById('ok').style.display='block';
-  window.location.href='demobankingapp://verified?source=email&ts='+Date.now();
-}
-</script>
-</body>
-</html>`;
 
 const DEFAULT_USER = {
   name: 'Alex Johnson',
@@ -61,20 +25,10 @@ const DEFAULT_USER = {
 export default function ProfileScreen() {
   const { primaryColor, primaryBg, primaryBorder, greenMode } = useTheme();
   const router = useRouter();
-  const params = useLocalSearchParams<{ deeplink_verified?: string }>();
   const [balance, setBalance] = useState(BankStore.getBalance());
   const [txCount, setTxCount] = useState(BankStore.getTransactions().length);
   const [userInfo, setUserInfo] = useState(DEFAULT_USER);
   const [profileLoading, setProfileLoading] = useState(true);
-  const [emailVerified, setEmailVerified] = useState(false);
-
-  // Handle deep-link return from browser verification
-  useEffect(() => {
-    if (params.deeplink_verified === '1') {
-      setEmailVerified(true);
-      Alert.alert('✅ Email Verified', 'Your identity has been verified successfully via the browser.');
-    }
-  }, [params.deeplink_verified]);
 
   useEffect(() => {
     const unsub = BankStore.subscribe(() => {
@@ -97,6 +51,25 @@ export default function ProfileScreen() {
     }).catch(() => { /* use defaults */ }).finally(() => setProfileLoading(false));
     return unsub;
   }, []);
+
+  const handleDeleteAccount = async () => {
+    Alert.alert(
+      'Delete Account',
+      'This will permanently delete your account and all data. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete', style: 'destructive', onPress: async () => {
+            try {
+              await api.deleteAccount();
+            } catch { /* ignore — proceed with local logout */ }
+            await AuthStore.logout();
+            router.replace('/' as any);
+          },
+        },
+      ],
+    );
+  };
 
   const handleLogout = async () => {
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
@@ -218,76 +191,31 @@ export default function ProfileScreen() {
           )}
         </View>
 
-        {/* Market Insights card */}
-        <TouchableOpacity
-          style={[styles.insightsCard, { backgroundColor: primaryColor }]}
-          onPress={() => router.push({ pathname: '/(banking)/webview' as any, params: { url: 'https://finance.yahoo.com/', title: 'Market Insights' } })}
-          testID="market-insights-btn"
-          activeOpacity={0.85}
-        >
-          <View style={styles.insightsLeft}>
-            <View style={styles.insightsIconWrap}>
-              <Ionicons name="trending-up" size={22} color={primaryColor} />
-            </View>
-            <View>
-              <Text style={styles.insightsTitle}>Market Insights</Text>
-              <Text style={styles.insightsSub}>Live financial news & markets</Text>
-            </View>
-          </View>
-          <Ionicons name="open-outline" size={18} color="rgba(255,255,255,0.8)" />
-        </TouchableOpacity>
-
         {/* Settings */}
         <Text style={styles.sectionTitle}>Settings</Text>
         <View style={styles.infoCard}>
-          {[
-            { icon: 'notifications-outline', label: 'Notifications', onPress: () => Alert.alert('Notifications', 'Notification settings coming soon.') },
-            { icon: 'lock-closed-outline', label: 'Security & Privacy', onPress: () => Alert.alert('Security', 'Security settings coming soon.') },
-            { icon: 'newspaper-outline', label: 'Financial News', onPress: () => router.push({ pathname: '/(banking)/webview' as any, params: { url: 'https://www.reuters.com/finance/', title: 'Financial News' } }) },
-            { icon: 'help-circle-outline', label: 'Help & Support', onPress: () => Alert.alert('Support', 'Contact support@browserstackbank.com') },
-          ].map((item, i, arr) => (
-            <TouchableOpacity key={item.label} style={[styles.infoRow, i === arr.length - 1 && { borderBottomWidth: 0 }]} onPress={item.onPress}>
-              <View style={styles.infoIconWrap}>
-                <Ionicons name={item.icon as any} size={18} color={primaryColor} />
-              </View>
-              <View style={styles.infoContent}>
-                <Text style={styles.infoValue}>{item.label}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={16} color={primaryBorder} />
-            </TouchableOpacity>
-          ))}
+          <TouchableOpacity
+            style={[styles.infoRow, { borderBottomWidth: 0 }]}
+            onPress={() => router.push({ pathname: '/(banking)/webview' as any, params: { url: 'https://www.reuters.com/finance/', title: 'Financial News' } })}
+          >
+            <View style={styles.infoIconWrap}>
+              <Ionicons name="newspaper-outline" size={18} color={primaryColor} />
+            </View>
+            <View style={styles.infoContent}>
+              <Text style={styles.infoValue}>Financial News</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={primaryBorder} />
+          </TouchableOpacity>
         </View>
-
-        {/* Verify via Browser — deep-link demo */}
-        <TouchableOpacity
-          style={[styles.verifyCard, emailVerified && styles.verifyCardDone]}
-          onPress={() => {
-            const encoded = encodeURIComponent(VERIFY_HTML);
-            router.push({
-              pathname: '/(banking)/webview' as any,
-              params: { url: `data:text/html,${encoded}`, title: 'Email Verification' },
-            });
-          }}
-          testID="verify-browser-btn"
-          activeOpacity={0.85}
-        >
-          <View style={[styles.verifyIcon, { backgroundColor: emailVerified ? '#D1FAE5' : '#EEF2FF' }]}>
-            <Ionicons name={emailVerified ? 'checkmark-circle' : 'open-outline'} size={22} color={emailVerified ? '#059669' : primaryColor} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.verifyTitle, emailVerified && { color: '#059669' }]}>
-              {emailVerified ? 'Email Verified ✓' : 'Verify via Browser'}
-            </Text>
-            <Text style={styles.verifySub}>
-              {emailVerified ? 'Identity confirmed via browser deep-link' : 'Opens browser → verify → auto-returns to app'}
-            </Text>
-          </View>
-          {!emailVerified && <Ionicons name="chevron-forward" size={16} color={primaryColor} />}
-        </TouchableOpacity>
 
         <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} testID="logout-btn">
           <Ionicons name="log-out-outline" size={18} color="#DC2626" />
           <Text style={styles.logoutText}>Sign Out</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.deleteBtn} onPress={handleDeleteAccount} testID="delete-account-btn">
+          <Ionicons name="trash-outline" size={18} color="#DC2626" />
+          <Text style={styles.deleteText}>Delete Account</Text>
         </TouchableOpacity>
 
       </ScrollView>
@@ -322,8 +250,10 @@ const styles = StyleSheet.create({
   insightsIconWrap: { width: 44, height: 44, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
   insightsTitle: { color: '#fff', fontSize: 15, fontWeight: '800', marginBottom: 2 },
   insightsSub: { color: 'rgba(255,255,255,0.75)', fontSize: 12 },
-  logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#FEF2F2', borderRadius: 14, paddingVertical: 16, borderWidth: 1.5, borderColor: '#FECACA' },
+  logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#FEF2F2', borderRadius: 14, paddingVertical: 16, borderWidth: 1.5, borderColor: '#FECACA', marginBottom: 12 },
   logoutText: { color: '#DC2626', fontSize: 16, fontWeight: '700' },
+  deleteBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#fff', borderRadius: 14, paddingVertical: 14, borderWidth: 1.5, borderColor: '#FECACA' },
+  deleteText: { color: '#DC2626', fontSize: 14, fontWeight: '600' },
   verifyCard: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2, borderWidth: 1, borderColor: '#C7D2FE' },
   verifyCardDone: { borderColor: '#BBF7D0', backgroundColor: '#F0FDF4' },
   verifyIcon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },

@@ -8,8 +8,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 const FEATURES = [
   {
     id: 'shake',
-    title: 'Shake Detection',
-    subtitle: 'Shake your device to trigger effects',
+    title: 'Fraud Alert',
+    subtitle: 'Shake to flag a suspicious transaction for fraud review',
     icon: 'phone-portrait-outline' as const,
     color: '#D97706',
     route: '/(banking)/shake',

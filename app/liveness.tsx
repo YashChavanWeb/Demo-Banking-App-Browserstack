@@ -5,124 +5,73 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-// expo-face-detector requires a native build — gracefully degrade if not available
-let FaceDetector: typeof import('expo-face-detector') | null = null;
-try { FaceDetector = require('expo-face-detector'); } catch { FaceDetector = null; }
-
-const RECORD_SECONDS = 8;
-const SCAN_INTERVAL_MS = 800;   // take a snapshot every 800ms to check for eyes
-const EYE_TIMEOUT_MS = 2000;    // if no eyes detected for 2s → retry
 
 export default function LivenessScreen() {
   const router = useRouter();
   const [permission, requestPermission] = useCameraPermissions();
-  const [phase, setPhase] = useState<'ready' | 'recording' | 'done' | 'retry'>('ready');
-  const [countdown, setCountdown] = useState(RECORD_SECONDS);
-  const [eyesDetected, setEyesDetected] = useState(false);
+  const [cameraFacing, setCameraFacing] = useState<'front' | 'back'>('back');
+  const [phase, setPhase] = useState<'ready' | 'capturing' | 'preview'>('ready');
+  const [capturedUri, setCapturedUri] = useState<string | null>(null);
   const cameraRef = useRef<CameraView>(null);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const scanRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const eyeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const phaseRef = useRef<string>('ready');
 
   const flowConfig = AuthStore.getFlowConfig();
 
   useEffect(() => {
     if (!flowConfig.cameraInjection) {
-      router.replace('/biometric' as any);
+      if (flowConfig.biometric) {
+        router.replace('/biometric' as any);
+      } else if (flowConfig.fileUpload) {
+        router.replace('/kyc' as any);
+      } else {
+        router.replace('/(banking)/home' as any);
+      }
     }
-    return () => clearTimers();
   }, []);
 
-  const clearTimers = () => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    if (scanRef.current) clearInterval(scanRef.current);
-    if (eyeTimeoutRef.current) clearTimeout(eyeTimeoutRef.current);
-  };
-
-  const resetEyeTimeout = () => {
-    if (eyeTimeoutRef.current) clearTimeout(eyeTimeoutRef.current);
-    eyeTimeoutRef.current = setTimeout(() => {
-      if (phaseRef.current === 'recording') {
-        clearTimers();
-        phaseRef.current = 'retry';
-        setPhase('retry');
+  const handleCapture = async () => {
+    if (!cameraRef.current) return;
+    setPhase('capturing');
+    try {
+      const photo = await cameraRef.current.takePictureAsync({
+        quality: 0.8,
+        skipProcessing: false,
+      });
+      if (photo?.uri) {
+        setCapturedUri(photo.uri);
+        setPhase('preview');
+      } else {
+        setPhase('ready');
       }
-    }, EYE_TIMEOUT_MS);
+    } catch {
+      setPhase('ready');
+    }
   };
 
-  const startVerification = async () => {
-    if (!permission?.granted) { await requestPermission(); return; }
-    phaseRef.current = 'recording';
-    setPhase('recording');
-    setCountdown(RECORD_SECONDS);
-    setEyesDetected(false);
-
-    // Start eye-loss timeout immediately
-    resetEyeTimeout();
-
-    // Periodic face scan using expo-face-detector
-    scanRef.current = setInterval(async () => {
-      if (phaseRef.current !== 'recording' || !cameraRef.current) return;
-      try {
-        const photo = await cameraRef.current.takePictureAsync({
-          base64: false,
-          quality: 0.3,
-          skipProcessing: true,
-        });
-        if (!photo?.uri) return;
-        if (FaceDetector) {
-          // Face detection — accept any face (open or closed eyes) for injected images
-          const result = await FaceDetector.detectFacesAsync(photo.uri, {
-            mode: FaceDetector.FaceDetectorMode.fast,
-            detectLandmarks: FaceDetector.FaceDetectorLandmarks.none,
-            runClassifications: FaceDetector.FaceDetectorClassifications.all,
-          });
-          // Accept: any face detected, OR eyes with very low threshold (0.05) for static injected images
-          const hasFace = result.faces.length > 0;
-          const hasEyes = result.faces.some(
-            f => (f.leftEyeOpenProbability ?? 0) > 0.05 || (f.rightEyeOpenProbability ?? 0) > 0.05
-          );
-          if ((hasFace || hasEyes) && phaseRef.current === 'recording') {
-            setEyesDetected(true);
-            resetEyeTimeout();
-          }
-        } else {
-          // Fallback: if camera snapshot succeeds, user is present
-          if (phaseRef.current === 'recording') {
-            setEyesDetected(true);
-            resetEyeTimeout();
-          }
-        }
-      } catch { /* ignore scan errors */ }
-    }, SCAN_INTERVAL_MS);
-
-    // Countdown timer
-    let count = RECORD_SECONDS;
-    timerRef.current = setInterval(() => {
-      count -= 1;
-      setCountdown(count);
-      if (count <= 0) {
-        clearTimers();
-        phaseRef.current = 'done';
-        setPhase('done');
-      }
-    }, 1000);
-  };
-
-  const handleRetry = () => {
-    clearTimers();
-    phaseRef.current = 'ready';
+  const handleRetake = () => {
+    setCapturedUri(null);
     setPhase('ready');
-    setCountdown(RECORD_SECONDS);
-    setEyesDetected(false);
+  };
+
+  const handleContinue = () => {
+    if (flowConfig.biometric) {
+      router.replace('/biometric' as any);
+    } else if (flowConfig.fileUpload) {
+      router.replace('/kyc' as any);
+    } else {
+      router.replace('/(banking)/home' as any);
+    }
   };
 
   const handleSkip = () => {
-    clearTimers();
-    router.replace('/biometric' as any);
+    if (flowConfig.biometric) {
+      router.replace('/biometric' as any);
+    } else if (flowConfig.fileUpload) {
+      router.replace('/kyc' as any);
+    } else {
+      router.replace('/(banking)/home' as any);
+    }
   };
 
   if (!permission) return <View style={s.safe} />;
@@ -155,81 +104,83 @@ export default function LivenessScreen() {
           <Text style={s.stepBadgeText}>Step 3 of 5 — Liveness Check</Text>
         </View>
 
-        <Text style={s.title}>Video Liveness Verification</Text>
-        <Text style={s.subtitle}>Look directly at the camera and hold still for 8 seconds</Text>
-        <Text style={s.subtitleHint}>Position your face to fill the frame</Text>
+        <Text style={s.title}>Liveness Verification</Text>
+        <Text style={s.subtitle}>
+          {phase === 'preview' ? 'Review your photo and continue or retake' : 'Position your face in the frame and take a photo'}
+        </Text>
 
-        {phase === 'done' ? (
-          <View style={s.successContainer}>
-            <View style={s.successCircle}>
-              <Ionicons name="checkmark-circle" size={80} color="#059669" />
-            </View>
-            <Text style={s.successTitle}>Video Verified Successfully</Text>
-            <Text style={s.successSub}>Your liveness check is complete</Text>
-            <TouchableOpacity style={s.primaryBtn} onPress={() => router.replace('/biometric' as any)} testID="continue-btn">
-              <Text style={s.primaryBtnText}>Continue to Biometric Setup</Text>
-            </TouchableOpacity>
-          </View>
-        ) : phase === 'retry' ? (
-          <View style={s.retryContainer}>
-            <View style={s.retryCircle}>
-              <Ionicons name="eye-off-outline" size={56} color="#DC2626" />
-            </View>
-            <Text style={s.retryTitle}>Eyes Not Detected</Text>
-            <Text style={s.retrySub}>
-              Please look directly at the camera with your eyes open and try again.
-            </Text>
-            <TouchableOpacity style={s.primaryBtn} onPress={handleRetry} testID="retry-btn">
-              <Ionicons name="refresh-outline" size={18} color="#fff" style={{ marginRight: 8 }} />
-              <Text style={s.primaryBtnText}>Try Again</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={s.skipBtn} onPress={handleSkip} testID="skip-liveness-btn">
-              <Text style={s.skipBtnText}>Skip this step</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
+        {phase !== 'preview' ? (
           <>
+            {/* Camera preview */}
             <View style={s.cameraFrame}>
               <CameraView
                 ref={cameraRef}
                 style={s.camera}
-                facing="front"
+                facing={cameraFacing}
                 testID="liveness-camera-view"
               />
-              {phase === 'recording' && (
-                <View style={s.countdownOverlay}>
-                  <Text style={s.countdownText}>{countdown}</Text>
-                </View>
-              )}
-              {phase === 'recording' && <View style={s.recDot} />}
-              {phase === 'recording' && eyesDetected && (
-                <View style={s.eyesBadge}>
-                  <Ionicons name="eye-outline" size={12} color="#fff" />
-                  <Text style={s.eyesBadgeText}>Eyes detected ✓</Text>
+              {/* Camera switch */}
+              <TouchableOpacity
+                style={s.cameraSwitchBtn}
+                onPress={() => setCameraFacing(f => f === 'back' ? 'front' : 'back')}
+                testID="camera-switch-btn"
+                disabled={phase === 'capturing'}
+              >
+                <Ionicons name="camera-reverse-outline" size={22} color="#fff" />
+              </TouchableOpacity>
+              {/* Camera indicator */}
+              <View style={s.cameraIndicator}>
+                <Ionicons name={cameraFacing === 'front' ? 'person-outline' : 'scan-outline'} size={10} color="#fff" />
+                <Text style={s.cameraIndicatorText}>{cameraFacing === 'front' ? 'Front' : 'Back'}</Text>
+              </View>
+              {phase === 'capturing' && (
+                <View style={s.capturingOverlay}>
+                  <ActivityIndicator size="large" color="#fff" />
+                  <Text style={s.capturingText}>Capturing...</Text>
                 </View>
               )}
             </View>
 
-            {phase === 'ready' && <Text style={s.cameraHint}>Hold still — face detection active</Text>}
-            {phase === 'recording' && (
-              <Text style={s.recordingLabel}>
-                {eyesDetected ? `✓ Eyes detected · ${countdown}s remaining` : `Scanning... ${countdown}s`}
-              </Text>
-            )}
-
             <TouchableOpacity
-              style={[s.primaryBtn, phase === 'recording' && s.primaryBtnDisabled]}
-              onPress={startVerification}
-              disabled={phase === 'recording'}
-              testID="start-verification-btn"
+              style={[s.captureBtn, phase === 'capturing' && s.captureBtnDisabled]}
+              onPress={handleCapture}
+              disabled={phase === 'capturing'}
+              testID="capture-btn"
             >
-              <Ionicons name="videocam-outline" size={18} color="#fff" style={{ marginRight: 8 }} />
-              <Text style={s.primaryBtnText}>{phase === 'ready' ? 'Start Verification' : 'Recording...'}</Text>
+              <Ionicons name="camera-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
+              <Text style={s.primaryBtnText}>Take Photo</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={s.skipBtn} onPress={handleSkip} testID="skip-liveness-btn">
               <Text style={s.skipBtnText}>Skip this step</Text>
             </TouchableOpacity>
+          </>
+        ) : (
+          <>
+            {/* Photo preview */}
+            <View style={s.previewFrame}>
+              <Image
+                source={{ uri: capturedUri! }}
+                style={s.previewImage}
+                contentFit="cover"
+                testID="captured-photo"
+              />
+              <View style={s.previewBadge}>
+                <Ionicons name="checkmark-circle" size={14} color="#fff" />
+                <Text style={s.previewBadgeText}>Photo captured</Text>
+              </View>
+            </View>
+
+            <View style={s.previewActions}>
+              <TouchableOpacity style={s.retakeBtn} onPress={handleRetake} testID="retake-btn">
+                <Ionicons name="refresh-outline" size={18} color={BSColors.primary} style={{ marginRight: 6 }} />
+                <Text style={s.retakeBtnText}>Retake</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={s.continueBtn} onPress={handleContinue} testID="continue-btn">
+                <Ionicons name="checkmark-circle-outline" size={18} color="#fff" style={{ marginRight: 6 }} />
+                <Text style={s.continueBtnText}>Continue</Text>
+              </TouchableOpacity>
+            </View>
           </>
         )}
       </View>
@@ -244,28 +195,27 @@ const s = StyleSheet.create({
   stepBadge: { backgroundColor: '#EEF2FF', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 5, marginBottom: 16, borderWidth: 1, borderColor: BSColors.primary + '40' },
   stepBadgeText: { color: BSColors.primary, fontSize: 12, fontWeight: '600' },
   title: { color: '#111', fontSize: 22, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
-  subtitle: { color: '#888', fontSize: 14, textAlign: 'center', marginBottom: 4 },
-  subtitleHint: { color: BSColors.primary, fontSize: 12, fontWeight: '600', textAlign: 'center', marginBottom: 16 },
-  cameraFrame: { width: 300, height: 380, borderRadius: 16, overflow: 'hidden', borderWidth: 4, borderColor: BSColors.primary, marginBottom: 16, shadowColor: BSColors.primary, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.25, shadowRadius: 12, elevation: 6 },
+  subtitle: { color: '#888', fontSize: 14, textAlign: 'center', marginBottom: 20 },
+  cameraFrame: { width: 300, height: 380, borderRadius: 16, overflow: 'hidden', borderWidth: 4, borderColor: BSColors.primary, marginBottom: 20, shadowColor: BSColors.primary, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.25, shadowRadius: 12, elevation: 6 },
   camera: { width: '100%', height: '100%' },
-  countdownOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.35)', alignItems: 'center', justifyContent: 'center' },
-  countdownText: { color: '#fff', fontSize: 64, fontWeight: '800' },
-  recDot: { position: 'absolute', top: 12, right: 12, width: 12, height: 12, borderRadius: 6, backgroundColor: '#DC2626' },
-  eyesBadge: { position: 'absolute', bottom: 10, left: 10, flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(5,150,105,0.85)', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 4 },
-  eyesBadgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
-  cameraHint: { color: '#888', fontSize: 13, marginBottom: 16 },
-  recordingLabel: { color: BSColors.primary, fontSize: 14, fontWeight: '600', marginBottom: 16 },
-  primaryBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: BSColors.primary, borderRadius: 12, paddingVertical: 14, paddingHorizontal: 28, marginTop: 8, shadowColor: BSColors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
-  primaryBtnDisabled: { opacity: 0.5 },
+  cameraSwitchBtn: { position: 'absolute', top: 10, right: 10, width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(0,0,0,0.45)', alignItems: 'center', justifyContent: 'center' },
+  cameraIndicator: { position: 'absolute', top: 10, left: 10, flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(0,0,0,0.45)', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 4 },
+  cameraIndicatorText: { color: '#fff', fontSize: 10, fontWeight: '700' },
+  capturingOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', gap: 12 },
+  capturingText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  captureBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: BSColors.primary, borderRadius: 12, paddingVertical: 14, paddingHorizontal: 32, marginBottom: 12, shadowColor: BSColors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
+  captureBtnDisabled: { opacity: 0.5 },
   primaryBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
-  skipBtn: { marginTop: 14, paddingVertical: 8, paddingHorizontal: 20 },
+  skipBtn: { marginTop: 4, paddingVertical: 8, paddingHorizontal: 20 },
   skipBtnText: { color: '#94A3B8', fontSize: 13, fontWeight: '600', textDecorationLine: 'underline' },
-  successContainer: { alignItems: 'center', width: '100%', marginTop: 16 },
-  successCircle: { marginBottom: 16 },
-  successTitle: { color: '#111', fontSize: 20, fontWeight: '700', marginBottom: 8 },
-  successSub: { color: '#888', fontSize: 14, marginBottom: 28 },
-  retryContainer: { alignItems: 'center', width: '100%', marginTop: 16 },
-  retryCircle: { width: 100, height: 100, borderRadius: 50, backgroundColor: '#FEF2F2', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
-  retryTitle: { color: '#DC2626', fontSize: 20, fontWeight: '700', marginBottom: 8 },
-  retrySub: { color: '#888', fontSize: 14, textAlign: 'center', marginBottom: 28, lineHeight: 20 },
+  primaryBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: BSColors.primary, borderRadius: 12, paddingVertical: 14, paddingHorizontal: 28, marginTop: 8 },
+  previewFrame: { width: 300, height: 380, borderRadius: 16, overflow: 'hidden', borderWidth: 4, borderColor: '#059669', marginBottom: 20, shadowColor: '#059669', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.25, shadowRadius: 12, elevation: 6 },
+  previewImage: { width: '100%', height: '100%' },
+  previewBadge: { position: 'absolute', bottom: 10, left: 10, flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(5,150,105,0.85)', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 4 },
+  previewBadgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
+  previewActions: { flexDirection: 'row', gap: 12, width: '100%' },
+  retakeBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#EEF2FF', borderRadius: 12, paddingVertical: 14, borderWidth: 1.5, borderColor: BSColors.primary + '40' },
+  retakeBtnText: { color: BSColors.primary, fontSize: 15, fontWeight: '700' },
+  continueBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#059669', borderRadius: 12, paddingVertical: 14 },
+  continueBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
 });

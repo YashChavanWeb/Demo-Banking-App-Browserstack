@@ -53,6 +53,28 @@ router.get('/balance', authMiddleware, async (req, res) => {
   }
 });
 
+// DELETE /account  — permanently delete the authenticated user's account and all data
+router.delete('/', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    // Delete in dependency order: transactions → accounts → cards → orders → otps → push_tokens → user
+    const [account] = await sql`SELECT id FROM accounts WHERE user_id = ${userId}`;
+    if (account) {
+      await sql`DELETE FROM transactions WHERE account_id = ${account.id}`;
+    }
+    await sql`DELETE FROM accounts WHERE user_id = ${userId}`;
+    await sql`DELETE FROM cards WHERE user_id = ${userId}`;
+    await sql`DELETE FROM orders WHERE user_id = ${userId}`;
+    await sql`DELETE FROM otps WHERE email = (SELECT email FROM users WHERE id = ${userId})`;
+    await sql`DELETE FROM push_tokens WHERE user_id = ${userId}`;
+    await sql`DELETE FROM users WHERE id = ${userId}`;
+    res.json({ deleted: true });
+  } catch (err) {
+    console.error('Delete account error:', err.message);
+    res.status(500).json({ error: 'Failed to delete account' });
+  }
+});
+
 // PATCH /account/kyc  — mark KYC as verified
 router.patch('/kyc', authMiddleware, async (req, res) => {
   try {

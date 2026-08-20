@@ -14,6 +14,20 @@ export default function BiometricScreen() {
   const [errorMsg, setErrorMsg] = useState('');
   const isSignup = AuthStore.getFlow() === 'signup';
 
+  // Skip biometric step if disabled in flow config
+  React.useEffect(() => {
+    if (isSignup) {
+      const cfg = AuthStore.getFlowConfig();
+      if (!cfg.biometric) {
+        if (cfg.fileUpload) {
+          router.replace('/kyc' as any);
+        } else {
+          router.replace('/(banking)/home' as any);
+        }
+      }
+    }
+  }, []);
+
   const navigateToDashboard = () => {
     const flow = AuthStore.getFlow();
     const role = AuthStore.getRole();

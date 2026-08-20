@@ -93,9 +93,8 @@ export default function WebViewScreen() {
             setCurrentUrl(state.url);
             // Intercept deep links (e.g. demobankingapp://verified) — iOS blocks these in WKWebView
             if (state.url && state.url.startsWith('demobankingapp://')) {
-              const { Linking: L } = require('react-native') as typeof import('react-native');
-              L.openURL(state.url).catch(() => {});
-              router.back();
+              // Navigate back to profile with deeplink_verified=1 so it can mark email as verified
+              router.replace({ pathname: '/(banking)/profile' as any, params: { deeplink_verified: '1' } });
             }
           }}
           javaScriptEnabled

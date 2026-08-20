@@ -1,6 +1,7 @@
 import { BSColors } from '@/constants/theme';
 import { api } from '@/store/api';
 import { AuthStore } from '@/store/auth';
+import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
@@ -83,8 +84,8 @@ export default function LoginScreen() {
               secureTextEntry={!showPassword}
               testID="password-input"
             />
-            <TouchableOpacity style={styles.eyeBtn} onPress={() => setShowPassword(s => !s)}>
-              <Text style={styles.eyeIcon}>{showPassword ? '🙈' : '👁️'}</Text>
+            <TouchableOpacity style={styles.eyeBtn} onPress={() => setShowPassword(s => !s)} testID="toggle-password-visibility">
+              <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#94A3B8" />
             </TouchableOpacity>
           </View>
         </View>
@@ -146,7 +147,6 @@ const styles = StyleSheet.create({
     flex: 1, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, color: '#0F172A',
   },
   eyeBtn: { paddingHorizontal: 14, paddingVertical: 14 },
-  eyeIcon: { fontSize: 16 },
   error: { color: '#DC2626', fontSize: 13, marginBottom: 14, textAlign: 'center' },
   primaryBtn: {
     backgroundColor: BSColors.primary, borderRadius: 12, paddingVertical: 16,
