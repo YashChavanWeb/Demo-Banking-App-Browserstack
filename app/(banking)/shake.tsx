@@ -5,7 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Animated, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ShakeScreen() {
@@ -15,7 +16,10 @@ export default function ShakeScreen() {
   const [showModal, setShowModal] = useState(false);
   const [suspiciousTx, setSuspiciousTx] = useState<{ merchant: string; amount: number; date: string } | null>(null);
   const [reported, setReported] = useState<string[]>([]);
-  const shakeAnim = useRef(new Animated.Value(0)).current;
+  const shakeAnim = useSharedValue(0);
+  const shakeStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: shakeAnim.value }],
+  }));
   const lastAccel = useRef({ x: 0, y: 0, z: 0 });
   const lastShakeTime = useRef(0);
 
@@ -36,12 +40,12 @@ export default function ShakeScreen() {
     setSuspiciousTx(tx);
     setShowModal(true);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-    Animated.sequence([
-      Animated.timing(shakeAnim, { toValue: 10, duration: 60, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: -10, duration: 60, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 6, duration: 60, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 0, duration: 60, useNativeDriver: true }),
-    ]).start();
+    shakeAnim.value = withSequence(
+      withTiming(10, { duration: 60 }),
+      withTiming(-10, { duration: 60 }),
+      withTiming(6, { duration: 60 }),
+      withTiming(0, { duration: 60 }),
+    );
   }, [shakeAnim, pickSuspiciousTx]);
 
   useEffect(() => {
@@ -82,7 +86,7 @@ export default function ShakeScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
-        <Animated.View style={[styles.alertCard, { transform: [{ translateX: shakeAnim }] }]}>
+        <Animated.View style={[styles.alertCard, shakeStyle]}>
           <View style={styles.alertIconWrap}>
             <Ionicons name="shield-outline" size={48} color={shakeEnabled ? BSColors.errorDark : BSColors.slate300} />
           </View>

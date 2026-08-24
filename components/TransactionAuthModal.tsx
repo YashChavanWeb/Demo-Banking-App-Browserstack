@@ -5,16 +5,16 @@
 import { BSColors } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import * as LocalAuthentication from 'expo-local-authentication';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Animated,
   Modal,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 
 const CORRECT_PIN = '1234';
 
@@ -34,7 +34,7 @@ export function TransactionAuthModal({ visible, amount, description, onSuccess, 
   const [pinError, setPinError] = useState('');
   const [bioLoading, setBioLoading] = useState(false);
   const [failReason, setFailReason] = useState('');
-  const shakeAnim = useRef(new Animated.Value(0)).current;
+  const shakeAnim = useSharedValue(0);
 
   useEffect(() => {
     if (visible) {
@@ -46,14 +46,18 @@ export function TransactionAuthModal({ visible, amount, description, onSuccess, 
     }
   }, [visible]);
 
+  const shakeStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: shakeAnim.value }],
+  }));
+
   const shake = () => {
-    Animated.sequence([
-      Animated.timing(shakeAnim, { toValue: 10, duration: 60, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: -10, duration: 60, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 8, duration: 60, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: -8, duration: 60, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 0, duration: 60, useNativeDriver: true }),
-    ]).start();
+    shakeAnim.value = withSequence(
+      withTiming(10, { duration: 60 }),
+      withTiming(-10, { duration: 60 }),
+      withTiming(8, { duration: 60 }),
+      withTiming(-8, { duration: 60 }),
+      withTiming(0, { duration: 60 }),
+    );
   };
 
   const handleSuccess = () => {
@@ -184,7 +188,7 @@ export function TransactionAuthModal({ visible, amount, description, onSuccess, 
               </View>
 
               {/* PIN dots */}
-              <Animated.View style={[s.pinDots, { transform: [{ translateX: shakeAnim }] }]}>
+              <Animated.View style={[s.pinDots, shakeStyle]}>
                 {[0,1,2,3].map(i => (
                   <View key={i} style={[s.pinDot, pin.length > i && s.pinDotFilled]} />
                 ))}
