@@ -1,5 +1,6 @@
 import { BSColors } from '@/constants/theme';
 import { AuthStore } from '@/store/auth';
+import { injectCameraImage } from '@/utils/browserstack-camera';
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Image } from 'expo-image';
@@ -34,6 +35,12 @@ export default function LivenessScreen() {
     if (!cameraRef.current) return;
     setPhase('capturing');
     try {
+      // Trigger BrowserStack camera injection API before capturing.
+      // This ensures the injected image is active in the camera feed
+      // when takePictureAsync() is called. Safe no-op on real devices.
+      await injectCameraImage(
+        'https://upload.wikimedia.org/wikipedia/commons/a/a7/Camponotus_flavomarginatus_ant.jpg'
+      );
       const photo = await cameraRef.current.takePictureAsync({
         quality: 0.8,
         skipProcessing: false,
