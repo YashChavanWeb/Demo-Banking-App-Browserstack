@@ -107,7 +107,7 @@ router.post('/signup', async (req, res) => {
     res.status(201).json({ token, user: { id: user.id, fullName: user.full_name, email: user.email, role: user.role, kycStatus: user.kyc_status } });
   } catch (err) {
     console.error('Signup error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }
 });
 
@@ -134,7 +134,7 @@ router.post('/login', async (req, res) => {
     res.json({ token, user: { id: user.id, fullName: user.full_name, email: user.email, role: user.role, kycStatus: user.kyc_status } });
   } catch (err) {
     console.error('Login error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }
 });
 
@@ -152,14 +152,15 @@ router.post('/send-otp', async (req, res) => {
       VALUES (${email}, ${code}, ${expiresAt})
     `;
 
-    // In production: send via email. For demo, return in response.
-    // Also send as FCM push notification (fire-and-forget)
+    // Send as FCM push notification (fire-and-forget)
     sendOtpPushToUser(email, code).catch(() => {});
 
-    res.json({ message: 'OTP sent', otp: code, expiresAt });
+    // Fix 2: Never return the OTP in the HTTP response — it defeats out-of-band delivery.
+    // The OTP is stored in the DB and delivered via push notification only.
+    res.json({ message: 'OTP sent' });
   } catch (err) {
     console.error('OTP error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }
 });
 
@@ -183,7 +184,7 @@ router.post('/verify-otp', async (req, res) => {
     res.json({ verified: true });
   } catch (err) {
     console.error('Verify OTP error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }
 });
 

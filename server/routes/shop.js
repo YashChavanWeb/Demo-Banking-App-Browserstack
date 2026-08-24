@@ -80,7 +80,7 @@ router.post('/order', authMiddleware, async (req, res) => {
     });
   } catch (err) {
     console.error('Shop order error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }
 });
 
@@ -105,7 +105,7 @@ router.get('/orders', authMiddleware, async (req, res) => {
     res.json({ orders });
   } catch (err) {
     console.error('Shop orders error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }
 });
 

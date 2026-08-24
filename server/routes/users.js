@@ -24,7 +24,7 @@ router.get('/', authMiddleware, async (req, res) => {
     });
   } catch (err) {
     console.error('Users error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }
 });
 

@@ -84,7 +84,7 @@ router.post('/', authMiddleware, async (req, res) => {
     res.json({ message });
   } catch (err) {
     console.error('Send message error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }
 });
 
@@ -114,7 +114,7 @@ router.get('/conversation/:userId', authMiddleware, async (req, res) => {
     res.json({ messages: rows });
   } catch (err) {
     console.error('Conversation error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }
 });
 
@@ -156,7 +156,7 @@ router.get('/inbox', authMiddleware, async (req, res) => {
     res.json({ conversations: rows });
   } catch (err) {
     console.error('Inbox error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }
 });
 
@@ -170,7 +170,7 @@ router.get('/unread-count', authMiddleware, async (req, res) => {
     `;
     res.json({ count });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }
 });
 

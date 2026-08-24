@@ -1,3 +1,4 @@
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { StripeProvider } from '@stripe/stripe-react-native';
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -124,21 +125,22 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <StripeProvider publishableKey={STRIPE_PK} merchantIdentifier="merchant.com.browserstackbank" urlScheme="demobankingapp">
-      <Stack>
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="signup" options={{ headerShown: false }} />
-        <Stack.Screen name="otp" options={{ headerShown: false }} />
-        <Stack.Screen name="biometric" options={{ headerShown: false }} />
-        <Stack.Screen name="liveness" options={{ headerShown: false }} />
-        <Stack.Screen name="kyc" options={{ headerShown: false }} />
-        <Stack.Screen name="dashboard" options={{ headerShown: false }} />
-        <Stack.Screen name="admin" options={{ headerShown: false }} />
-        <Stack.Screen name="(admin)" options={{ headerShown: false }} />
-        <Stack.Screen name="(banking)" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      </Stack>
-      <StatusBar style="light" />
-    </StripeProvider>
+    <ErrorBoundary>
+      <StripeProvider publishableKey={STRIPE_PK} merchantIdentifier="merchant.com.browserstackbank" urlScheme="demobankingapp">
+        <Stack>
+          <Stack.Screen name="index" options={{ headerShown: false }} />
+          <Stack.Screen name="signup" options={{ headerShown: false }} />
+          <Stack.Screen name="otp" options={{ headerShown: false }} />
+          <Stack.Screen name="biometric" options={{ headerShown: false }} />
+          <Stack.Screen name="liveness" options={{ headerShown: false }} />
+          <Stack.Screen name="kyc" options={{ headerShown: false }} />
+          <Stack.Screen name="dashboard" options={{ headerShown: false }} />
+          <Stack.Screen name="admin" options={{ headerShown: false }} />
+          <Stack.Screen name="(admin)" options={{ headerShown: false }} />
+          <Stack.Screen name="(banking)" options={{ headerShown: false }} />
+        </Stack>
+        <StatusBar style="light" />
+      </StripeProvider>
+    </ErrorBoundary>
   );
 }

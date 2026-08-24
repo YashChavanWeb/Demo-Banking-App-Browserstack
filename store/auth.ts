@@ -1,58 +1,102 @@
-// Auth store — persists token + user info across sessions
+// Auth store — Zustand-based, persists token + user info across sessions
+import type { AuthFlow, FlowConfig, User, UserRole } from '@/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { create } from 'zustand';
 import { api } from './api';
 
-let _role: 'user' | 'admin' = 'user';
-let _flow: 'login' | 'signup' = 'login';
-let _token: string | null = null;
-let _user: { id: string; fullName: string; email: string; role: string; kycStatus: string } | null = null;
-let _email: string = ''; // temp storage during OTP flow
-let _flowConfig = { biometric: true, fileUpload: true, cameraInjection: true };
+const DEFAULT_FLOW_CONFIG: FlowConfig = {
+  biometric: true,
+  fileUpload: true,
+  cameraInjection: true,
+};
 
-export const AuthStore = {
-  // Role / flow (kept for backward compat)
-  setRole: (role: 'user' | 'admin') => { _role = role; },
-  getRole: () => _role,
-  setFlow: (flow: 'login' | 'signup') => { _flow = flow; },
-  getFlow: () => _flow,
+interface AuthState {
+  role: UserRole;
+  flow: AuthFlow;
+  token: string | null;
+  user: User | null;
+  email: string;
+  flowConfig: FlowConfig;
+  setRole: (role: UserRole) => void;
+  setFlow: (flow: AuthFlow) => void;
+  setEmail: (email: string) => void;
+  setFlowConfig: (cfg: Partial<FlowConfig>) => void;
+  resetFlowConfig: () => void;
+  setToken: (token: string) => Promise<void>;
+  loadToken: () => Promise<string | null>;
+  clearToken: () => Promise<void>;
+  setUser: (user: User | null) => void;
+  clearUser: () => void;
+  logout: () => Promise<void>;
+}
 
-  // Email (used during OTP verification)
-  setEmail: (email: string) => { _email = email; },
-  getEmail: () => _email,
+export const useAuthStore = create<AuthState>((set, get) => ({
+  role: 'user',
+  flow: 'login',
+  token: null,
+  user: null,
+  email: '',
+  flowConfig: { ...DEFAULT_FLOW_CONFIG },
 
-  // Signup flow config (which steps to show)
-  setFlowConfig: (cfg: Partial<typeof _flowConfig>) => { _flowConfig = { ..._flowConfig, ...cfg }; },
-  getFlowConfig: () => _flowConfig,
-  resetFlowConfig: () => { _flowConfig = { biometric: true, fileUpload: true, cameraInjection: true }; },
+  setRole: (role) => set({ role }),
+  setFlow: (flow) => set({ flow }),
+  setEmail: (email) => set({ email }),
 
-  // Token
-  setToken: async (token: string) => {
-    _token = token;
-    api.setMemToken(token); // sync to API client immediately
+  setFlowConfig: (cfg) =>
+    set((state) => ({ flowConfig: { ...state.flowConfig, ...cfg } })),
+
+  resetFlowConfig: () => set({ flowConfig: { ...DEFAULT_FLOW_CONFIG } }),
+
+  setToken: async (token) => {
+    set({ token });
+    api.setMemToken(token);
     await AsyncStorage.setItem('auth_token', token);
   },
-  getToken: () => _token,
+
   loadToken: async () => {
-    _token = await AsyncStorage.getItem('auth_token');
-    return _token;
+    const stored = await AsyncStorage.getItem('auth_token');
+    if (stored) {
+      set({ token: stored });
+      api.setMemToken(stored);
+    }
+    return stored;
   },
+
   clearToken: async () => {
-    _token = null;
+    set({ token: null });
     await AsyncStorage.removeItem('auth_token');
   },
 
-  // User
-  setUser: (user: typeof _user) => { _user = user; if (user) _role = user.role as any; },
-  getUser: () => _user,
-  clearUser: () => { _user = null; },
+  setUser: (user) =>
+    set({ user, role: user ? (user.role as UserRole) : 'user' }),
 
-  // Full logout
+  clearUser: () => set({ user: null }),
+
   logout: async () => {
-    _token = null;
-    _user = null;
-    _role = 'user';
-    _flowConfig = { biometric: true, fileUpload: true, cameraInjection: true };
+    set({ token: null, user: null, role: 'user', flowConfig: { ...DEFAULT_FLOW_CONFIG } });
     await api.clearToken();
     await AsyncStorage.removeItem('auth_token');
   },
+}));
+
+// ── Backward-compat shim ──────────────────────────────────────────────────────
+// All existing code that imports AuthStore continues to work unchanged.
+export const AuthStore = {
+  getRole: () => useAuthStore.getState().role,
+  setRole: (role: UserRole) => useAuthStore.getState().setRole(role),
+  getFlow: () => useAuthStore.getState().flow,
+  setFlow: (flow: AuthFlow) => useAuthStore.getState().setFlow(flow),
+  getEmail: () => useAuthStore.getState().email,
+  setEmail: (email: string) => useAuthStore.getState().setEmail(email),
+  getFlowConfig: () => useAuthStore.getState().flowConfig,
+  setFlowConfig: (cfg: Partial<FlowConfig>) => useAuthStore.getState().setFlowConfig(cfg),
+  resetFlowConfig: () => useAuthStore.getState().resetFlowConfig(),
+  setToken: (token: string) => useAuthStore.getState().setToken(token),
+  getToken: () => useAuthStore.getState().token,
+  loadToken: () => useAuthStore.getState().loadToken(),
+  clearToken: () => useAuthStore.getState().clearToken(),
+  setUser: (user: User | null) => useAuthStore.getState().setUser(user),
+  getUser: () => useAuthStore.getState().user,
+  clearUser: () => useAuthStore.getState().clearUser(),
+  logout: () => useAuthStore.getState().logout(),
 };

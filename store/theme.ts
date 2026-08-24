@@ -1,16 +1,21 @@
-// Global theme store — green mode toggle
-let _greenMode = false;
-let _listeners: (() => void)[] = [];
+// Theme store — Zustand-based green mode toggle
+import { create } from 'zustand';
 
-function notify() { _listeners.forEach(fn => fn()); }
+interface ThemeState {
+  greenMode: boolean;
+  toggle: () => void;
+}
 
+export const useThemeStore = create<ThemeState>((set) => ({
+  greenMode: false,
+  toggle: () => set((state) => ({ greenMode: !state.greenMode })),
+}));
+
+// ── Backward-compat shim ──────────────────────────────────────────────────────
+// All existing code that imports ThemeStore continues to work unchanged.
 export const ThemeStore = {
-  isGreenMode: () => _greenMode,
-  toggle: () => { _greenMode = !_greenMode; notify(); },
-  subscribe: (fn: () => void) => {
-    _listeners.push(fn);
-    return () => { _listeners = _listeners.filter(l => l !== fn); };
-  },
-  // Returns the active primary color
-  primaryColor: () => _greenMode ? '#059669' : '#4F46E5',
+  isGreenMode: () => useThemeStore.getState().greenMode,
+  toggle: () => useThemeStore.getState().toggle(),
+  subscribe: (fn: () => void) => useThemeStore.subscribe(fn),
+  primaryColor: () => (useThemeStore.getState().greenMode ? '#059669' : '#4F46E5'),
 };

@@ -1,6 +1,7 @@
 import { BSColors } from '@/constants/theme';
 import { api } from '@/store/api';
 import { AuthStore } from '@/store/auth';
+import { firstError, validateEmail, validateRequired } from '@/utils/validation';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -26,7 +27,11 @@ export default function LoginScreen() {
   const autoFillWrong = () => { setEmail('yash@gmail.com'); setPassword('wrongpass'); setError(''); };
 
   const handleLogin = async () => {
-    if (!email || !password) { setError('Please fill in all fields.'); return; }
+    const validationError = firstError(
+      validateEmail(email),
+      validateRequired(password, 'Password'),
+    );
+    if (validationError) { setError(validationError); return; }
     setError('');
     setLoading(true);
     try {

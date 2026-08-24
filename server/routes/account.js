@@ -28,7 +28,7 @@ router.get('/profile', authMiddleware, async (req, res) => {
     });
   } catch (err) {
     console.error('Profile error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }
 });
 
@@ -49,7 +49,7 @@ router.get('/balance', authMiddleware, async (req, res) => {
     });
   } catch (err) {
     console.error('Balance error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }
 });
 
@@ -82,7 +82,7 @@ router.patch('/kyc', authMiddleware, async (req, res) => {
     res.json({ kycStatus: 'verified' });
   } catch (err) {
     console.error('KYC error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }
 });
 

@@ -1,6 +1,7 @@
 import { BSColors } from '@/constants/theme';
 import { api } from '@/store/api';
 import { AuthStore } from '@/store/auth';
+import { firstError, validateEmail, validatePassword, validatePasswordMatch, validateRequired } from '@/utils/validation';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -56,12 +57,13 @@ export default function SignupScreen() {
   };
 
   const handleSignup = async () => {
-    if (!fullName || !email || !password || !confirmPassword) {
-      setError('Please fill in all fields.'); return;
-    }
-    if (password !== confirmPassword) {
-      setError('Passwords do not match.'); return;
-    }
+    const validationError = firstError(
+      validateRequired(fullName, 'Full name'),
+      validateEmail(email),
+      validatePassword(password),
+      validatePasswordMatch(password, confirmPassword),
+    );
+    if (validationError) { setError(validationError); return; }
     setError('');
     setLoading(true);
     try {
@@ -69,13 +71,10 @@ export default function SignupScreen() {
       await AuthStore.setToken(res.token);
       AuthStore.setUser(res.user);
     } catch (err: any) {
-      if (err.message?.includes('already')) {
-        try {
-          const res = await api.login(email, password);
-          await AuthStore.setToken(res.token);
-          AuthStore.setUser(res.user);
-        } catch { /* proceed anyway in demo mode */ }
-      }
+      // Fix 9: Never silently log in an existing user on signup failure.
+      setError(err.message || 'Signup failed. Please try again.');
+      setLoading(false);
+      return;
     }
     AuthStore.setRole('user');
     AuthStore.setFlow('signup');
