@@ -1,3 +1,4 @@
+import { TransactionAuthModal } from '@/components/TransactionAuthModal';
 import { BSColors } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { api, API_URL } from '@/store/api';
@@ -425,18 +426,13 @@ export default function ShopScreen() {
         </SafeAreaView>
       </Modal>
 
-      {(() => {
-        const { TransactionAuthModal: TAM } = require('@/components/TransactionAuthModal');
-        return (
-          <TAM
-            visible={showAuth}
-            amount={`$${cartTotal.toFixed(2)}`}
-            description={`${cartCount} item${cartCount !== 1 ? 's' : ''}`}
-            onSuccess={() => { setShowAuth(false); executeCheckout(); }}
-            onCancel={() => { setShowAuth(false); setCheckoutError('Transaction could not be completed.'); }}
-          />
-        );
-      })()}
+      <TransactionAuthModal
+        visible={showAuth}
+        amount={`$${cartTotal.toFixed(2)}`}
+        description={`${cartCount} item${cartCount !== 1 ? 's' : ''}`}
+        onSuccess={() => { setShowAuth(false); executeCheckout(); }}
+        onCancel={() => { setShowAuth(false); setCheckoutError('Transaction could not be completed.'); }}
+      />
     </SafeAreaView>
   );
 }

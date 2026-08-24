@@ -1,3 +1,4 @@
+import { TransactionAuthModal } from '@/components/TransactionAuthModal';
 import { BSColors } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useStripe } from '@stripe/stripe-react-native';
@@ -6,6 +7,7 @@ import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  InteractionManager,
   ScrollView,
   StyleSheet,
   Text,
@@ -17,8 +19,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 const API_URL = 'https://bs-banking-app.onrender.com';
 const QUICK_AMOUNTS = [5, 10, 25, 50];
-
-const { TransactionAuthModal } = require('@/components/TransactionAuthModal');
 
 export default function PaymentScreen() {
   const router = useRouter();
@@ -188,7 +188,11 @@ export default function PaymentScreen() {
         visible={showAuth}
         amount={`$${parseFloat(amount || '0').toFixed(2)}`}
         description={description || 'payment'}
-        onSuccess={() => { setShowAuth(false); executePresent(); }}
+        onSuccess={() => {
+          setShowAuth(false);
+          // Wait for the modal close animation to finish before presenting Stripe sheet
+          InteractionManager.runAfterInteractions(() => { executePresent(); });
+        }}
         onCancel={() => { setShowAuth(false); setServerError('Transaction could not be completed.'); }}
       />
     </SafeAreaView>
