@@ -23,12 +23,12 @@ interface Card {
 }
 
 const CARD_COLORS = [
-  { label: 'Indigo', value: '#4F46E5' },
-  { label: 'Slate', value: '#334155' },
-  { label: 'Emerald', value: '#059669' },
-  { label: 'Rose', value: '#E11D48' },
-  { label: 'Amber', value: '#D97706' },
-  { label: 'Sky', value: '#0284C7' },
+  { label: 'Indigo', value: BSColors.accent },
+  { label: 'Slate', value: BSColors.slate700 },
+  { label: 'Emerald', value: BSColors.successDark },
+  { label: 'Rose', value: BSColors.errorDeep },
+  { label: 'Amber', value: BSColors.warningDark },
+  { label: 'Sky', value: BSColors.infoDeepAlt },
 ];
 
 const CARD_TYPES: { label: string; value: Card['type'] }[] = [
@@ -38,8 +38,8 @@ const CARD_TYPES: { label: string; value: Card['type'] }[] = [
 ];
 
 const INITIAL_CARDS: Card[] = [
-  { id: 'c1', label: 'Primary Card', number: '4242 4242 4242 4242', holder: 'ALEX JOHNSON', expiry: '12/28', color: '#4F46E5', type: 'visa', frozen: false },
-  { id: 'c2', label: 'Savings Card', number: '5555 5555 5555 4444', holder: 'ALEX JOHNSON', expiry: '09/27', color: '#059669', type: 'mastercard', frozen: false },
+  { id: 'c1', label: 'Primary Card', number: '4242 4242 4242 4242', holder: 'ALEX JOHNSON', expiry: '12/28', color: BSColors.accent, type: 'visa', frozen: false },
+  { id: 'c2', label: 'Savings Card', number: '5555 5555 5555 4444', holder: 'ALEX JOHNSON', expiry: '09/27', color: BSColors.successDark, type: 'mastercard', frozen: false },
 ];
 
 function CardDisplay({ card }: { card: Card }) {
@@ -158,10 +158,10 @@ export default function CardsScreen() {
 
         <View style={[styles.actionsRow, greenMode && { flexWrap: "wrap", gap: 16 }]}>
           {[
-            { label: activeCard.frozen ? 'Unfreeze' : 'Freeze', icon: activeCard.frozen ? 'snow' : 'snow-outline', color: activeCard.frozen ? primaryColor : '#64748B', bg: activeCard.frozen ? primaryBg : '#F1F5F9', onPress: toggleFreeze, testID: 'freeze-btn' },
-            { label: 'Details', icon: 'eye-outline', color: '#64748B', bg: '#F1F5F9', onPress: () => Alert.alert('Card Details', `Number: ${activeCard.number}\nExpiry: ${activeCard.expiry}\nCVV: •••`), testID: 'details-btn' },
-            { label: 'Limits', icon: 'speedometer-outline', color: '#64748B', bg: '#F1F5F9', onPress: () => Alert.alert('Limits', 'Daily: $5,000\nMonthly: $50,000'), testID: 'limits-btn' },
-            { label: 'Delete', icon: 'trash-outline', color: '#DC2626', bg: '#FEF2F2', onPress: deleteCard, testID: 'delete-card-btn' },
+            { label: activeCard.frozen ? 'Unfreeze' : 'Freeze', icon: activeCard.frozen ? 'snow' : 'snow-outline', color: activeCard.frozen ? primaryColor : BSColors.darkGray, bg: activeCard.frozen ? primaryBg : BSColors.lightGray, onPress: toggleFreeze, testID: 'freeze-btn' },
+            { label: 'Details', icon: 'eye-outline', color: BSColors.darkGray, bg: BSColors.lightGray, onPress: () => Alert.alert('Card Details', `Number: ${activeCard.number}\nExpiry: ${activeCard.expiry}\nCVV: •••`), testID: 'details-btn' },
+            { label: 'Limits', icon: 'speedometer-outline', color: BSColors.darkGray, bg: BSColors.lightGray, onPress: () => Alert.alert('Limits', 'Daily: $5,000\nMonthly: $50,000'), testID: 'limits-btn' },
+            { label: 'Delete', icon: 'trash-outline', color: BSColors.errorDark, bg: BSColors.errorBg, onPress: deleteCard, testID: 'delete-card-btn' },
           ].map(a => (
             <TouchableOpacity key={a.label} style={styles.actionBtn} onPress={a.onPress} testID={a.testID}>
               <View style={[styles.actionIcon, { backgroundColor: a.bg }]}>
@@ -185,8 +185,8 @@ export default function CardsScreen() {
           ))}
           <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
             <Text style={styles.infoLabel}>Status</Text>
-            <View style={[styles.statusBadge, { backgroundColor: activeCard.frozen ? primaryBg : '#F0FDF4' }]}>
-              <Text style={[styles.statusText, { color: activeCard.frozen ? primaryColor : '#059669' }]}>{activeCard.frozen ? 'Frozen' : 'Active'}</Text>
+            <View style={[styles.statusBadge, { backgroundColor: activeCard.frozen ? primaryBg : BSColors.successBg }]}>
+              <Text style={[styles.statusText, { color: activeCard.frozen ? primaryColor : BSColors.successDark }]}>{activeCard.frozen ? 'Frozen' : 'Active'}</Text>
             </View>
           </View>
         </View>
@@ -262,58 +262,58 @@ export default function CardsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F8FAFF' },
+  safe: { flex: 1, backgroundColor: BSColors.bgPageAlt },
   content: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  pageTitle: { color: '#0F172A', fontSize: 22, fontWeight: '700' },
+  pageTitle: { color: BSColors.textPrimary, fontSize: 22, fontWeight: '700' },
   addBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: BSColors.primary, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 },
-  addBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  addBtnText: { color: BSColors.white, fontSize: 13, fontWeight: '700' },
   cardDisplay: { borderRadius: 20, padding: 24, marginBottom: 16, minHeight: 180, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 16, elevation: 8, overflow: 'hidden' },
   frozenOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)', borderRadius: 20, alignItems: 'center', justifyContent: 'center', zIndex: 10 },
-  frozenText: { color: '#fff', fontSize: 16, fontWeight: '700', marginTop: 8 },
+  frozenText: { color: BSColors.white, fontSize: 16, fontWeight: '700', marginTop: 8 },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24 },
   cardLabel: { color: 'rgba(255,255,255,0.9)', fontSize: 14, fontWeight: '600' },
   cardTypeText: { color: 'rgba(255,255,255,0.8)', fontSize: 13, fontWeight: '700', letterSpacing: 1 },
   cardNumberRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 24 },
-  cardNumber: { color: '#fff', fontSize: 16, fontWeight: '600', letterSpacing: 2, flex: 1 },
+  cardNumber: { color: BSColors.white, fontSize: 16, fontWeight: '600', letterSpacing: 2, flex: 1 },
   cardBottom: { flexDirection: 'row', justifyContent: 'space-between' },
   cardMeta: { color: 'rgba(255,255,255,0.6)', fontSize: 9, letterSpacing: 1, marginBottom: 2 },
-  cardMetaValue: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  cardMetaValue: { color: BSColors.white, fontSize: 13, fontWeight: '600' },
   cardSelector: { marginBottom: 20 },
-  cardChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#E2E8F0' },
-  cardChipActive: { backgroundColor: '#EEF2FF' },
+  cardChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: BSColors.white, borderWidth: 1.5, borderColor: BSColors.mediumGray },
+  cardChipActive: { backgroundColor: BSColors.indigoBg },
   cardChipDot: { width: 8, height: 8, borderRadius: 4 },
-  cardChipText: { color: '#64748B', fontSize: 12, fontWeight: '600' },
+  cardChipText: { color: BSColors.darkGray, fontSize: 12, fontWeight: '600' },
   actionsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
   actionBtn: { alignItems: 'center', gap: 6 },
   actionIcon: { width: 52, height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  actionLabel: { color: '#64748B', fontSize: 11, fontWeight: '600' },
-  infoCard: { backgroundColor: '#fff', borderRadius: 16, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
-  infoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
-  infoLabel: { color: '#64748B', fontSize: 14 },
-  infoValue: { color: '#0F172A', fontSize: 14, fontWeight: '600' },
+  actionLabel: { color: BSColors.darkGray, fontSize: 11, fontWeight: '600' },
+  infoCard: { backgroundColor: BSColors.white, borderRadius: 16, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+  infoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: BSColors.lightGray },
+  infoLabel: { color: BSColors.darkGray, fontSize: 14 },
+  infoValue: { color: BSColors.textPrimary, fontSize: 14, fontWeight: '600' },
   statusBadge: { borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
   statusText: { fontSize: 12, fontWeight: '700' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-  modalCard: { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: '90%' },
+  modalCard: { backgroundColor: BSColors.white, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: '90%' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  modalTitle: { color: '#0F172A', fontSize: 18, fontWeight: '700' },
-  fieldLabel: { color: '#334155', fontSize: 13, fontWeight: '600', marginBottom: 8, marginTop: 16 },
-  fieldInput: { backgroundColor: '#F8FAFF', borderRadius: 12, borderWidth: 1.5, borderColor: '#C7D2FE', paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: '#0F172A' },
+  modalTitle: { color: BSColors.textPrimary, fontSize: 18, fontWeight: '700' },
+  fieldLabel: { color: BSColors.slate700, fontSize: 13, fontWeight: '600', marginBottom: 8, marginTop: 16 },
+  fieldInput: { backgroundColor: BSColors.bgPageAlt, borderRadius: 12, borderWidth: 1.5, borderColor: BSColors.indigoBorder, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: BSColors.textPrimary },
   typeRow: { flexDirection: 'row', gap: 10 },
-  typeChip: { flex: 1, paddingVertical: 10, borderRadius: 10, backgroundColor: '#F1F5F9', alignItems: 'center', borderWidth: 1.5, borderColor: '#E2E8F0' },
-  typeChipActive: { backgroundColor: '#EEF2FF', borderColor: BSColors.primary },
-  typeChipText: { color: '#64748B', fontSize: 13, fontWeight: '600' },
+  typeChip: { flex: 1, paddingVertical: 10, borderRadius: 10, backgroundColor: BSColors.lightGray, alignItems: 'center', borderWidth: 1.5, borderColor: BSColors.mediumGray },
+  typeChipActive: { backgroundColor: BSColors.indigoBg, borderColor: BSColors.primary },
+  typeChipText: { color: BSColors.darkGray, fontSize: 13, fontWeight: '600' },
   typeChipTextActive: { color: BSColors.primary },
   colorRow: { flexDirection: 'row', gap: 12, flexWrap: 'wrap' },
   colorDot: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  colorDotSelected: { borderWidth: 3, borderColor: '#fff', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 4 },
+  colorDotSelected: { borderWidth: 3, borderColor: BSColors.white, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 4 },
   previewCard: { borderRadius: 16, padding: 20, marginTop: 4, minHeight: 120 },
   previewLabel: { color: 'rgba(255,255,255,0.85)', fontSize: 13, fontWeight: '600', marginBottom: 16 },
-  previewNumber: { color: '#fff', fontSize: 15, fontWeight: '600', letterSpacing: 2, marginBottom: 16 },
+  previewNumber: { color: BSColors.white, fontSize: 15, fontWeight: '600', letterSpacing: 2, marginBottom: 16 },
   previewBottom: { flexDirection: 'row', justifyContent: 'space-between' },
   previewHolder: { color: 'rgba(255,255,255,0.85)', fontSize: 12 },
   previewExpiry: { color: 'rgba(255,255,255,0.85)', fontSize: 12 },
   createBtn: { backgroundColor: BSColors.primary, borderRadius: 14, paddingVertical: 16, alignItems: 'center', marginTop: 24, marginBottom: 8 },
-  createBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  createBtnText: { color: BSColors.white, fontSize: 16, fontWeight: '700' },
 });

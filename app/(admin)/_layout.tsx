@@ -10,8 +10,8 @@ export default function AdminLayout() {
         tabBarActiveTintColor: BSColors.orange,
         tabBarInactiveTintColor: '#999',
         tabBarStyle: {
-          backgroundColor: '#fff',
-          borderTopColor: '#F0F0F0',
+          backgroundColor: BSColors.white,
+          borderTopColor: BSColors.borderLight,
           borderTopWidth: 1,
           height: 64,
           paddingBottom: 10,

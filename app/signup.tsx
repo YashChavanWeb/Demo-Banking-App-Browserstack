@@ -188,8 +188,8 @@ export default function SignupScreen() {
 
             {FLOW_OPTIONS.map(opt => (
               <View key={opt.key} style={styles.flowRow}>
-                <View style={[styles.flowIcon, { backgroundColor: flowConfig[opt.key] ? BSColors.primary + '15' : '#F1F5F9' }]}>
-                  <Ionicons name={opt.icon} size={20} color={flowConfig[opt.key] ? BSColors.primary : '#94A3B8'} />
+                <View style={[styles.flowIcon, { backgroundColor: flowConfig[opt.key] ? BSColors.primary + '15' : BSColors.lightGray }]}>
+                  <Ionicons name={opt.icon} size={20} color={flowConfig[opt.key] ? BSColors.primary : BSColors.slate300} />
                 </View>
                 <View style={styles.flowText}>
                   <Text style={styles.flowLabel}>{opt.label}</Text>
@@ -198,8 +198,8 @@ export default function SignupScreen() {
                 <Switch
                   value={flowConfig[opt.key]}
                   onValueChange={() => setFlowConfig(prev => ({ ...prev, [opt.key]: !prev[opt.key] }))}
-                  trackColor={{ false: '#E2E8F0', true: BSColors.primary + '80' }}
-                  thumbColor={flowConfig[opt.key] ? BSColors.primary : '#94A3B8'}
+                  trackColor={{ false: BSColors.mediumGray, true: BSColors.primary + '80' }}
+                  thumbColor={flowConfig[opt.key] ? BSColors.primary : BSColors.slate300}
                   testID={`toggle-${opt.key}`}
                 />
               </View>
@@ -216,8 +216,8 @@ export default function SignupScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F8FAFF' },
-  container: { flex: 1, backgroundColor: '#F8FAFF' },
+  safe: { flex: 1, backgroundColor: BSColors.bgPageAlt },
+  container: { flex: 1, backgroundColor: BSColors.bgPageAlt },
   content: { paddingHorizontal: 28, paddingTop: 48, paddingBottom: 32 },
   logoContainer: { alignItems: 'center', marginBottom: 36 },
   logo: { width: 200, height: 54 },
@@ -226,43 +226,43 @@ const styles = StyleSheet.create({
   inputGroup: { marginBottom: 20 },
   label: { color: '#333', fontSize: 14, fontWeight: '600', marginBottom: 8 },
   input: {
-    backgroundColor: '#fff', borderRadius: 12, borderWidth: 1.5,
-    borderColor: '#C7D2FE', paddingHorizontal: 16, paddingVertical: 14,
+    backgroundColor: BSColors.white, borderRadius: 12, borderWidth: 1.5,
+    borderColor: BSColors.indigoBorder, paddingHorizontal: 16, paddingVertical: 14,
     fontSize: 15, color: '#111',
   },
   passwordWrap: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#fff', borderRadius: 12, borderWidth: 1.5, borderColor: '#C7D2FE',
+    backgroundColor: BSColors.white, borderRadius: 12, borderWidth: 1.5, borderColor: BSColors.indigoBorder,
   },
   passwordInput: { flex: 1, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, color: '#111' },
   eyeBtn: { paddingHorizontal: 14, paddingVertical: 14 },
-  error: { color: '#D32F2F', fontSize: 13, marginBottom: 14, textAlign: 'center' },
+  error: { color: BSColors.errorDeeper, fontSize: 13, marginBottom: 14, textAlign: 'center' },
   primaryBtn: {
     backgroundColor: BSColors.primary, borderRadius: 12, paddingVertical: 16,
     alignItems: 'center', marginBottom: 20, marginTop: 8,
     shadowColor: BSColors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
   },
-  primaryBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  primaryBtnText: { color: BSColors.white, fontSize: 16, fontWeight: '700' },
   linkRow: { marginBottom: 36 },
   linkText: { color: '#666', textAlign: 'center', fontSize: 14 },
   link: { color: BSColors.primary, fontWeight: '700' },
-  mockBar: { backgroundColor: '#EEF2FF', borderRadius: 14, padding: 16, borderWidth: 1.5, borderColor: BSColors.primary, marginTop: 8 },
+  mockBar: { backgroundColor: BSColors.indigoBg, borderRadius: 14, padding: 16, borderWidth: 1.5, borderColor: BSColors.primary, marginTop: 8 },
   mockBarTitle: { color: BSColors.primary, fontWeight: '700', fontSize: 11, marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1 },
   mockBtnRow: { flexDirection: 'row', gap: 8 },
   mockBtn: { backgroundColor: BSColors.primary, borderRadius: 8, paddingVertical: 11, alignItems: 'center', justifyContent: 'center' },
   customizeBtn: { flexDirection: 'row', paddingHorizontal: 12 },
-  mockBtnText: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  mockBtnText: { color: BSColors.white, fontSize: 13, fontWeight: '600' },
   // Modal
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
-  customizeModal: { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 36 },
+  customizeModal: { backgroundColor: BSColors.white, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 36 },
   customizeHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
-  customizeTitle: { color: '#0F172A', fontSize: 18, fontWeight: '800' },
-  customizeSub: { color: '#64748B', fontSize: 13, marginBottom: 20 },
-  flowRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F1F5F9', gap: 12 },
+  customizeTitle: { color: BSColors.textPrimary, fontSize: 18, fontWeight: '800' },
+  customizeSub: { color: BSColors.darkGray, fontSize: 13, marginBottom: 20 },
+  flowRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: BSColors.lightGray, gap: 12 },
   flowIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   flowText: { flex: 1 },
-  flowLabel: { color: '#0F172A', fontSize: 14, fontWeight: '700', marginBottom: 2 },
-  flowDesc: { color: '#64748B', fontSize: 12 },
+  flowLabel: { color: BSColors.textPrimary, fontSize: 14, fontWeight: '700', marginBottom: 2 },
+  flowDesc: { color: BSColors.darkGray, fontSize: 12 },
   customizeDone: { backgroundColor: BSColors.primary, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 20 },
-  customizeDoneText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  customizeDoneText: { color: BSColors.white, fontSize: 15, fontWeight: '700' },
 });

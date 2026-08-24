@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingBottom: 40 },
   heroCard: { borderRadius: 24, padding: 32, alignItems: 'center', marginBottom: 24, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 16, elevation: 8 },
   heroFlag: { fontSize: 56, marginBottom: 8 },
-  heroCode: { color: '#fff', fontSize: 28, fontWeight: '800', letterSpacing: 1, textAlign: 'center' },
+  heroCode: { color: BSColors.white, fontSize: 28, fontWeight: '800', letterSpacing: 1, textAlign: 'center' },
   heroSub: { color: 'rgba(255,255,255,0.85)', fontSize: 15, fontWeight: '500', marginBottom: 16, textAlign: 'center' },
   heroBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6 },
   heroBadgeText: { color: 'rgba(255,255,255,0.85)', fontSize: 12 },

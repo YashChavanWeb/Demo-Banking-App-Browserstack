@@ -84,8 +84,8 @@ export default function NetworkScreen() {
   useEffect(() => { checkConnection(); }, []);
 
   const isOnline = online === true;
-  const statusColor = online === null ? '#94A3B8' : isOnline ? BSColors.success : BSColors.error;
-  const statusBg = online === null ? BSColors.lightGray : isOnline ? '#F0FDF4' : '#FEF2F2';
+  const statusColor = online === null ? BSColors.slate300 : isOnline ? BSColors.success : BSColors.error;
+  const statusBg = online === null ? BSColors.lightGray : isOnline ? BSColors.successBg : BSColors.errorBg;
   const statusText = checking ? 'Measuring...' : online === null ? 'Checking...' : isOnline ? 'Online' : 'Offline';
 
   const speedColor = speedMbps === null ? statusColor
@@ -210,6 +210,6 @@ const styles = StyleSheet.create({
   qualityText: { fontSize: 13, fontWeight: '700' },
   checkBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 14, paddingVertical: 16, marginBottom: 12 },
   checkBtnDisabled: { opacity: 0.6 },
-  checkBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  checkBtnText: { color: BSColors.white, fontSize: 16, fontWeight: '700' },
   note: { color: BSColors.darkGray, fontSize: 12, textAlign: 'center' },
 });

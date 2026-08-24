@@ -179,7 +179,7 @@ export default function TransferScreen() {
             testID={`recipient-${r.id}`}
           >
             <View style={[styles.avatar, selectedRecipient === r.id && { backgroundColor: primaryColor }]}>
-              <Text style={[styles.avatarText, selectedRecipient === r.id && { color: '#fff' }]}>{r.avatar}</Text>
+              <Text style={[styles.avatarText, selectedRecipient === r.id && { color: BSColors.white }]}>{r.avatar}</Text>
             </View>
             <View style={styles.recipientInfo}>
               <Text style={[styles.recipientName, selectedRecipient === r.id && { color: primaryColor }]}>{r.name}</Text>
@@ -212,7 +212,7 @@ export default function TransferScreen() {
             style={[styles.quickPill, amount === a.toString() && { backgroundColor: primaryColor, borderColor: primaryColor }]}
             onPress={() => { setAmount(a.toString()); setErrorState(''); setPayReady(false); }}
           >
-            <Text style={[styles.quickPillText, amount === a.toString() && { color: '#fff' }]}>${a}</Text>
+            <Text style={[styles.quickPillText, amount === a.toString() && { color: BSColors.white }]}>${a}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -228,15 +228,15 @@ export default function TransferScreen() {
           style={[styles.tabBtn, tab === 'send' && { backgroundColor: primaryColor }]}
           onPress={() => switchTab('send')}
         >
-          <Ionicons name="swap-horizontal" size={16} color={tab === 'send' ? '#fff' : primaryColor} style={{ marginRight: 6 }} />
-          <Text style={[styles.tabBtnText, { color: tab === 'send' ? '#fff' : primaryColor }]}>Send Money</Text>
+          <Ionicons name="swap-horizontal" size={16} color={tab === 'send' ? BSColors.white : primaryColor} style={{ marginRight: 6 }} />
+          <Text style={[styles.tabBtnText, { color: tab === 'send' ? BSColors.white : primaryColor }]}>Send Money</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tabBtn, tab === 'pay' && { backgroundColor: primaryColor }]}
           onPress={() => switchTab('pay')}
         >
-          <Ionicons name="card-outline" size={16} color={tab === 'pay' ? '#fff' : primaryColor} style={{ marginRight: 6 }} />
-          <Text style={[styles.tabBtnText, { color: tab === 'pay' ? '#fff' : primaryColor }]}>Pay via Card</Text>
+          <Ionicons name="card-outline" size={16} color={tab === 'pay' ? BSColors.white : primaryColor} style={{ marginRight: 6 }} />
+          <Text style={[styles.tabBtnText, { color: tab === 'pay' ? BSColors.white : primaryColor }]}>Pay via Card</Text>
         </TouchableOpacity>
       </View>
 
@@ -449,9 +449,9 @@ const styles = StyleSheet.create({
   avatarText: { color: BSColors.darkGray, fontSize: 14, fontWeight: '700' },
   recipientInfo: { flex: 1 },
   recipientName: { color: BSColors.textPrimary, fontSize: 14, fontWeight: '600', marginBottom: 2 },
-  recipientAccount: { color: '#94A3B8', fontSize: 12 },
+  recipientAccount: { color: BSColors.slate300, fontSize: 12 },
   emptyRecipients: { alignItems: 'center', paddingVertical: 24, gap: 10 },
-  emptyRecipientsText: { color: '#94A3B8', fontSize: 13, textAlign: 'center' },
+  emptyRecipientsText: { color: BSColors.slate300, fontSize: 13, textAlign: 'center' },
 
   amountRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: BSColors.white, borderRadius: 14, borderWidth: 1.5, borderColor: BSColors.primaryBorder, paddingHorizontal: 16, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1 },
   currencySymbol: { color: BSColors.textSecondary, fontSize: 24, fontWeight: '700', marginRight: 8 },
@@ -462,18 +462,18 @@ const styles = StyleSheet.create({
 
   remarksInput: { backgroundColor: BSColors.white, borderRadius: 14, borderWidth: 1.5, borderColor: BSColors.mediumGray, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, color: BSColors.textPrimary, marginBottom: 20 },
 
-  errorCard: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#FEF2F2', borderRadius: 12, padding: 12, marginBottom: 14, borderWidth: 1, borderColor: '#FECACA' },
+  errorCard: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: BSColors.errorBg, borderRadius: 12, padding: 12, marginBottom: 14, borderWidth: 1, borderColor: BSColors.errorBorder },
   errorCardText: { color: BSColors.error, fontSize: 13, flex: 1 },
 
   primaryBtn: { borderRadius: 14, paddingVertical: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 10, elevation: 4, marginBottom: 8 },
-  primaryBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  primaryBtnText: { color: BSColors.white, fontSize: 16, fontWeight: '700' },
   btnDisabled: { opacity: 0.6 },
 
-  stripeBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#F0FDF4', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6, alignSelf: 'center', marginBottom: 20, borderWidth: 1, borderColor: '#BBF7D0' },
+  stripeBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: BSColors.successBg, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6, alignSelf: 'center', marginBottom: 20, borderWidth: 1, borderColor: BSColors.successBorder },
   stripeBadgeText: { fontSize: 12, fontWeight: '600' },
 
-  infoCard: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#EFF6FF', borderRadius: 12, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: '#BFDBFE' },
-  infoText: { color: '#1D4ED8', fontSize: 12, flex: 1 },
+  infoCard: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: BSColors.primaryBg, borderRadius: 12, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: BSColors.primaryBorder },
+  infoText: { color: BSColors.blueDark, fontSize: 12, flex: 1 },
   infoCode: { fontWeight: '700' },
 
   testCards: { marginTop: 20, backgroundColor: BSColors.lightGray, borderRadius: 14, padding: 16, borderWidth: 1, borderColor: BSColors.mediumGray },
@@ -482,20 +482,20 @@ const styles = StyleSheet.create({
   testCardNum: { color: BSColors.textSecondary, fontSize: 12, fontFamily: 'monospace' },
   testCardBadge: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
   testCardLabel: { fontSize: 11, fontWeight: '700' },
-  testCardNote: { color: '#94A3B8', fontSize: 11, marginTop: 6 },
+  testCardNote: { color: BSColors.slate300, fontSize: 11, marginTop: 6 },
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center', padding: 24 },
   modalCard: { backgroundColor: BSColors.white, borderRadius: 28, padding: 32, width: '100%', alignItems: 'center' },
   successIconWrap: { width: 80, height: 80, borderRadius: 40, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
   modalTitle: { color: BSColors.textPrimary, fontSize: 22, fontWeight: '800', marginBottom: 8 },
   modalSubtitle: { color: BSColors.textSecondary, fontSize: 15, textAlign: 'center', marginBottom: 8 },
-  modalRemarks: { color: '#94A3B8', fontSize: 13, fontStyle: 'italic', marginBottom: 16 },
+  modalRemarks: { color: BSColors.slate300, fontSize: 13, fontStyle: 'italic', marginBottom: 16 },
   modalRef: { backgroundColor: BSColors.lightGray, borderRadius: 12, padding: 14, width: '100%', alignItems: 'center', marginBottom: 10 },
-  modalRefLabel: { color: '#94A3B8', fontSize: 12, marginBottom: 4 },
+  modalRefLabel: { color: BSColors.slate300, fontSize: 12, marginBottom: 4 },
   modalRefValue: { color: BSColors.textPrimary, fontSize: 15, fontWeight: '700' },
   modalBalanceRow: { borderRadius: 12, padding: 14, width: '100%', alignItems: 'center', marginBottom: 24 },
   modalBalanceLabel: { color: BSColors.darkGray, fontSize: 12, marginBottom: 4 },
   modalBalanceValue: { fontSize: 20, fontWeight: '800' },
   doneBtn: { borderRadius: 14, paddingVertical: 14, paddingHorizontal: 48 },
-  doneBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  doneBtnText: { color: BSColors.white, fontSize: 16, fontWeight: '700' },
 });

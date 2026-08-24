@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
   errorTitle: { color: BSColors.textPrimary, fontSize: 18, fontWeight: '700' },
   errorSub: { color: BSColors.darkGray, fontSize: 14, textAlign: 'center' },
   retryBtn: { borderRadius: 14, paddingHorizontal: 28, paddingVertical: 12, marginTop: 8 },
-  retryText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  retryText: { color: BSColors.white, fontSize: 15, fontWeight: '700' },
   bottomBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', backgroundColor: BSColors.white, borderTopWidth: 1, borderTopColor: BSColors.mediumGray, paddingVertical: 10, paddingBottom: 16 },
   navBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
   navBtnDisabled: { opacity: 0.4 },

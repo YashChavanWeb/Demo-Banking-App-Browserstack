@@ -1,3 +1,4 @@
+import { BSColors } from '@/constants/theme';
 import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, View, ViewStyle } from 'react-native';
 
@@ -79,7 +80,7 @@ export function CurrencyShimmer() {
   return (
     <View style={{ gap: 0 }}>
       {/* Hero card shimmer */}
-      <View style={{ borderRadius: 24, padding: 32, alignItems: 'center', marginBottom: 24, backgroundColor: '#E0E7FF' }}>
+      <View style={{ borderRadius: 24, padding: 32, alignItems: 'center', marginBottom: 24, backgroundColor: BSColors.indigoLight }}>
         <Shimmer width={64} height={64} borderRadius={32} style={{ marginBottom: 12 }} />
         <Shimmer width="40%" height={36} borderRadius={10} style={{ marginBottom: 8 }} />
         <Shimmer width="55%" height={16} borderRadius={8} style={{ marginBottom: 20 }} />
@@ -87,9 +88,9 @@ export function CurrencyShimmer() {
       </View>
       {/* Info rows shimmer */}
       <Shimmer width="35%" height={14} borderRadius={7} style={{ marginBottom: 12 }} />
-      <View style={{ backgroundColor: '#fff', borderRadius: 18, overflow: 'hidden' }}>
+      <View style={{ backgroundColor: BSColors.white, borderRadius: 18, overflow: 'hidden' }}>
         {[1, 2, 3, 4, 5, 6, 7].map(i => (
-          <View key={i} style={{ flexDirection: 'row', alignItems: 'center', padding: 14, gap: 12, borderBottomWidth: i < 7 ? 1 : 0, borderBottomColor: '#F1F5F9' }}>
+          <View key={i} style={{ flexDirection: 'row', alignItems: 'center', padding: 14, gap: 12, borderBottomWidth: i < 7 ? 1 : 0, borderBottomColor: BSColors.lightGray }}>
             <Shimmer width={36} height={36} borderRadius={10} />
             <View style={{ flex: 1, gap: 6 }}>
               <Shimmer width="30%" height={11} borderRadius={6} />
@@ -116,13 +117,13 @@ export function BalanceShimmer() {
 }
 
 const styles = StyleSheet.create({
-  shimmer: { backgroundColor: '#C7D2FE' },
+  shimmer: { backgroundColor: BSColors.indigoBorder },
   cardShimmer: { marginBottom: 16 },
   recipientShimmer: { gap: 10, marginBottom: 24 },
-  recipientRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 14, padding: 14, gap: 12 },
+  recipientRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: BSColors.white, borderRadius: 14, padding: 14, gap: 12 },
   recipientText: { flex: 1 },
-  txShimmer: { backgroundColor: '#fff', borderRadius: 16, overflow: 'hidden' },
-  txRow: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  txShimmer: { backgroundColor: BSColors.white, borderRadius: 16, overflow: 'hidden' },
+  txRow: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12, borderBottomWidth: 1, borderBottomColor: BSColors.lightGray },
   txText: { flex: 1 },
   balanceShimmer: { backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 20, padding: 24, marginBottom: 20 },
   balanceRow: { flexDirection: 'row', justifyContent: 'space-between' },

@@ -14,6 +14,10 @@ export interface User {
   email: string;
   role: UserRole;
   kycStatus: KycStatus;
+  // Some endpoints return these additional fields
+  name?: string;
+  avatar?: string;
+  account?: string;
 }
 
 export interface FlowConfig {
@@ -83,19 +87,28 @@ export interface Order {
 
 export interface Message {
   id: string;
-  senderId: string;
-  recipientId: string;
+  // Server returns snake_case for chat messages
+  sender_id: string;
   body: string;
-  createdAt: string;
-  read: boolean;
+  created_at: string;
+  // camelCase aliases (used in some contexts)
+  senderId?: string;
+  recipientId?: string;
+  read?: boolean;
 }
 
 export interface Conversation {
-  userId: string;
-  fullName: string;
-  lastMessage: string;
-  unreadCount: number;
-  updatedAt: string;
+  // Server returns snake_case for inbox conversations
+  partner_id: string;
+  partner_name: string;
+  body: string;
+  created_at: string;
+  sender_id: string;
+  unread_count: number;
+  // camelCase aliases
+  userId?: string;
+  fullName?: string;
+  unreadCount?: number;
 }
 
 // ── API responses ─────────────────────────────────────────────────────────────
@@ -110,7 +123,7 @@ export interface TransferResponse {
   newBalance: number;
 }
 
-export interface ProfileResponse extends User {
+export interface ProfileResponse extends Omit<User, 'account'> {
   memberSince: string;
   account: { id: string; balance: number; currency: string } | null;
 }

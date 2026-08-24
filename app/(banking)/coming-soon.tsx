@@ -7,10 +7,10 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const FEATURE_META: Record<string, { icon: keyof typeof Ionicons.glyphMap; color: string; desc: string }> = {
-  Agents: { icon: 'hardware-chip-outline', color: '#7C3AED', desc: 'AI-powered banking agents that automate tasks, answer questions, and manage your finances intelligently.' },
-  A11y: { icon: 'accessibility-outline', color: '#0891B2', desc: 'Accessibility testing and compliance tools to ensure the app works for everyone, including users with disabilities.' },
-  Visual: { icon: 'eye-outline', color: '#D97706', desc: 'Visual regression testing to catch UI changes and ensure pixel-perfect consistency across releases.' },
-  Local: { icon: 'server-outline', color: '#059669', desc: 'BrowserStack Local integration for testing against your local or internal network environments.' },
+  Agents: { icon: 'hardware-chip-outline', color: BSColors.purple, desc: 'AI-powered banking agents that automate tasks, answer questions, and manage your finances intelligently.' },
+  A11y: { icon: 'accessibility-outline', color: BSColors.infoDark, desc: 'Accessibility testing and compliance tools to ensure the app works for everyone, including users with disabilities.' },
+  Visual: { icon: 'eye-outline', color: BSColors.warningDark, desc: 'Visual regression testing to catch UI changes and ensure pixel-perfect consistency across releases.' },
+  Local: { icon: 'server-outline', color: BSColors.successDark, desc: 'BrowserStack Local integration for testing against your local or internal network environments.' },
 };
 
 export default function ComingSoonScreen() {
@@ -59,19 +59,19 @@ export default function ComingSoonScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F8FAFF' },
+  safe: { flex: 1, backgroundColor: BSColors.bgPageAlt },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 1 },
-  pageTitle: { color: '#0F172A', fontSize: 18, fontWeight: '700' },
+  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: BSColors.white, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 1 },
+  pageTitle: { color: BSColors.textPrimary, fontSize: 18, fontWeight: '700' },
   content: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, paddingBottom: 40 },
   iconWrap: { width: 120, height: 120, borderRadius: 36, alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
   badge: { flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6, borderWidth: 1, marginBottom: 20 },
   badgeText: { fontSize: 12, fontWeight: '700' },
-  title: { color: '#0F172A', fontSize: 26, fontWeight: '800', marginBottom: 12, textAlign: 'center' },
-  desc: { color: '#64748B', fontSize: 14, lineHeight: 22, textAlign: 'center', marginBottom: 28 },
-  card: { backgroundColor: '#fff', borderRadius: 18, padding: 20, alignItems: 'center', width: '100%', marginBottom: 28, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
-  cardTitle: { color: '#0F172A', fontSize: 15, fontWeight: '700', marginBottom: 8 },
-  cardSub: { color: '#94A3B8', fontSize: 13, lineHeight: 19, textAlign: 'center' },
+  title: { color: BSColors.textPrimary, fontSize: 26, fontWeight: '800', marginBottom: 12, textAlign: 'center' },
+  desc: { color: BSColors.darkGray, fontSize: 14, lineHeight: 22, textAlign: 'center', marginBottom: 28 },
+  card: { backgroundColor: BSColors.white, borderRadius: 18, padding: 20, alignItems: 'center', width: '100%', marginBottom: 28, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+  cardTitle: { color: BSColors.textPrimary, fontSize: 15, fontWeight: '700', marginBottom: 8 },
+  cardSub: { color: BSColors.slate300, fontSize: 13, lineHeight: 19, textAlign: 'center' },
   backHomeBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 14, paddingVertical: 14, paddingHorizontal: 32 },
-  backHomeBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  backHomeBtnText: { color: BSColors.white, fontSize: 15, fontWeight: '700' },
 });

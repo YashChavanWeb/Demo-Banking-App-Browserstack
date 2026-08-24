@@ -84,7 +84,7 @@ export default function ShakeScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <Animated.View style={[styles.alertCard, { transform: [{ translateX: shakeAnim }] }]}>
           <View style={styles.alertIconWrap}>
-            <Ionicons name="shield-outline" size={48} color={shakeEnabled ? '#DC2626' : '#94A3B8'} />
+            <Ionicons name="shield-outline" size={48} color={shakeEnabled ? BSColors.errorDark : BSColors.slate300} />
           </View>
           <Text style={styles.alertTitle}>Shake to Report Fraud</Text>
           <Text style={styles.alertSub}>
@@ -95,7 +95,7 @@ export default function ShakeScreen() {
         </Animated.View>
 
         <TouchableOpacity
-          style={[styles.toggleBtn, { backgroundColor: shakeEnabled ? '#DC2626' : BSColors.primary }]}
+          style={[styles.toggleBtn, { backgroundColor: shakeEnabled ? BSColors.errorDark : BSColors.primary }]}
           onPress={() => setShakeEnabled(e => !e)}
           testID="shake-toggle-btn"
         >
@@ -115,11 +115,11 @@ export default function ShakeScreen() {
         <View style={styles.txCard}>
           {BankStore.getTransactions().filter(t => t.amount < 0).slice(0, 5).map((tx, i, arr) => (
             <View key={tx.id} style={[styles.txRow, i < arr.length - 1 && styles.txBorder]}>
-              <View style={[styles.txIcon, { backgroundColor: reported.includes(tx.merchant) ? '#FEE2E2' : '#F1F5F9' }]}>
+              <View style={[styles.txIcon, { backgroundColor: reported.includes(tx.merchant) ? BSColors.errorBorderDark : BSColors.lightGray }]}>
                 <Ionicons
                   name={reported.includes(tx.merchant) ? 'flag' : (tx.icon as any)}
                   size={16}
-                  color={reported.includes(tx.merchant) ? '#DC2626' : '#64748B'}
+                  color={reported.includes(tx.merchant) ? BSColors.errorDark : BSColors.darkGray}
                 />
               </View>
               <View style={{ flex: 1 }}>
@@ -179,42 +179,42 @@ export default function ShakeScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F8FAFF' },
+  safe: { flex: 1, backgroundColor: BSColors.bgPageAlt },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 1 },
-  pageTitle: { color: '#0F172A', fontSize: 18, fontWeight: '700' },
+  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: BSColors.white, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 1 },
+  pageTitle: { color: BSColors.textPrimary, fontSize: 18, fontWeight: '700' },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 40 },
-  alertCard: { backgroundColor: '#fff', borderRadius: 20, padding: 24, alignItems: 'center', marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.07, shadowRadius: 10, elevation: 3 },
-  alertIconWrap: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#FEF2F2', alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
-  alertTitle: { color: '#0F172A', fontSize: 18, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
-  alertSub: { color: '#64748B', fontSize: 13, textAlign: 'center', lineHeight: 19 },
+  alertCard: { backgroundColor: BSColors.white, borderRadius: 20, padding: 24, alignItems: 'center', marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.07, shadowRadius: 10, elevation: 3 },
+  alertIconWrap: { width: 80, height: 80, borderRadius: 40, backgroundColor: BSColors.errorBg, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
+  alertTitle: { color: BSColors.textPrimary, fontSize: 18, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
+  alertSub: { color: BSColors.darkGray, fontSize: 13, textAlign: 'center', lineHeight: 19 },
   toggleBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 14, paddingVertical: 14, marginBottom: 14 },
-  toggleBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
-  hintCard: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, backgroundColor: '#FFFBEB', borderRadius: 12, padding: 12, marginBottom: 20, borderWidth: 1, borderColor: '#FDE68A' },
-  hintText: { color: '#92400E', fontSize: 13, flex: 1, lineHeight: 18 },
-  sectionTitle: { color: '#0F172A', fontSize: 15, fontWeight: '700', marginBottom: 10 },
-  txCard: { backgroundColor: '#fff', borderRadius: 16, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+  toggleBtnText: { color: BSColors.white, fontSize: 15, fontWeight: '700' },
+  hintCard: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, backgroundColor: BSColors.warningBg, borderRadius: 12, padding: 12, marginBottom: 20, borderWidth: 1, borderColor: BSColors.amberHighlight },
+  hintText: { color: BSColors.amberText, fontSize: 13, flex: 1, lineHeight: 18 },
+  sectionTitle: { color: BSColors.textPrimary, fontSize: 15, fontWeight: '700', marginBottom: 10 },
+  txCard: { backgroundColor: BSColors.white, borderRadius: 16, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
   txRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, gap: 12 },
-  txBorder: { borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  txBorder: { borderBottomWidth: 1, borderBottomColor: BSColors.lightGray },
   txIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  txMerchant: { color: '#0F172A', fontSize: 14, fontWeight: '600', marginBottom: 2 },
-  txDate: { color: '#94A3B8', fontSize: 12 },
-  txAmount: { color: '#DC2626', fontSize: 14, fontWeight: '700' },
-  reportedBadge: { color: '#DC2626', fontSize: 10, fontWeight: '700', marginTop: 2 },
+  txMerchant: { color: BSColors.textPrimary, fontSize: 14, fontWeight: '600', marginBottom: 2 },
+  txDate: { color: BSColors.slate300, fontSize: 12 },
+  txAmount: { color: BSColors.errorDark, fontSize: 14, fontWeight: '700' },
+  reportedBadge: { color: BSColors.errorDark, fontSize: 10, fontWeight: '700', marginTop: 2 },
   emptyTx: { padding: 24, alignItems: 'center' },
-  emptyTxText: { color: '#94A3B8', fontSize: 13 },
+  emptyTxText: { color: BSColors.slate300, fontSize: 13 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalCard: { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
-  modalIconWrap: { width: 72, height: 72, borderRadius: 36, backgroundColor: '#FEE2E2', alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 16 },
-  modalTitle: { color: '#0F172A', fontSize: 20, fontWeight: '700', textAlign: 'center', marginBottom: 8 },
-  modalDesc: { color: '#64748B', fontSize: 14, textAlign: 'center', marginBottom: 16 },
-  modalTxBox: { backgroundColor: '#FEF2F2', borderRadius: 14, padding: 16, alignItems: 'center', marginBottom: 20, borderWidth: 1, borderColor: '#FECACA' },
-  modalTxMerchant: { color: '#0F172A', fontSize: 16, fontWeight: '700', marginBottom: 4 },
-  modalTxAmount: { color: '#DC2626', fontSize: 20, fontWeight: '800', marginBottom: 4 },
-  modalTxDate: { color: '#94A3B8', fontSize: 12 },
+  modalCard: { backgroundColor: BSColors.white, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
+  modalIconWrap: { width: 72, height: 72, borderRadius: 36, backgroundColor: BSColors.errorBorderDark, alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 16 },
+  modalTitle: { color: BSColors.textPrimary, fontSize: 20, fontWeight: '700', textAlign: 'center', marginBottom: 8 },
+  modalDesc: { color: BSColors.darkGray, fontSize: 14, textAlign: 'center', marginBottom: 16 },
+  modalTxBox: { backgroundColor: BSColors.errorBg, borderRadius: 14, padding: 16, alignItems: 'center', marginBottom: 20, borderWidth: 1, borderColor: BSColors.errorBorder },
+  modalTxMerchant: { color: BSColors.textPrimary, fontSize: 16, fontWeight: '700', marginBottom: 4 },
+  modalTxAmount: { color: BSColors.errorDark, fontSize: 20, fontWeight: '800', marginBottom: 4 },
+  modalTxDate: { color: BSColors.slate300, fontSize: 12 },
   modalBtns: { flexDirection: 'row', gap: 12 },
-  modalDismissBtn: { flex: 1, paddingVertical: 14, borderRadius: 12, alignItems: 'center', backgroundColor: '#F1F5F9' },
-  modalDismissText: { color: '#64748B', fontSize: 15, fontWeight: '600' },
-  modalReportBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: 12, backgroundColor: '#DC2626' },
-  modalReportText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  modalDismissBtn: { flex: 1, paddingVertical: 14, borderRadius: 12, alignItems: 'center', backgroundColor: BSColors.lightGray },
+  modalDismissText: { color: BSColors.darkGray, fontSize: 15, fontWeight: '600' },
+  modalReportBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: 12, backgroundColor: BSColors.errorDark },
+  modalReportText: { color: BSColors.white, fontSize: 15, fontWeight: '700' },
 });

@@ -1,5 +1,5 @@
 // Central API client — all backend calls go through here
-import type { AuthResponse, Card, Conversation, Message, Order, ProfileResponse, Transaction, TransferResponse, User } from '@/types';
+import type { AuthResponse, Card, Conversation, Message, Order, ProfileResponse, Transaction, TransferResponse } from '@/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // ── Backend URL — read from env (EXPO_PUBLIC_API_URL) ────────────────────────
@@ -67,8 +67,8 @@ export const api = {
   recordPayment: (amount: number, description?: string) =>
     request<TransferResponse>('POST', '/transactions/payment', { amount, description }),
 
-  // Users (for transfer recipient list)
-  getUsers: () => request<{ users: User[] }>('GET', '/users'),
+  // Users (for transfer recipient list — returns a different shape than auth User)
+  getUsers: () => request<{ users: { id: string; name: string; email: string; avatar: string; account: string }[] }>('GET', '/users'),
 
   // Shop
   placeOrder: (items: { id: string; name: string; price: number; qty: number }[], total: number, description?: string) =>
