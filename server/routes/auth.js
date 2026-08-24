@@ -155,9 +155,8 @@ router.post('/send-otp', async (req, res) => {
     // Send as FCM push notification (fire-and-forget)
     sendOtpPushToUser(email, code).catch(() => {});
 
-    // Fix 2: Never return the OTP in the HTTP response — it defeats out-of-band delivery.
-    // The OTP is stored in the DB and delivered via push notification only.
-    res.json({ message: 'OTP sent' });
+    // Demo app: return OTP in response for autofill convenience
+    res.json({ message: 'OTP sent', otp: code, expiresAt });
   } catch (err) {
     console.error('OTP error:', err.message);
     res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });

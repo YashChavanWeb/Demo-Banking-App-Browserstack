@@ -13,14 +13,19 @@ export default function OTPScreen() {
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [serverOtp, setServerOtp] = useState<string | null>(null);
   const inputRef = useRef<TextInput>(null);
   const isSignup = AuthStore.getFlow() === 'signup';
   const email = AuthStore.getEmail();
 
-  // Send OTP on mount — OTP is delivered via push notification only (Fix 2)
+  // Send OTP on mount and store it for autofill (demo convenience)
   useEffect(() => {
     if (!email) return;
-    api.sendOtp(email).catch(() => { /* ignore send errors — user can resend */ });
+    api.sendOtp(email).then(res => {
+      if (res.otp) setServerOtp(res.otp);
+    }).catch(() => {
+      setServerOtp('123456'); // fallback for demo
+    });
   }, [email]);
 
   const handleChange = (text: string) => {
@@ -65,7 +70,9 @@ export default function OTPScreen() {
     setOtp('');
     setError('');
     if (email) {
-      api.sendOtp(email).catch(() => { /* ignore resend errors */ });
+      api.sendOtp(email).then(res => {
+        if (res.otp) setServerOtp(res.otp);
+      }).catch(() => {});
     }
   };
 
@@ -83,6 +90,19 @@ export default function OTPScreen() {
 
           <Text style={s.title}>OTP Verification</Text>
           <Text style={s.subtitle}>Enter the 6-digit code sent to your email</Text>
+          {serverOtp && (
+            <View style={s.hintRow}>
+              <Text style={s.hint}>Demo OTP: <Text style={s.hintCode}>{serverOtp}</Text></Text>
+              <TouchableOpacity
+                style={s.autoFillBtn}
+                onPress={() => { setOtp(serverOtp); setError(''); }}
+                testID="autofill-otp-btn"
+              >
+                <Ionicons name="flash" size={14} color={BSColors.white} style={{ marginRight: 4 }} />
+                <Text style={s.autoFillBtnText}>Auto-fill</Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
           <TouchableOpacity activeOpacity={1} onPress={() => inputRef.current?.focus()} style={s.otpRow} testID="otp-display">
             {Array.from({ length: 6 }).map((_, i) => (

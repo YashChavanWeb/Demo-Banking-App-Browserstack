@@ -50,7 +50,7 @@ export const api = {
     request<AuthResponse>('POST', '/auth/login', { email, password }, false),
 
   sendOtp: (email: string) =>
-    request<{ message: string }>('POST', '/auth/send-otp', { email }, false),
+    request<{ message: string; otp?: string; expiresAt?: string }>('POST', '/auth/send-otp', { email }, false),
 
   verifyOtp: (email: string, code: string) =>
     request<{ verified: boolean }>('POST', '/auth/verify-otp', { email, code }, false),
