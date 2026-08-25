@@ -7,7 +7,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const FEATURE_META: Record<string, { icon: keyof typeof Ionicons.glyphMap; color: string; desc: string }> = {
-  Agents: { icon: 'hardware-chip-outline', color: BSColors.purple, desc: 'AI-powered banking agents that automate tasks, answer questions, and manage your finances intelligently.' },
+  Agent: { icon: 'hardware-chip-outline', color: BSColors.purple, desc: 'AI-powered banking agents that automate tasks, answer questions, and manage your finances intelligently.' },
   A11y: { icon: 'accessibility-outline', color: BSColors.infoDark, desc: 'Accessibility testing and compliance tools to ensure the app works for everyone, including users with disabilities.' },
   Visual: { icon: 'eye-outline', color: BSColors.warningDark, desc: 'Visual regression testing to catch UI changes and ensure pixel-perfect consistency across releases.' },
   Local: { icon: 'server-outline', color: BSColors.successDark, desc: 'BrowserStack Local integration for testing against your local or internal network environments.' },

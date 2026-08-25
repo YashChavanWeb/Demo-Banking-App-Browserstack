@@ -107,6 +107,15 @@ export const Colors = {
   },
 };
 
+// Urbanist font family constants — loaded in app/_layout.tsx via expo-font
+export const BSFonts = {
+  regular:    'Urbanist-Regular',
+  medium:     'Urbanist-Medium',
+  semiBold:   'Urbanist-SemiBold',
+  bold:       'Urbanist-Bold',
+  extraBold:  'Urbanist-ExtraBold',
+};
+
 export const Fonts = Platform.select({
   ios: {
     sans: 'system-ui',

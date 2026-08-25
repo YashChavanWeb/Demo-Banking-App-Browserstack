@@ -18,7 +18,7 @@ export default function ShakeScreen() {
   const [reported, setReported] = useState<string[]>([]);
   const shakeAnim = useSharedValue(0);
   const shakeStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: shakeAnim.value }],
+    transform: [{ translateX: shakeAnim.get() }],
   }));
   const lastAccel = useRef({ x: 0, y: 0, z: 0 });
   const lastShakeTime = useRef(0);

@@ -47,7 +47,7 @@ export function TransactionAuthModal({ visible, amount, description, onSuccess, 
   }, [visible]);
 
   const shakeStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: shakeAnim.value }],
+    transform: [{ translateX: shakeAnim.get() }],
   }));
 
   const shake = () => {

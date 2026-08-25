@@ -176,7 +176,7 @@ export default function RegionScreen() {
           <>
             {/* Hero */}
             <View style={[styles.heroCard, { backgroundColor: primaryColor }]}>
-              <Text style={styles.heroFlag}>🌍</Text>
+              <Ionicons name="globe-outline" size={32} color="#fff" />
               <Text style={styles.heroCode}>{info!.countryName}</Text>
               <Text style={styles.heroSub}>{info!.city}{info!.region !== info!.city ? `, ${info!.region}` : ''}</Text>
               <View style={styles.heroBadge}>

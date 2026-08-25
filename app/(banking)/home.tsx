@@ -6,9 +6,10 @@ import { ThemeStore } from '@/store/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator, Alert, Modal, ScrollView,
+  ActivityIndicator, Alert, Animated,
+  Modal, ScrollView,
   StyleSheet, Switch, Text, TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -39,6 +40,24 @@ export default function HomeScreen() {
 
   const primaryColor = greenMode ? BSColors.successDark : BSColors.primary;
   const accentColor = greenMode ? BSColors.success : BSColors.accent;
+
+  // Theme toggle smooth transition
+  const toggleAnim = useRef(new Animated.Value(greenMode ? 1 : 0)).current;
+
+  // Card metallic shimmer — sweeps every 2.5s
+  const shimmerAnim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(shimmerAnim, { toValue: 1, duration: 900, useNativeDriver: true }),
+        Animated.timing(shimmerAnim, { toValue: 0, duration: 100, useNativeDriver: true }),
+        Animated.delay(1500),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [shimmerAnim]);
+  const shimmerTranslate = shimmerAnim.interpolate({ inputRange: [0, 1], outputRange: [-300, 400] });
 
   useEffect(() => {
     BankStore.sync().then(() => setDataLoading(false)).catch(() => setDataLoading(false));
@@ -139,16 +158,18 @@ export default function HomeScreen() {
   };
 
   const handleThemeToggle = () => {
+    const next = !ThemeStore.isGreenMode();
+    Animated.timing(toggleAnim, { toValue: next ? 1 : 0, duration: 350, useNativeDriver: false }).start();
     ThemeStore.toggle();
-    setGreenMode(ThemeStore.isGreenMode());
+    setGreenMode(next);
   };
 
   const savings = BankStore.getSavings();
   const checking = BankStore.getChecking();
 
   const currencyLabel = ipCurrency
-    ? `🌍 ${ipCurrency.city || ipCurrency.country || 'Region'}`
-    : '🌍 Region';
+    ? `${ipCurrency.city || ipCurrency.country || 'Region'}`
+    : 'Region';
 
   const QUICK_ACTIONS = [
     { label: 'Transfer', icon: 'swap-horizontal' as const, color: primaryColor, bg: primaryColor + '15', onPress: () => router.push('/(banking)/transfer' as any) },
@@ -174,7 +195,7 @@ export default function HomeScreen() {
         <View style={styles.header}>
           <View>
           <Text style={styles.greeting}>{greenMode ? 'Good green,' : 'Good morning,'}</Text>
-          <Text style={styles.userName}>{userName} {greenMode ? '🌳' : '👋'}</Text>
+          <Text style={styles.userName}>{userName} <Ionicons name={greenMode ? 'leaf-outline' : 'hand-left-outline'} size={20} /></Text>
           </View>
           <View style={styles.headerRight}>
             <TouchableOpacity style={styles.locationBadge} onPress={async () => {
@@ -207,7 +228,10 @@ export default function HomeScreen() {
         </View>
 
         {/* Theme Toggle */}
-        <View style={[styles.themeToggleRow, { borderColor: primaryColor + '30', backgroundColor: primaryColor + '08' }]}>
+        <Animated.View style={[styles.themeToggleRow, {
+          borderColor: toggleAnim.interpolate({ inputRange: [0, 1], outputRange: [BSColors.primary + '30', BSColors.successDark + '30'] }),
+          backgroundColor: toggleAnim.interpolate({ inputRange: [0, 1], outputRange: [BSColors.primary + '08', BSColors.successDark + '12'] }),
+        }]}>
           <Ionicons name={greenMode ? 'leaf-outline' : 'color-palette-outline'} size={16} color={primaryColor} />
           <Text style={[styles.themeToggleLabel, { color: primaryColor }]}>{greenMode ? 'Green Mode ON' : 'Default Theme'}</Text>
           <Switch
@@ -217,10 +241,15 @@ export default function HomeScreen() {
             thumbColor={greenMode ? BSColors.successDark : primaryColor}
             testID="theme-toggle"
           />
-        </View>
+        </Animated.View>
 
         {/* Balance Card — shifts slightly left+top in green mode (Percy visual diff use-case) */}
         <View style={[styles.balanceCard, { backgroundColor: primaryColor }, greenMode && styles.balanceCardGreen]}>
+          {/* Metallic shimmer sweep */}
+          <Animated.View
+            pointerEvents="none"
+            style={[styles.cardShimmerOverlay, { transform: [{ translateX: shimmerTranslate }] }]}
+          />
           {dataLoading ? <BalanceShimmer /> : (
             <>
               <View style={styles.balanceCardTop}>
@@ -285,10 +314,10 @@ export default function HomeScreen() {
                 { label: 'Local', icon: 'server-outline' as const, color: BSColors.successDark, bg: '#05966915' },
                 { label: 'Visual', icon: 'eye-outline' as const, color: BSColors.warningDark, bg: '#D9770615' },
                 { label: 'A11y', icon: 'accessibility-outline' as const, color: BSColors.infoDark, bg: '#0891B215' },
-                { label: 'Agents', icon: 'hardware-chip-outline' as const, color: BSColors.purple, bg: '#7C3AED15' },
+                { label: 'Agent', icon: 'hardware-chip-outline' as const, color: BSColors.purple, bg: '#7C3AED15' },
               ]
             : [
-                { label: 'Agents', icon: 'hardware-chip-outline' as const, color: BSColors.purple, bg: '#7C3AED15' },
+                { label: 'Agent', icon: 'hardware-chip-outline' as const, color: BSColors.purple, bg: '#7C3AED15' },
                 { label: 'A11y', icon: 'accessibility-outline' as const, color: BSColors.infoDark, bg: '#0891B215' },
                 { label: 'Visual', icon: 'eye-outline' as const, color: BSColors.warningDark, bg: '#D9770615' },
                 { label: 'Local', icon: 'server-outline' as const, color: BSColors.successDark, bg: '#05966915' },
@@ -297,7 +326,13 @@ export default function HomeScreen() {
             <TouchableOpacity
               key={s.label}
               style={styles.specialItem}
-              onPress={() => router.push({ pathname: '/(banking)/coming-soon' as any, params: { feature: s.label } })}
+              onPress={() => {
+                if (s.label === 'Local') return router.push('/(banking)/local-app' as any);
+                if (s.label === 'A11y') return router.push('/(banking)/a11y' as any);
+                if (s.label === 'Agent') return router.push('/(banking)/agents' as any);
+                if (s.label === 'Visual') return router.push('/(banking)/visual' as any);
+                router.push({ pathname: '/(banking)/coming-soon' as any, params: { feature: s.label } });
+              }}
               testID={`special-${s.label.toLowerCase()}`}
             >
               <View style={[styles.specialIcon, { backgroundColor: s.bg }]}>
@@ -392,8 +427,8 @@ export default function HomeScreen() {
           {/* Bottom overlay — hint + close + actions all together */}
           <SafeAreaView style={styles.qrBottomOverlay}>
             <View style={styles.qrHint}>
-              {!scanned && <Text style={styles.qrHintText}>🔍 Point camera at a QR code</Text>}
-              {scanned && <Text style={[styles.qrHintText, { color: BSColors.greenBright }]}>✅ QR Code Detected!</Text>}
+              {!scanned && <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="search-outline" size={16} color="#fff" /><Text style={styles.qrHintText}>Point camera at a QR code</Text></View>}
+              {scanned && <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="checkmark-circle-outline" size={16} color={BSColors.greenBright} /><Text style={[styles.qrHintText, { color: BSColors.greenBright }]}>QR Code Detected!</Text></View>}
             </View>
             <View style={styles.qrActions}>
               {!scanned ? (
@@ -460,7 +495,8 @@ const styles = StyleSheet.create({
   themeToggleLabel: { flex: 1, fontSize: 13, fontWeight: '600' },
 
   // Balance card
-  balanceCard: { borderRadius: 24, padding: 24, marginBottom: 24, shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 20, elevation: 10 },
+  balanceCard: { borderRadius: 24, padding: 24, marginBottom: 24, shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 20, elevation: 10, overflow: 'hidden' },
+  cardShimmerOverlay: { position: 'absolute', top: 0, bottom: 0, width: 120, backgroundColor: 'rgba(255,255,255,0.12)', transform: [{ skewX: '-20deg' }] },
   balanceCardGreen: { marginLeft: -6, marginTop: -4 },
   balanceCardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 },
   balanceLabel: { color: 'rgba(255,255,255,0.75)', fontSize: 12, fontWeight: '500', marginBottom: 2 },

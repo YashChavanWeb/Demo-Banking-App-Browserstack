@@ -29,7 +29,8 @@
       "favicon": "./assets/images/favicon.png"
     },
     "experiments": {
-      "typedRoutes": true
+      "typedRoutes": true,
+      "reactCompiler": true
     },
     "plugins": [
       "expo-router",
@@ -43,7 +44,7 @@
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 120,
+          "imageWidth": 80,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
           "dark": {
@@ -65,12 +66,9 @@
           "color": "#1E3A8A",
           "sounds": []
         }
-      ]
+      ],
+      "@react-native-voice/voice"
     ],
-    "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
-    },
     "extra": {
       "router": {},
       "eas": {

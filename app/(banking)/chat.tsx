@@ -252,7 +252,7 @@ export default function ChatScreen() {
           }}
           ListEmptyComponent={
             <View style={styles.center}>
-              <Text style={styles.emptyText}>No messages yet. Say hello! 👋</Text>
+              <Text style={styles.emptyText}>No messages yet. Say hello!</Text>
             </View>
           }
         />

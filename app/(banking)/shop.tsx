@@ -139,7 +139,7 @@ export default function ShopScreen() {
         setCart({});
         setShowCart(false);
         Alert.alert(
-          'Order Placed! 🎉',
+          'Order Placed!',
           `$${cartTotal.toFixed(2)} paid successfully.\n${cartCount} item${cartCount > 1 ? 's' : ''} will be delivered soon.`,
           [{ text: 'Continue Shopping' }]
         );
@@ -419,7 +419,7 @@ export default function ShopScreen() {
                   {checkoutLoading ? <ActivityIndicator color="#fff" style={{ marginRight: 8 }} /> : <Ionicons name="lock-closed-outline" size={18} color="#fff" style={{ marginRight: 8 }} />}
                   <Text style={styles.checkoutBtnText}>{checkoutLoading ? 'Processing...' : `Pay $${cartTotal.toFixed(2)}`}</Text>
                 </TouchableOpacity>
-                <Text style={styles.secureNote}>🔒 Secured by Stripe</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, justifyContent: 'center' }}><Ionicons name="lock-closed-outline" size={13} color={BSColors.textSecondary} /><Text style={styles.secureNote}>Secured by Stripe</Text></View>
               </View>
             </>
           )}

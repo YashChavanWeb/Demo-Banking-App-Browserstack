@@ -113,7 +113,7 @@ export default function LoginScreen() {
 
         {/* Mock Data Controller Bar */}
         <View style={styles.mockBar}>
-          <Text style={styles.mockBarTitle}>⚡ Mock Data Controller</Text>
+          <Text style={styles.mockBarTitle}>Mock Data Controller</Text>
           <View style={styles.mockButtons}>
             <TouchableOpacity style={styles.mockBtn} onPress={autoFillRegular} testID="autofill-regular">
               <Text style={styles.mockBtnText}>Regular User</Text>

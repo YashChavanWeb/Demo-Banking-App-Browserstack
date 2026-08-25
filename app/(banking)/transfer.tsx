@@ -151,7 +151,7 @@ export default function TransferScreen() {
       await BankStore.recordPayment(amt, payDesc || undefined);
       setBalance(BankStore.getBalance());
       Alert.alert(
-        'Payment Successful! 🎉',
+        'Payment Successful!',
         `$${amt.toFixed(2)} sent to ${recipient!.name} via card.`,
         [{ text: 'Done', onPress: () => { setPayReady(false); setAmount(''); setPayDesc(''); setSelectedRecipient(null); } }],
       );
@@ -359,7 +359,7 @@ export default function TransferScreen() {
             )}
 
             <View style={styles.testCards}>
-              <Text style={styles.testCardsTitle}>🧪 Test Card Numbers</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="flask-outline" size={16} color={BSColors.textSecondary} /><Text style={styles.testCardsTitle}>Test Card Numbers</Text></View>
               {[
                 { num: '4242 4242 4242 4242', label: 'Success', color: BSColors.success },
                 { num: '4000 0025 0000 3155', label: 'Requires Auth', color: BSColors.warning },

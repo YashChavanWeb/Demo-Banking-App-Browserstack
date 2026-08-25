@@ -156,10 +156,10 @@ export default function SignupScreen() {
 
         {/* Mock Data Controller Bar */}
         <View style={styles.mockBar}>
-          <Text style={styles.mockBarTitle}>⚡ Mock Data Controller</Text>
+          <Text style={styles.mockBarTitle}>Mock Data Controller</Text>
           <View style={styles.mockBtnRow}>
             <TouchableOpacity style={[styles.mockBtn, { flex: 1 }]} onPress={autoFillNewUser} testID="autofill-new-user">
-              <Text style={styles.mockBtnText}>Auto-fill New User</Text>
+              <Text style={styles.mockBtnText}>Auto-fill</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.mockBtn, styles.customizeBtn]}

@@ -1,4 +1,4 @@
-import { BSColors } from '@/constants/theme';
+import { BSColors, BSFonts } from '@/constants/theme';
 import { StyleSheet, Text, type TextProps } from 'react-native';
 
 import { useThemeColor } from '@/hooks/use-theme-color';
@@ -38,24 +38,26 @@ const styles = StyleSheet.create({
   default: {
     fontSize: 16,
     lineHeight: 24,
+    fontFamily: BSFonts.regular,
   },
   defaultSemiBold: {
     fontSize: 16,
     lineHeight: 24,
-    fontWeight: '600',
+    fontFamily: BSFonts.semiBold,
   },
   title: {
     fontSize: 32,
-    fontWeight: 'bold',
     lineHeight: 32,
+    fontFamily: BSFonts.extraBold,
   },
   subtitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontFamily: BSFonts.bold,
   },
   link: {
     lineHeight: 30,
     fontSize: 16,
     color: BSColors.tealDeep,
+    fontFamily: BSFonts.medium,
   },
 });
