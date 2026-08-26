@@ -19,7 +19,7 @@ router.post('/', authMiddleware, async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     console.error('Push token error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }
 });
 

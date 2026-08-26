@@ -1,6 +1,7 @@
 const express = require('express');
 const { sql } = require('../db');
 const { authMiddleware } = require('../middleware/auth');
+const { serverError } = require('../middleware/error');
 
 const router = express.Router();
 
@@ -14,8 +15,7 @@ router.get('/', authMiddleware, async (req, res) => {
     `;
     res.json({ cards: rows.map(c => ({ ...c, cardType: c.card_type })) });
   } catch (err) {
-    console.error('Cards error:', err.message);
-    res.status(500).json({ error: err.message });
+    serverError(res, err, 'Cards GET');
   }
 });
 
@@ -36,7 +36,7 @@ router.post('/', authMiddleware, async (req, res) => {
     res.status(201).json({ card: { ...card, cardType: card.card_type } });
   } catch (err) {
     console.error('Create card error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }
 });
 
@@ -63,7 +63,7 @@ router.patch('/:id', authMiddleware, async (req, res) => {
     res.json({ card: { ...card, cardType: card.card_type } });
   } catch (err) {
     console.error('Update card error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }
 });
 
@@ -86,7 +86,7 @@ router.delete('/:id', authMiddleware, async (req, res) => {
     res.json({ deleted: true });
   } catch (err) {
     console.error('Delete card error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }
 });
 

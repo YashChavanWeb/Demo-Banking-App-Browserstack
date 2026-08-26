@@ -6,9 +6,10 @@ import { ThemeStore } from '@/store/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator, Alert, Modal, ScrollView,
+  ActivityIndicator, Alert, Animated,
+  Modal, ScrollView,
   StyleSheet, Switch, Text, TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -21,6 +22,7 @@ export default function HomeScreen() {
   const [balanceVisible, setBalanceVisible] = useState(true);
   const [showQRModal, setShowQRModal] = useState(false);
   const [scanned, setScanned] = useState(false);
+  const [qrResult, setQrResult] = useState<string | null>(null);
   const [balance, setBalance] = useState(BankStore.getBalance());
   const [recentTxs, setRecentTxs] = useState(BankStore.getTransactions().slice(0, 4));
   const [greenMode, setGreenMode] = useState(ThemeStore.isGreenMode());
@@ -36,8 +38,26 @@ export default function HomeScreen() {
   const [ipCurrency, setIpCurrency] = useState<{ code: string; country: string; city: string } | null>(null);
   const [ipLoading, setIpLoading] = useState(true);
 
-  const primaryColor = greenMode ? '#059669' : BSColors.primary;
-  const accentColor = greenMode ? '#10B981' : BSColors.accent;
+  const primaryColor = greenMode ? BSColors.successDark : BSColors.primary;
+  const accentColor = greenMode ? BSColors.success : BSColors.accent;
+
+  // Theme toggle smooth transition
+  const toggleAnim = useRef(new Animated.Value(greenMode ? 1 : 0)).current;
+
+  // Card metallic shimmer — sweeps every 2.5s
+  const shimmerAnim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(shimmerAnim, { toValue: 1, duration: 900, useNativeDriver: true }),
+        Animated.timing(shimmerAnim, { toValue: 0, duration: 100, useNativeDriver: true }),
+        Animated.delay(1500),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [shimmerAnim]);
+  const shimmerTranslate = shimmerAnim.interpolate({ inputRange: [0, 1], outputRange: [-300, 400] });
 
   useEffect(() => {
     BankStore.sync().then(() => setDataLoading(false)).catch(() => setDataLoading(false));
@@ -121,38 +141,43 @@ export default function HomeScreen() {
       }
     }
     setScanned(false);
+    setQrResult(null);
+    // Inject a QR code image into the BrowserStack camera feed so the
+    // barcode scanner can detect it. Safe no-op on real devices.
+    const { injectCameraImage: injectQR } = await import('@/utils/browserstack-camera');
+    await injectQR(
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/QR_code_for_mobile_English_Wikipedia.svg/1200px-QR_code_for_mobile_English_Wikipedia.svg.png'
+    );
     setShowQRModal(true);
   }, [cameraPermission, requestCameraPermission]);
 
   const handleBarCodeScanned = ({ data }: { data: string }) => {
-    if (scanned) return; // guard against duplicate fires from continuous scanning
+    if (scanned) return;
     setScanned(true);
-    Alert.alert('QR Code Scanned', `Data: ${data}`, [
-      { text: 'Scan Again', onPress: () => setScanned(false) },
-      { text: 'Close', onPress: () => { setScanned(false); setShowQRModal(false); } },
-    ]);
+    setQrResult(data);
   };
 
   const handleThemeToggle = () => {
+    const next = !ThemeStore.isGreenMode();
+    Animated.timing(toggleAnim, { toValue: next ? 1 : 0, duration: 350, useNativeDriver: false }).start();
     ThemeStore.toggle();
-    setGreenMode(ThemeStore.isGreenMode());
+    setGreenMode(next);
   };
 
   const savings = BankStore.getSavings();
   const checking = BankStore.getChecking();
 
   const currencyLabel = ipCurrency
-    ? `🌍 ${ipCurrency.city || ipCurrency.country || 'Region'}`
-    : '🌍 Region';
+    ? `${ipCurrency.city || ipCurrency.country || 'Region'}`
+    : 'Region';
 
   const QUICK_ACTIONS = [
     { label: 'Transfer', icon: 'swap-horizontal' as const, color: primaryColor, bg: primaryColor + '15', onPress: () => router.push('/(banking)/transfer' as any) },
-    { label: 'Chat', icon: 'chatbubbles-outline' as const, color: '#7C3AED', bg: '#7C3AED15', onPress: () => router.push('/(banking)/chat' as any) },
-    { label: 'Pay Bills', icon: 'receipt-outline' as const, color: '#D97706', bg: '#D9770615', onPress: () => router.push('/(banking)/transfer' as any) },
-    { label: 'Scan QR', icon: 'qr-code-outline' as const, color: '#DC2626', bg: '#DC262615', onPress: openQRScanner },
-    { label: 'Shop', icon: 'bag-outline' as const, color: '#059669', bg: '#05966915', onPress: () => router.push('/(banking)/shop' as any) },
-    { label: 'Network', icon: 'wifi-outline' as const, color: '#0891B2', bg: '#0891B215', onPress: () => router.push('/(banking)/network' as any) },
-    { label: 'Shake', icon: 'phone-portrait-outline' as const, color: '#7C3AED', bg: '#7C3AED15', onPress: () => router.push('/(banking)/testfeatures' as any) },
+    { label: 'Chat', icon: 'chatbubbles-outline' as const, color: BSColors.purple, bg: '#7C3AED15', onPress: () => router.push('/(banking)/chat' as any) },
+    { label: 'Scan QR', icon: 'qr-code-outline' as const, color: BSColors.errorDark, bg: '#DC262615', onPress: openQRScanner },
+    { label: 'Shop', icon: 'bag-outline' as const, color: BSColors.successDark, bg: '#05966915', onPress: () => router.push('/(banking)/shop' as any) },
+    { label: 'Network', icon: 'wifi-outline' as const, color: BSColors.infoDark, bg: '#0891B215', onPress: () => router.push('/(banking)/network' as any) },
+    { label: 'Shake', icon: 'phone-portrait-outline' as const, color: BSColors.purple, bg: '#7C3AED15', onPress: () => router.push('/(banking)/testfeatures' as any) },
     {
       label: currencyLabel,
       icon: 'globe-outline' as const,
@@ -170,7 +195,7 @@ export default function HomeScreen() {
         <View style={styles.header}>
           <View>
           <Text style={styles.greeting}>{greenMode ? 'Good green,' : 'Good morning,'}</Text>
-          <Text style={styles.userName}>{userName} {greenMode ? '🌳' : '👋'}</Text>
+          <Text style={styles.userName}>{userName} <Ionicons name={greenMode ? 'leaf-outline' : 'hand-left-outline'} size={20} /></Text>
           </View>
           <View style={styles.headerRight}>
             <TouchableOpacity style={styles.locationBadge} onPress={async () => {
@@ -203,20 +228,28 @@ export default function HomeScreen() {
         </View>
 
         {/* Theme Toggle */}
-        <View style={[styles.themeToggleRow, { borderColor: primaryColor + '30', backgroundColor: primaryColor + '08' }]}>
+        <Animated.View style={[styles.themeToggleRow, {
+          borderColor: toggleAnim.interpolate({ inputRange: [0, 1], outputRange: [BSColors.primary + '30', BSColors.successDark + '30'] }),
+          backgroundColor: toggleAnim.interpolate({ inputRange: [0, 1], outputRange: [BSColors.primary + '08', BSColors.successDark + '12'] }),
+        }]}>
           <Ionicons name={greenMode ? 'leaf-outline' : 'color-palette-outline'} size={16} color={primaryColor} />
           <Text style={[styles.themeToggleLabel, { color: primaryColor }]}>{greenMode ? 'Green Mode ON' : 'Default Theme'}</Text>
           <Switch
             value={greenMode}
             onValueChange={handleThemeToggle}
-            trackColor={{ false: BSColors.mediumGray, true: '#6EE7B7' }}
-            thumbColor={greenMode ? '#059669' : primaryColor}
+            trackColor={{ false: BSColors.mediumGray, true: BSColors.greenLight }}
+            thumbColor={greenMode ? BSColors.successDark : primaryColor}
             testID="theme-toggle"
           />
-        </View>
+        </Animated.View>
 
         {/* Balance Card — shifts slightly left+top in green mode (Percy visual diff use-case) */}
         <View style={[styles.balanceCard, { backgroundColor: primaryColor }, greenMode && styles.balanceCardGreen]}>
+          {/* Metallic shimmer sweep */}
+          <Animated.View
+            pointerEvents="none"
+            style={[styles.cardShimmerOverlay, { transform: [{ translateX: shimmerTranslate }] }]}
+          />
           {dataLoading ? <BalanceShimmer /> : (
             <>
               <View style={styles.balanceCardTop}>
@@ -273,6 +306,43 @@ export default function HomeScreen() {
           ))}
         </View>
 
+        {/* Specials */}
+        <Text style={styles.sectionTitle}>Specials</Text>
+        <View style={styles.specialsRow}>
+          {(greenMode
+            ? [
+                { label: 'Local', icon: 'server-outline' as const, color: BSColors.successDark, bg: '#05966915' },
+                { label: 'Visual', icon: 'eye-outline' as const, color: BSColors.warningDark, bg: '#D9770615' },
+                { label: 'A11y', icon: 'accessibility-outline' as const, color: BSColors.infoDark, bg: '#0891B215' },
+                { label: 'Agent', icon: 'hardware-chip-outline' as const, color: BSColors.purple, bg: '#7C3AED15' },
+              ]
+            : [
+                { label: 'Agent', icon: 'hardware-chip-outline' as const, color: BSColors.purple, bg: '#7C3AED15' },
+                { label: 'A11y', icon: 'accessibility-outline' as const, color: BSColors.infoDark, bg: '#0891B215' },
+                { label: 'Visual', icon: 'eye-outline' as const, color: BSColors.warningDark, bg: '#D9770615' },
+                { label: 'Local', icon: 'server-outline' as const, color: BSColors.successDark, bg: '#05966915' },
+              ]
+          ).map(s => (
+            <TouchableOpacity
+              key={s.label}
+              style={styles.specialItem}
+              onPress={() => {
+                if (s.label === 'Local') return router.push('/(banking)/local-app' as any);
+                if (s.label === 'A11y') return router.push('/(banking)/a11y' as any);
+                if (s.label === 'Agent') return router.push('/(banking)/agents' as any);
+                if (s.label === 'Visual') return router.push('/(banking)/visual' as any);
+                router.push({ pathname: '/(banking)/coming-soon' as any, params: { feature: s.label } });
+              }}
+              testID={`special-${s.label.toLowerCase()}`}
+            >
+              <View style={[styles.specialIcon, { backgroundColor: s.bg }]}>
+                <Ionicons name={s.icon} size={24} color={s.color} />
+              </View>
+              <Text style={styles.specialLabel}>{s.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
         {/* Recent Transactions */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Recent Transactions</Text>
@@ -322,7 +392,7 @@ export default function HomeScreen() {
               { icon: 'checkmark-circle-outline', color: BSColors.success, title: 'Transfer Successful', body: 'Your transfer of $250.00 was completed.', time: '2 min ago' },
               { icon: 'card-outline', color: primaryColor, title: 'Card Payment', body: 'A payment of $45.99 was made with your card.', time: '1 hr ago' },
               { icon: 'alert-circle-outline', color: BSColors.warning, title: 'Low Balance Alert', body: 'Your checking account balance is below $100.', time: '3 hr ago' },
-              { icon: 'gift-outline', color: '#7C3AED', title: 'Cashback Earned', body: 'You earned $5.00 cashback on your last purchase.', time: 'Yesterday' },
+              { icon: 'gift-outline', color: BSColors.purple, title: 'Cashback Earned', body: 'You earned $5.00 cashback on your last purchase.', time: 'Yesterday' },
               { icon: 'shield-checkmark-outline', color: BSColors.info, title: 'Security Update', body: 'Your account password was changed successfully.', time: '2 days ago' },
             ].map((n, i) => (
               <View key={i} style={styles.notifItem}>
@@ -340,38 +410,66 @@ export default function HomeScreen() {
         </SafeAreaView>
       </Modal>
 
-      {/* QR Scanner Modal */}
-      <Modal visible={showQRModal} animationType="slide" onShow={() => setScanned(false)}>
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#000' }}>
-          <View style={styles.qrHeader}>
-            <TouchableOpacity onPress={() => { setShowQRModal(false); setScanned(false); }} style={styles.qrClose}>
-              <Ionicons name="close" size={24} color="#fff" />
-            </TouchableOpacity>
-            <Text style={styles.qrTitle}>Scan QR Code</Text>
-            {scanned ? (
-              <TouchableOpacity onPress={() => setScanned(false)} style={styles.qrClose} testID="scan-again-btn">
-                <Ionicons name="refresh" size={22} color="#fff" />
-              </TouchableOpacity>
-            ) : (
-              <View style={{ width: 40 }} />
-            )}
-          </View>
+      {/* QR Scanner Modal — camera is always active; scanning starts immediately on open */}
+      <Modal visible={showQRModal} animationType="slide" onShow={() => { setScanned(false); setQrResult(null); }}>
+        <View style={{ flex: 1, backgroundColor: '#000' }}>
+          {/* Camera fills the full screen */}
           <CameraView
             key={showQRModal ? 'qr-active' : 'qr-inactive'}
             style={{ flex: 1 }}
             facing="back"
             active={showQRModal}
-            onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+            onBarcodeScanned={!scanned ? handleBarCodeScanned : undefined}
             barcodeScannerSettings={{ barcodeTypes: ['qr', 'aztec', 'datamatrix', 'pdf417', 'code128', 'code39', 'ean13', 'ean8', 'upc_e'] }}
             testID="qr-camera-view"
           />
-          <View style={styles.qrHint}>
-            {scanned
-              ? <Text style={[styles.qrHintText, { color: '#4ADE80' }]}>QR scanned! Tap ↻ to scan again.</Text>
-              : <Text style={styles.qrHintText}>Point camera at a QR code to scan</Text>
-            }
-          </View>
-        </SafeAreaView>
+
+          {/* Bottom overlay — hint + close + actions all together */}
+          <SafeAreaView style={styles.qrBottomOverlay}>
+            <View style={styles.qrHint}>
+              {!scanned && <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="search-outline" size={16} color="#fff" /><Text style={styles.qrHintText}>Point camera at a QR code</Text></View>}
+              {scanned && <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="checkmark-circle-outline" size={16} color={BSColors.greenBright} /><Text style={[styles.qrHintText, { color: BSColors.greenBright }]}>QR Code Detected!</Text></View>}
+            </View>
+            <View style={styles.qrActions}>
+              {!scanned ? (
+                <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
+                  <View style={[styles.qrScanBtn, { backgroundColor: BSColors.grayDark, flex: 1 }]}>
+                    <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />
+                    <Text style={styles.qrScanBtnText}>Scanning...</Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => { setShowQRModal(false); setScanned(false); setQrResult(null); }}
+                    style={styles.qrClose}
+                    hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                    testID="qr-close-btn"
+                  >
+                    <Ionicons name="close" size={22} color="#fff" />
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <>
+                  <Text style={{ color: BSColors.white, fontSize: 13, marginBottom: 10, textAlign: 'center', paddingHorizontal: 16 }} numberOfLines={2}>
+                    {qrResult}
+                  </Text>
+                  <View style={{ flexDirection: 'row', gap: 12 }}>
+                    <TouchableOpacity style={[styles.qrScanBtn, { backgroundColor: BSColors.successDark, flex: 1 }]} onPress={() => { setScanned(false); setQrResult(null); }} testID="scan-again-btn">
+                      <Ionicons name="refresh" size={18} color="#fff" style={{ marginRight: 8 }} />
+                      <Text style={styles.qrScanBtnText}>Scan Again</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => { setShowQRModal(false); setScanned(false); setQrResult(null); }}
+                      style={styles.qrClose}
+                      hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                      testID="qr-close-btn"
+                    >
+                      <Ionicons name="close" size={22} color="#fff" />
+                    </TouchableOpacity>
+                  </View>
+                </>
+              )}
+            </View>
+          </SafeAreaView>
+        </View>
       </Modal>
     </SafeAreaView>
   );
@@ -397,19 +495,20 @@ const styles = StyleSheet.create({
   themeToggleLabel: { flex: 1, fontSize: 13, fontWeight: '600' },
 
   // Balance card
-  balanceCard: { borderRadius: 24, padding: 24, marginBottom: 24, shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 20, elevation: 10 },
+  balanceCard: { borderRadius: 24, padding: 24, marginBottom: 24, shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 20, elevation: 10, overflow: 'hidden' },
+  cardShimmerOverlay: { position: 'absolute', top: 0, bottom: 0, width: 120, backgroundColor: 'rgba(255,255,255,0.12)', transform: [{ skewX: '-20deg' }] },
   balanceCardGreen: { marginLeft: -6, marginTop: -4 },
   balanceCardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 },
   balanceLabel: { color: 'rgba(255,255,255,0.75)', fontSize: 12, fontWeight: '500', marginBottom: 2 },
   balanceCurrency: { color: 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: '600', letterSpacing: 1 },
   eyeBtn: { padding: 4 },
-  balanceAmount: { color: '#fff', fontSize: 36, fontWeight: '800', letterSpacing: -0.5, marginBottom: 20 },
+  balanceAmount: { color: BSColors.white, fontSize: 36, fontWeight: '800', letterSpacing: -0.5, marginBottom: 20 },
   balanceDividerLine: { height: 1, backgroundColor: 'rgba(255,255,255,0.15)', marginBottom: 16 },
   balanceRow: { flexDirection: 'row', alignItems: 'center' },
   balanceItem: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
   balanceItemIcon: { width: 30, height: 30, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center' },
   balanceItemLabel: { color: 'rgba(255,255,255,0.65)', fontSize: 11, marginBottom: 2 },
-  balanceItemValue: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  balanceItemValue: { color: BSColors.white, fontSize: 15, fontWeight: '700' },
   balanceVertDivider: { width: 1, height: 36, backgroundColor: 'rgba(255,255,255,0.2)', marginHorizontal: 8 },
 
   // Quick actions
@@ -446,9 +545,19 @@ const styles = StyleSheet.create({
   notifItemTime: { color: BSColors.darkGray, fontSize: 11 },
 
   // QR
-  qrHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, backgroundColor: '#000' },
-  qrClose: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  qrTitle: { color: '#fff', fontSize: 17, fontWeight: '700' },
-  qrHint: { backgroundColor: '#000', padding: 20, alignItems: 'center' },
-  qrHintText: { color: 'rgba(255,255,255,0.7)', fontSize: 14 },
+  qrHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, backgroundColor: 'rgba(0,0,0,0.6)' },
+  qrClose: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center' },
+  qrTitle: { color: BSColors.white, fontSize: 17, fontWeight: '700' },
+  qrBottomOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.75)', paddingBottom: 40 },
+  qrHint: { padding: 20, alignItems: 'center' },
+  qrHintText: { color: 'rgba(255,255,255,0.85)', fontSize: 14 },
+  qrActions: { paddingHorizontal: 24, paddingTop: 4, paddingBottom: 8 },
+  qrScanBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: BSColors.errorDark, borderRadius: 14, paddingVertical: 14, paddingHorizontal: 24, minWidth: 120 },
+  qrScanBtnText: { color: BSColors.white, fontSize: 16, fontWeight: '700' },
+
+  // Specials
+  specialsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 28 },
+  specialItem: { alignItems: 'center', gap: 7, flex: 1 },
+  specialIcon: { width: 58, height: 58, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  specialLabel: { color: BSColors.textSecondary, fontSize: 11, fontWeight: '700', textAlign: 'center' },
 });

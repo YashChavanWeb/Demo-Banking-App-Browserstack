@@ -80,9 +80,9 @@ export default function UsersTab() {
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
         <View style={s.statsRow}>
           {[
-            { label: 'Total', value: users.length, icon: 'people-outline' as const, color: '#4F46E5' },
-            { label: 'Active', value: users.filter(u => u.status === 'Active').length, icon: 'checkmark-circle-outline' as const, color: '#059669' },
-            { label: 'Suspended', value: users.filter(u => u.status === 'Suspended').length, icon: 'ban-outline' as const, color: '#DC2626' },
+            { label: 'Total', value: users.length, icon: 'people-outline' as const, color: BSColors.accent },
+            { label: 'Active', value: users.filter(u => u.status === 'Active').length, icon: 'checkmark-circle-outline' as const, color: BSColors.successDark },
+            { label: 'Suspended', value: users.filter(u => u.status === 'Suspended').length, icon: 'ban-outline' as const, color: BSColors.errorDark },
           ].map(st => (
             <View key={st.label} style={s.statCard}>
               <Ionicons name={st.icon} size={18} color={st.color} />
@@ -125,8 +125,8 @@ export default function UsersTab() {
                 <Ionicons name="pencil-outline" size={13} color="#4F46E5" /><Text style={s.btnEditText}>Edit</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[s.btnToggle, u.status === 'Active' ? s.btnSuspend : s.btnActivate]} onPress={() => handleToggle(u.id, u.name, u.status)} testID={`toggle-${u.id}`}>
-                <Ionicons name={u.status === 'Active' ? 'pause-circle-outline' : 'play-circle-outline'} size={13} color={u.status === 'Active' ? '#D97706' : '#059669'} />
-                <Text style={[s.btnToggleText, { color: u.status === 'Active' ? '#D97706' : '#059669' }]}>{u.status === 'Active' ? 'Suspend' : 'Activate'}</Text>
+                <Ionicons name={u.status === 'Active' ? 'pause-circle-outline' : 'play-circle-outline'} size={13} color={u.status === 'Active' ? BSColors.warningDark : BSColors.successDark} />
+                <Text style={[s.btnToggleText, { color: u.status === 'Active' ? BSColors.warningDark : BSColors.successDark }]}>{u.status === 'Active' ? 'Suspend' : 'Activate'}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={s.btnDelete} onPress={() => handleDelete(u.id, u.name)} testID={`delete-${u.id}`}>
                 <Ionicons name="trash-outline" size={13} color="#DC2626" /><Text style={s.btnDeleteText}>Delete</Text>
@@ -201,62 +201,62 @@ export default function UsersTab() {
 }
 
 const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F5F6FA' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#EEF2FF' },
+  safe: { flex: 1, backgroundColor: BSColors.bgPageLight },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: BSColors.white, paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: BSColors.indigoBg },
   headerTitle: { color: '#111', fontSize: 17, fontWeight: '700' },
   headerSub: { color: '#888', fontSize: 12, marginTop: 1 },
-  logoutBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#FEF2F2', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 },
-  logoutText: { color: '#DC2626', fontSize: 12, fontWeight: '600' },
+  logoutBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: BSColors.errorBg, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 },
+  logoutText: { color: BSColors.errorDark, fontSize: 12, fontWeight: '600' },
   content: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 32 },
   statsRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },
-  statCard: { flex: 1, backgroundColor: '#fff', borderRadius: 12, padding: 12, alignItems: 'center', gap: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 },
+  statCard: { flex: 1, backgroundColor: BSColors.white, borderRadius: 12, padding: 12, alignItems: 'center', gap: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 },
   statValue: { fontSize: 20, fontWeight: '700' },
   statLabel: { color: '#888', fontSize: 11 },
   toolbar: { flexDirection: 'row', gap: 10, marginBottom: 14, alignItems: 'center' },
-  searchBox: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, gap: 8, borderWidth: 1, borderColor: '#C7D2FE' },
+  searchBox: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: BSColors.white, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, gap: 8, borderWidth: 1, borderColor: BSColors.indigoBorder },
   searchInput: { flex: 1, fontSize: 14, color: '#111' },
   addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: BSColors.primary, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10 },
-  addBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
-  userCard: { backgroundColor: '#fff', borderRadius: 14, padding: 14, marginBottom: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 },
+  addBtnText: { color: BSColors.white, fontWeight: '700', fontSize: 14 },
+  userCard: { backgroundColor: BSColors.white, borderRadius: 14, padding: 14, marginBottom: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 },
   userTop: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
   avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: BSColors.primary, alignItems: 'center', justifyContent: 'center', marginRight: 10 },
-  avatarText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  avatarText: { color: BSColors.white, fontWeight: '700', fontSize: 13 },
   userInfo: { flex: 1 },
   userName: { color: '#111', fontSize: 14, fontWeight: '700' },
   userEmail: { color: '#888', fontSize: 12 },
   userAccNum: { color: '#AAA', fontSize: 11, marginTop: 1 },
   badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
-  badgeActive: { backgroundColor: '#D1FAE5' },
-  badgeSuspended: { backgroundColor: '#FEE2E2' },
+  badgeActive: { backgroundColor: BSColors.successBgLight },
+  badgeSuspended: { backgroundColor: BSColors.errorBorderDark },
   badgeText: { fontSize: 11, fontWeight: '700' },
-  badgeTextActive: { color: '#059669' },
-  badgeTextSuspended: { color: '#DC2626' },
-  userMeta: { flexDirection: 'row', gap: 16, marginBottom: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#F5F5F5' },
+  badgeTextActive: { color: BSColors.successDark },
+  badgeTextSuspended: { color: BSColors.errorDark },
+  userMeta: { flexDirection: 'row', gap: 16, marginBottom: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: BSColors.bgPageNeutral },
   metaItem: { color: '#555', fontSize: 13 },
   metaLabel: { color: '#888', fontWeight: '600' },
   userActions: { flexDirection: 'row', gap: 8 },
-  btnEdit: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, backgroundColor: '#EEF2FF', borderRadius: 8, paddingVertical: 7 },
-  btnEditText: { color: '#4F46E5', fontSize: 12, fontWeight: '600' },
+  btnEdit: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, backgroundColor: BSColors.indigoBg, borderRadius: 8, paddingVertical: 7 },
+  btnEditText: { color: BSColors.accent, fontSize: 12, fontWeight: '600' },
   btnToggle: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, borderRadius: 8, paddingVertical: 7 },
-  btnSuspend: { backgroundColor: '#FFFBEB' },
-  btnActivate: { backgroundColor: '#F0FDF4' },
+  btnSuspend: { backgroundColor: BSColors.warningBg },
+  btnActivate: { backgroundColor: BSColors.successBg },
   btnToggleText: { fontSize: 12, fontWeight: '600' },
-  btnDelete: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, backgroundColor: '#FEF2F2', borderRadius: 8, paddingVertical: 7 },
-  btnDeleteText: { color: '#DC2626', fontSize: 12, fontWeight: '600' },
+  btnDelete: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, backgroundColor: BSColors.errorBg, borderRadius: 8, paddingVertical: 7 },
+  btnDeleteText: { color: BSColors.errorDark, fontSize: 12, fontWeight: '600' },
   empty: { alignItems: 'center', paddingVertical: 40, gap: 10 },
   emptyText: { color: '#AAA', fontSize: 14 },
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modal: { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
+  modal: { backgroundColor: BSColors.white, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
   modalHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   modalTitle: { color: '#111', fontSize: 18, fontWeight: '700' },
   formGroup: { marginBottom: 16 },
   formLabel: { color: '#333', fontSize: 13, fontWeight: '600', marginBottom: 6 },
-  formInput: { backgroundColor: '#fff', borderRadius: 10, borderWidth: 1.5, borderColor: '#C7D2FE', paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: '#111' },
+  formInput: { backgroundColor: BSColors.white, borderRadius: 10, borderWidth: 1.5, borderColor: BSColors.indigoBorder, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: '#111' },
   typeRow: { flexDirection: 'row', gap: 8 },
-  typeBtn: { flex: 1, paddingVertical: 9, borderRadius: 8, alignItems: 'center', backgroundColor: '#F5F5F5' },
+  typeBtn: { flex: 1, paddingVertical: 9, borderRadius: 8, alignItems: 'center', backgroundColor: BSColors.bgPageNeutral },
   typeBtnActive: { backgroundColor: BSColors.primary },
   typeBtnText: { color: '#666', fontSize: 13, fontWeight: '600' },
-  typeBtnTextActive: { color: '#fff' },
+  typeBtnTextActive: { color: BSColors.white },
   submitBtn: { backgroundColor: BSColors.primary, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 4 },
-  submitBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  submitBtnText: { color: BSColors.white, fontSize: 15, fontWeight: '700' },
 });

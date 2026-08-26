@@ -1,3 +1,4 @@
+import { TransactionAuthModal } from '@/components/TransactionAuthModal';
 import { BSColors } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { api, API_URL } from '@/store/api';
@@ -138,7 +139,7 @@ export default function ShopScreen() {
         setCart({});
         setShowCart(false);
         Alert.alert(
-          'Order Placed! 🎉',
+          'Order Placed!',
           `$${cartTotal.toFixed(2)} paid successfully.\n${cartCount} item${cartCount > 1 ? 's' : ''} will be delivered soon.`,
           [{ text: 'Continue Shopping' }]
         );
@@ -216,7 +217,7 @@ export default function ShopScreen() {
               onPress={() => setActiveCategory(cat)}
               testID={`cat-${cat}`}
             >
-              <Text style={[styles.catChipText, activeCategory === cat && { color: '#fff' }]}>{cat}</Text>
+              <Text style={[styles.catChipText, activeCategory === cat && { color: BSColors.white }]}>{cat}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -418,25 +419,20 @@ export default function ShopScreen() {
                   {checkoutLoading ? <ActivityIndicator color="#fff" style={{ marginRight: 8 }} /> : <Ionicons name="lock-closed-outline" size={18} color="#fff" style={{ marginRight: 8 }} />}
                   <Text style={styles.checkoutBtnText}>{checkoutLoading ? 'Processing...' : `Pay $${cartTotal.toFixed(2)}`}</Text>
                 </TouchableOpacity>
-                <Text style={styles.secureNote}>🔒 Secured by Stripe</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, justifyContent: 'center' }}><Ionicons name="lock-closed-outline" size={13} color={BSColors.textSecondary} /><Text style={styles.secureNote}>Secured by Stripe</Text></View>
               </View>
             </>
           )}
         </SafeAreaView>
       </Modal>
 
-      {(() => {
-        const { TransactionAuthModal: TAM } = require('@/components/TransactionAuthModal');
-        return (
-          <TAM
-            visible={showAuth}
-            amount={`$${cartTotal.toFixed(2)}`}
-            description={`${cartCount} item${cartCount !== 1 ? 's' : ''}`}
-            onSuccess={() => { setShowAuth(false); executeCheckout(); }}
-            onCancel={() => { setShowAuth(false); setCheckoutError('Transaction could not be completed.'); }}
-          />
-        );
-      })()}
+      <TransactionAuthModal
+        visible={showAuth}
+        amount={`$${cartTotal.toFixed(2)}`}
+        description={`${cartCount} item${cartCount !== 1 ? 's' : ''}`}
+        onSuccess={() => { setShowAuth(false); executeCheckout(); }}
+        onCancel={() => { setShowAuth(false); setCheckoutError('Transaction could not be completed.'); }}
+      />
     </SafeAreaView>
   );
 }
@@ -449,7 +445,7 @@ const styles = StyleSheet.create({
   pageSubtitle: { color: BSColors.darkGray, fontSize: 12 },
   cartBtn: { marginLeft: 'auto', width: 42, height: 42, borderRadius: 14, backgroundColor: BSColors.white, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 1 },
   cartBadge: { position: 'absolute', top: -4, right: -4, borderRadius: 10, minWidth: 18, height: 18, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4, borderWidth: 2, borderColor: BSColors.bgPage },
-  cartBadgeText: { color: '#fff', fontSize: 10, fontWeight: '800' },
+  cartBadgeText: { color: BSColors.white, fontSize: 10, fontWeight: '800' },
   searchRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: BSColors.white, marginHorizontal: 20, marginBottom: 12, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1, borderColor: BSColors.mediumGray },
   searchInput: { flex: 1, fontSize: 14, color: BSColors.textPrimary },
   catFilterWrap: { flexShrink: 0 },
@@ -473,15 +469,15 @@ const styles = StyleSheet.create({
   qtyBtn: { width: 30, height: 30, borderRadius: 9, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   qtyText: { color: BSColors.textPrimary, fontSize: 15, fontWeight: '800', minWidth: 20, textAlign: 'center' },
   addBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, borderRadius: 10, paddingVertical: 8 },
-  addBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  addBtnText: { color: BSColors.white, fontSize: 13, fontWeight: '700' },
   emptyState: { alignItems: 'center', paddingVertical: 60, gap: 12, width: '100%' },
   emptyStateText: { color: BSColors.darkGray, fontSize: 15 },
   floatingCart: { position: 'absolute', bottom: 20, left: 20, right: 20, borderRadius: 18, paddingHorizontal: 20, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.2, shadowRadius: 14, elevation: 8 },
   floatingCartLeft: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  floatingCartBadge: { width: 28, height: 28, borderRadius: 9, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
+  floatingCartBadge: { width: 28, height: 28, borderRadius: 9, backgroundColor: BSColors.white, alignItems: 'center', justifyContent: 'center' },
   floatingCartBadgeText: { fontSize: 13, fontWeight: '800' },
-  floatingCartLabel: { color: '#fff', fontSize: 15, fontWeight: '700' },
-  floatingCartTotal: { color: '#fff', fontSize: 15, fontWeight: '800', marginRight: 8 },
+  floatingCartLabel: { color: BSColors.white, fontSize: 15, fontWeight: '700' },
+  floatingCartTotal: { color: BSColors.white, fontSize: 15, fontWeight: '800', marginRight: 8 },
   cartModal: { flex: 1, backgroundColor: BSColors.bgPage },
   cartHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: BSColors.mediumGray },
   cartTitle: { color: BSColors.textPrimary, fontSize: 20, fontWeight: '800' },
@@ -490,7 +486,7 @@ const styles = StyleSheet.create({
   emptyCartTitle: { color: BSColors.textPrimary, fontSize: 18, fontWeight: '700' },
   emptyCartSub: { color: BSColors.darkGray, fontSize: 14 },
   continueShoppingBtn: { borderRadius: 14, paddingHorizontal: 28, paddingVertical: 12, marginTop: 8 },
-  continueShoppingText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  continueShoppingText: { color: BSColors.white, fontSize: 15, fontWeight: '700' },
   cartList: { flex: 1, paddingHorizontal: 20, paddingTop: 12 },
   cartItem: { flexDirection: 'row', backgroundColor: BSColors.white, borderRadius: 16, padding: 12, marginBottom: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 },
   cartItemImage: { width: 72, height: 72, borderRadius: 12, backgroundColor: BSColors.lightGray },
@@ -510,12 +506,12 @@ const styles = StyleSheet.create({
   summaryTotal: { borderTopWidth: 1, borderTopColor: BSColors.mediumGray, paddingTop: 12, marginTop: 4, marginBottom: 14 },
   summaryTotalLabel: { color: BSColors.textPrimary, fontSize: 16, fontWeight: '700' },
   summaryTotalValue: { fontSize: 20, fontWeight: '800' },
-  checkoutError: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#FEF2F2', borderRadius: 10, padding: 10, marginBottom: 12, borderWidth: 1, borderColor: '#FECACA' },
+  checkoutError: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: BSColors.errorBg, borderRadius: 10, padding: 10, marginBottom: 12, borderWidth: 1, borderColor: BSColors.errorBorder },
   checkoutErrorText: { color: BSColors.error, fontSize: 12, flex: 1 },
   balanceRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 14 },
   balanceText: { color: BSColors.darkGray, fontSize: 13 },
   checkoutBtn: { borderRadius: 14, paddingVertical: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
-  checkoutBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  checkoutBtnText: { color: BSColors.white, fontSize: 16, fontWeight: '700' },
   secureNote: { color: BSColors.darkGray, fontSize: 12, textAlign: 'center' },
   orderCard: { backgroundColor: BSColors.white, borderRadius: 16, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 },
   orderCardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },

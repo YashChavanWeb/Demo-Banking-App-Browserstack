@@ -7,12 +7,12 @@ import { BSColors } from '@/constants/theme';
 type Control = { id: string; label: string; description: string; icon: string; iconColor: string; value: boolean; danger?: boolean };
 
 const INIT_CONTROLS: Control[] = [
-  { id: 'maintenance', label: 'Maintenance Mode', description: 'Temporarily disable app access for all users', icon: 'construct-outline', iconColor: '#D97706', value: false, danger: true },
-  { id: 'signups', label: 'Disable New Signups', description: 'Prevent new user registrations', icon: 'person-add-outline', iconColor: '#DC2626', value: false, danger: true },
-  { id: 'transfers', label: 'Freeze All Transfers', description: 'Block all money transfers system-wide', icon: 'ban-outline', iconColor: '#DC2626', value: false, danger: true },
-  { id: 'notifications', label: 'Push Notifications', description: 'Send system-wide push notifications', icon: 'notifications-outline', iconColor: '#4F46E5', value: true },
-  { id: 'twofa', label: 'Enforce 2FA', description: 'Require two-factor auth for all logins', icon: 'shield-checkmark-outline', iconColor: '#059669', value: true },
-  { id: 'audit', label: 'Audit Logging', description: 'Log all admin actions for compliance', icon: 'document-text-outline', iconColor: '#0891B2', value: true },
+  { id: 'maintenance', label: 'Maintenance Mode', description: 'Temporarily disable app access for all users', icon: 'construct-outline', iconColor: BSColors.warningDark, value: false, danger: true },
+  { id: 'signups', label: 'Disable New Signups', description: 'Prevent new user registrations', icon: 'person-add-outline', iconColor: BSColors.errorDark, value: false, danger: true },
+  { id: 'transfers', label: 'Freeze All Transfers', description: 'Block all money transfers system-wide', icon: 'ban-outline', iconColor: BSColors.errorDark, value: false, danger: true },
+  { id: 'notifications', label: 'Push Notifications', description: 'Send system-wide push notifications', icon: 'notifications-outline', iconColor: BSColors.accent, value: true },
+  { id: 'twofa', label: 'Enforce 2FA', description: 'Require two-factor auth for all logins', icon: 'shield-checkmark-outline', iconColor: BSColors.successDark, value: true },
+  { id: 'audit', label: 'Audit Logging', description: 'Log all admin actions for compliance', icon: 'document-text-outline', iconColor: BSColors.infoDark, value: true },
 ];
 
 export default function ControlsTab() {
@@ -69,8 +69,8 @@ export default function ControlsTab() {
               <Switch
                 value={ctrl.value}
                 onValueChange={() => toggle(ctrl.id, ctrl.value, ctrl.label, ctrl.danger)}
-                trackColor={{ false: '#E0E0E0', true: '#FECACA' }}
-                thumbColor={ctrl.value ? '#DC2626' : '#fff'}
+                trackColor={{ false: BSColors.grayNeutral, true: BSColors.errorBorder }}
+                thumbColor={ctrl.value ? BSColors.errorDark : BSColors.white}
                 testID={`toggle-${ctrl.id}`}
               />
             </View>
@@ -91,8 +91,8 @@ export default function ControlsTab() {
               <Switch
                 value={ctrl.value}
                 onValueChange={() => toggle(ctrl.id, ctrl.value, ctrl.label)}
-                trackColor={{ false: '#E0E0E0', true: '#BBF7D0' }}
-                thumbColor={ctrl.value ? '#059669' : '#fff'}
+                trackColor={{ false: BSColors.grayNeutral, true: BSColors.successBorder }}
+                thumbColor={ctrl.value ? BSColors.successDark : BSColors.white}
                 testID={`toggle-${ctrl.id}`}
               />
             </View>
@@ -109,23 +109,23 @@ export default function ControlsTab() {
 }
 
 const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F5F6FA' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#EEF2FF' },
+  safe: { flex: 1, backgroundColor: BSColors.bgPageLight },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: BSColors.white, paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: BSColors.indigoBg },
   headerTitle: { color: '#111', fontSize: 17, fontWeight: '700' },
   headerSub: { color: '#888', fontSize: 12, marginTop: 1 },
-  alertBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#FEE2E2', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
-  alertBadgeText: { color: '#DC2626', fontSize: 12, fontWeight: '700' },
+  alertBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: BSColors.errorBorderDark, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
+  alertBadgeText: { color: BSColors.errorDark, fontSize: 12, fontWeight: '700' },
   content: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 40 },
-  warningBanner: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#FEF2F2', borderRadius: 12, padding: 14, marginBottom: 20, borderWidth: 1, borderColor: '#FECACA' },
-  warningText: { flex: 1, color: '#DC2626', fontSize: 13, fontWeight: '500' },
+  warningBanner: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: BSColors.errorBg, borderRadius: 12, padding: 14, marginBottom: 20, borderWidth: 1, borderColor: BSColors.errorBorder },
+  warningText: { flex: 1, color: BSColors.errorDark, fontSize: 13, fontWeight: '500' },
   sectionTitle: { color: '#111', fontSize: 15, fontWeight: '700', marginBottom: 10 },
-  controlGroup: { backgroundColor: '#fff', borderRadius: 16, overflow: 'hidden', marginBottom: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6, elevation: 1 },
+  controlGroup: { backgroundColor: BSColors.white, borderRadius: 16, overflow: 'hidden', marginBottom: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6, elevation: 1 },
   controlRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14 },
-  controlBorder: { borderBottomWidth: 1, borderBottomColor: '#F5F5F5' },
+  controlBorder: { borderBottomWidth: 1, borderBottomColor: BSColors.bgPageNeutral },
   controlIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   controlInfo: { flex: 1, marginRight: 8 },
   controlLabel: { color: '#111', fontSize: 14, fontWeight: '600', marginBottom: 2 },
   controlDesc: { color: '#888', fontSize: 12 },
-  infoCard: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, backgroundColor: '#E0F2FE', borderRadius: 12, padding: 14 },
-  infoText: { flex: 1, color: '#0369A1', fontSize: 13 },
+  infoCard: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, backgroundColor: BSColors.infoBg, borderRadius: 12, padding: 14 },
+  infoText: { flex: 1, color: BSColors.infoDeep, fontSize: 13 },
 });

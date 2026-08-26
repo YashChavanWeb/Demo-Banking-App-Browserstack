@@ -1,3 +1,4 @@
+import { BSColors } from '@/constants/theme';
 import { ThemeStore } from '@/store/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
@@ -32,17 +33,17 @@ export default function BankingLayout() {
     return unsub;
   }, []);
 
-  const primaryColor = greenMode ? '#059669' : '#4F46E5';
+  const primaryColor = greenMode ? BSColors.successDark : BSColors.accent;
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: primaryColor,
-        tabBarInactiveTintColor: '#94A3B8',
+        tabBarInactiveTintColor: BSColors.slate300,
         tabBarStyle: {
-          backgroundColor: '#fff',
-          borderTopColor: '#E2E8F0',
+          backgroundColor: BSColors.white,
+          borderTopColor: BSColors.mediumGray,
           borderTopWidth: 1,
           height: 72,
           paddingBottom: 16,
@@ -94,6 +95,11 @@ export default function BankingLayout() {
       <Tabs.Screen name="currency" options={{ href: null }} />
       <Tabs.Screen name="chat" options={{ href: null }} />
       <Tabs.Screen name="webview" options={{ href: null }} />
+      <Tabs.Screen name="coming-soon" options={{ href: null }} />
+      <Tabs.Screen name="local-app" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+      <Tabs.Screen name="a11y" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+      <Tabs.Screen name="agents" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+      <Tabs.Screen name="visual" options={{ href: null, tabBarStyle: { display: 'none' } }} />
     </Tabs>
   );
 }

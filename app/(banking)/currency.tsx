@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   ScrollView, StyleSheet,
   Text, TouchableOpacity, View,
 } from 'react-native';
@@ -123,12 +124,16 @@ export default function RegionScreen() {
   const [info, setInfo] = useState<RegionInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const loadData = () => {
+    setLoading(true);
+    setError(null);
     fetchRegionInfo()
       .then(setInfo)
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { loadData(); }, []);
 
   const INFO_ROWS = info ? [
     { icon: 'location-outline',       label: 'City',           value: info.city },
@@ -151,7 +156,11 @@ export default function RegionScreen() {
           <Ionicons name="arrow-back" size={20} color={BSColors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.pageTitle}>Region Info</Text>
-        <View style={styles.refreshBtn} />
+        <TouchableOpacity onPress={loadData} style={styles.refreshBtn} disabled={loading} testID="refresh-region-btn">
+          {loading
+            ? <ActivityIndicator size="small" color={primaryColor} />
+            : <Ionicons name="refresh-outline" size={20} color={primaryColor} />}
+        </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -167,7 +176,7 @@ export default function RegionScreen() {
           <>
             {/* Hero */}
             <View style={[styles.heroCard, { backgroundColor: primaryColor }]}>
-              <Text style={styles.heroFlag}>🌍</Text>
+              <Ionicons name="globe-outline" size={32} color="#fff" />
               <Text style={styles.heroCode}>{info!.countryName}</Text>
               <Text style={styles.heroSub}>{info!.city}{info!.region !== info!.city ? `, ${info!.region}` : ''}</Text>
               <View style={styles.heroBadge}>
@@ -213,7 +222,7 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingBottom: 40 },
   heroCard: { borderRadius: 24, padding: 32, alignItems: 'center', marginBottom: 24, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 16, elevation: 8 },
   heroFlag: { fontSize: 56, marginBottom: 8 },
-  heroCode: { color: '#fff', fontSize: 28, fontWeight: '800', letterSpacing: 1, textAlign: 'center' },
+  heroCode: { color: BSColors.white, fontSize: 28, fontWeight: '800', letterSpacing: 1, textAlign: 'center' },
   heroSub: { color: 'rgba(255,255,255,0.85)', fontSize: 15, fontWeight: '500', marginBottom: 16, textAlign: 'center' },
   heroBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6 },
   heroBadgeText: { color: 'rgba(255,255,255,0.85)', fontSize: 12 },

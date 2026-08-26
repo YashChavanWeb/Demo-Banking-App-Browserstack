@@ -8,6 +8,7 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, Modal, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { WebView } from 'react-native-webview';
 
 export default function KYCScreen() {
   const router = useRouter();
@@ -18,6 +19,7 @@ export default function KYCScreen() {
   const [showConsent, setShowConsent] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [downloadDone, setDownloadDone] = useState(false);
+  const [pdfBase64, setPdfBase64] = useState<string | null>(null);
 
   const flowConfig = AuthStore.getFlowConfig();
 
@@ -60,6 +62,12 @@ export default function KYCScreen() {
         setDocUri(asset.uri);
         setDocSize(asset.size ?? null);
         setDownloadDone(false);
+        setPdfBase64(null);
+        // Read PDF as base64 for in-app preview via WebView
+        try {
+          const b64 = await LegacyFS.readAsStringAsync(asset.uri, { encoding: LegacyFS.EncodingType.Base64 });
+          setPdfBase64(b64);
+        } catch { /* preview unavailable */ }
       }
     } catch {
       setError('Failed to pick document. Please try again.');
@@ -151,7 +159,7 @@ export default function KYCScreen() {
           )}
         </TouchableOpacity>
 
-        {/* PDF preview — show a styled info card (WebView can't load local file:// URIs on Android) */}
+        {/* PDF preview — render actual PDF pages via WebView using base64 data URI */}
         {docName && docUri && (
           <View style={s.pdfPreviewContainer} testID="pdf-preview">
             <View style={s.pdfPreviewHeader}>
@@ -159,18 +167,30 @@ export default function KYCScreen() {
               <Text style={s.pdfPreviewTitle} numberOfLines={1}>{docName}</Text>
               {docSize && <Text style={s.pdfPreviewSize}>{formatSize(docSize)}</Text>}
             </View>
-            <View style={s.pdfReadyBody}>
-              <View style={s.pdfReadyIcon}>
-                <Ionicons name="document-text-outline" size={48} color="#DC2626" />
+            {pdfBase64 ? (
+              <WebView
+                style={s.pdfWebView}
+                originWhitelist={['*']}
+                scalesPageToFit
+                testID="pdf-webview"
+                source={{
+                  html: `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>*{margin:0;padding:0;box-sizing:border-box}body{background:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh}embed,iframe{width:100vw;height:100vh;border:none}</style></head><body><embed src="data:application/pdf;base64,${pdfBase64}" type="application/pdf" width="100%" height="100%"/></body></html>`,
+                }}
+              />
+            ) : (
+              <View style={s.pdfReadyBody}>
+                <View style={s.pdfReadyIcon}>
+                  <Ionicons name="document-text-outline" size={48} color="#DC2626" />
+                </View>
+                <Text style={s.pdfReadyTitle}>Document Ready</Text>
+                <Text style={s.pdfReadyName} numberOfLines={2}>{docName}</Text>
+                {docSize && <Text style={s.pdfReadySize}>{formatSize(docSize)}</Text>}
+                <View style={s.pdfReadyBadge}>
+                  <Ionicons name="checkmark-circle" size={14} color="#059669" />
+                  <Text style={s.pdfReadyBadgeText}>PDF selected successfully</Text>
+                </View>
               </View>
-              <Text style={s.pdfReadyTitle}>Document Ready</Text>
-              <Text style={s.pdfReadyName} numberOfLines={2}>{docName}</Text>
-              {docSize && <Text style={s.pdfReadySize}>{formatSize(docSize)}</Text>}
-              <View style={s.pdfReadyBadge}>
-                <Ionicons name="checkmark-circle" size={14} color="#059669" />
-                <Text style={s.pdfReadyBadgeText}>PDF selected successfully</Text>
-              </View>
-            </View>
+            )}
           </View>
         )}
 
@@ -186,7 +206,7 @@ export default function KYCScreen() {
               disabled={downloading}
               testID="download-btn"
             >
-              <Ionicons name={downloadDone ? 'checkmark-circle-outline' : 'download-outline'} size={14} color={downloadDone ? '#059669' : '#4F46E5'} />
+              <Ionicons name={downloadDone ? 'checkmark-circle-outline' : 'download-outline'} size={14} color={downloadDone ? BSColors.successDark : BSColors.accent} />
               <Text style={[s.downloadBtnText, downloadDone && s.downloadBtnTextDone]}>
                 {downloading ? 'Saving...' : downloadDone ? 'Downloaded' : 'Download Report'}
               </Text>
@@ -248,64 +268,74 @@ export default function KYCScreen() {
 }
 
 const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F8FAFF' },
+  safe: { flex: 1, backgroundColor: BSColors.bgPageAlt },
   container: { alignItems: 'center', paddingHorizontal: 24, paddingTop: 32, paddingBottom: 40 },
   logo: { width: 160, height: 44, marginBottom: 16 },
-  stepBadge: { backgroundColor: '#EEF2FF', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 5, marginBottom: 16, borderWidth: 1, borderColor: BSColors.primary + '40' },
+  stepBadge: { backgroundColor: BSColors.indigoBg, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 5, marginBottom: 16, borderWidth: 1, borderColor: BSColors.primary + '40' },
   stepBadgeText: { color: BSColors.primary, fontSize: 12, fontWeight: '600' },
   title: { color: '#111', fontSize: 22, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
   subtitle: { color: '#888', fontSize: 14, textAlign: 'center', marginBottom: 24 },
-  requirementsCard: { width: '100%', backgroundColor: '#F5F6FA', borderRadius: 14, padding: 16, marginBottom: 24 },
+  requirementsCard: { width: '100%', backgroundColor: BSColors.bgPageLight, borderRadius: 14, padding: 16, marginBottom: 24 },
   requirementsTitle: { color: '#333', fontSize: 13, fontWeight: '700', marginBottom: 10 },
   reqRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 6 },
   reqText: { color: '#555', fontSize: 13, flex: 1 },
-  uploadArea: { width: '100%', borderRadius: 16, borderWidth: 2, borderColor: '#C7D2FE', borderStyle: 'dashed', padding: 24, alignItems: 'center', marginBottom: 12, backgroundColor: '#FAFAFA' },
-  uploadAreaDone: { borderColor: '#059669', borderStyle: 'solid', backgroundColor: '#F0FDF4' },
+  uploadArea: { width: '100%', borderRadius: 16, borderWidth: 2, borderColor: BSColors.indigoBorder, borderStyle: 'dashed', padding: 24, alignItems: 'center', marginBottom: 12, backgroundColor: BSColors.neutralFaint },
+  uploadAreaDone: { borderColor: BSColors.successDark, borderStyle: 'solid', backgroundColor: BSColors.successBg },
   uploadPrompt: { alignItems: 'center', gap: 8 },
-  uploadIconCircle: { width: 72, height: 72, borderRadius: 36, backgroundColor: '#EEF2FF', alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
+  uploadIconCircle: { width: 72, height: 72, borderRadius: 36, backgroundColor: BSColors.indigoBg, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
   uploadTitle: { color: '#111', fontSize: 16, fontWeight: '700' },
   uploadSub: { color: '#888', fontSize: 13 },
-  uploadBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#EEF2FF', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: BSColors.primary + '40' },
+  uploadBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: BSColors.indigoBg, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: BSColors.primary + '40' },
   uploadBadgeText: { color: BSColors.primary, fontSize: 11, fontWeight: '600' },
   uploadedContent: { flexDirection: 'row', alignItems: 'center', width: '100%', gap: 12 },
-  uploadedIcon: { width: 48, height: 48, borderRadius: 12, backgroundColor: '#D1FAE5', alignItems: 'center', justifyContent: 'center' },
+  uploadedIcon: { width: 48, height: 48, borderRadius: 12, backgroundColor: BSColors.successBgLight, alignItems: 'center', justifyContent: 'center' },
   uploadedInfo: { flex: 1 },
   uploadedName: { color: '#111', fontSize: 14, fontWeight: '600', marginBottom: 2 },
   uploadedSize: { color: '#888', fontSize: 12 },
   docActions: { flexDirection: 'row', gap: 12, marginBottom: 16, width: '100%' },
-  reuploadBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#EEF2FF', borderRadius: 10, paddingVertical: 10, borderWidth: 1, borderColor: BSColors.primary + '40' },
+  reuploadBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: BSColors.indigoBg, borderRadius: 10, paddingVertical: 10, borderWidth: 1, borderColor: BSColors.primary + '40' },
   reuploadText: { color: BSColors.primary, fontSize: 13, fontWeight: '600' },
-  downloadBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#EEF2FF', borderRadius: 10, paddingVertical: 10, borderWidth: 1, borderColor: '#C7D2FE' },
+  downloadBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: BSColors.indigoBg, borderRadius: 10, paddingVertical: 10, borderWidth: 1, borderColor: BSColors.indigoBorder },
   downloadBtnDisabled: { opacity: 0.5 },
-  downloadBtnText: { color: '#4F46E5', fontSize: 13, fontWeight: '600' },
-  downloadBtnTextDone: { color: '#059669' },
-  error: { color: '#DC2626', fontSize: 13, marginBottom: 14, textAlign: 'center' },
+  downloadBtnText: { color: BSColors.accent, fontSize: 13, fontWeight: '600' },
+  downloadBtnTextDone: { color: BSColors.successDark },
+  error: { color: BSColors.errorDark, fontSize: 13, marginBottom: 14, textAlign: 'center' },
   completeBtn: { width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: BSColors.primary, borderRadius: 12, paddingVertical: 16, marginBottom: 16, shadowColor: BSColors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
   completeBtnDisabled: { opacity: 0.45 },
-  completeBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  completeBtnText: { color: BSColors.white, fontSize: 15, fontWeight: '700' },
   secureNote: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   secureNoteText: { color: '#AAA', fontSize: 12 },
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  consentModal: { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
+  consentModal: { backgroundColor: BSColors.white, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
   consentIcon: { alignItems: 'center', marginBottom: 12 },
   consentTitle: { color: '#111', fontSize: 20, fontWeight: '700', textAlign: 'center', marginBottom: 12 },
   consentBody: { color: '#555', fontSize: 14, lineHeight: 22, marginBottom: 24 },
   consentBtns: { flexDirection: 'row', gap: 12 },
-  consentDecline: { flex: 1, paddingVertical: 14, borderRadius: 12, alignItems: 'center', backgroundColor: '#F5F5F5' },
+  consentDecline: { flex: 1, paddingVertical: 14, borderRadius: 12, alignItems: 'center', backgroundColor: BSColors.bgPageNeutral },
   consentDeclineText: { color: '#666', fontSize: 15, fontWeight: '600' },
   consentAccept: { flex: 2, paddingVertical: 14, borderRadius: 12, alignItems: 'center', backgroundColor: BSColors.primary },
-  consentAcceptText: { color: '#fff', fontSize: 15, fontWeight: '700' },
-  pdfPreviewContainer: { width: '100%', borderRadius: 14, overflow: 'hidden', borderWidth: 1, borderColor: '#FECACA', marginBottom: 12, backgroundColor: '#FFF5F5' },
-  pdfPreviewHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: '#FEE2E2' },
-  pdfPreviewTitle: { flex: 1, color: '#DC2626', fontSize: 12, fontWeight: '700' },
+  consentAcceptText: { color: BSColors.white, fontSize: 15, fontWeight: '700' },
+  pdfPreviewContainer: {
+    width: '100%',
+    borderRadius: 14,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: BSColors.errorBorder,
+    marginBottom: 12,
+    backgroundColor: BSColors.errorBgLight,
+    minHeight: 320,
+  },
+  pdfWebView: { width: '100%', height: 280 },
+  pdfPreviewHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: BSColors.errorBorderDark },
+  pdfPreviewTitle: { flex: 1, color: BSColors.errorDark, fontSize: 12, fontWeight: '700' },
   pdfPreviewSize: { color: '#888', fontSize: 11 },
   pdfReadyBody: { alignItems: 'center', paddingVertical: 24, paddingHorizontal: 16, gap: 8 },
-  pdfReadyIcon: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#FEE2E2', alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
+  pdfReadyIcon: { width: 80, height: 80, borderRadius: 40, backgroundColor: BSColors.errorBorderDark, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
   pdfReadyTitle: { color: '#111', fontSize: 16, fontWeight: '700' },
   pdfReadyName: { color: '#555', fontSize: 13, textAlign: 'center' },
   pdfReadySize: { color: '#888', fontSize: 12 },
-  pdfReadyBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#D1FAE5', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, marginTop: 4 },
-  pdfReadyBadgeText: { color: '#059669', fontSize: 12, fontWeight: '600' },
+  pdfReadyBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: BSColors.successBgLight, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, marginTop: 4 },
+  pdfReadyBadgeText: { color: BSColors.successDark, fontSize: 12, fontWeight: '600' },
   skipBtn: { marginTop: 4, marginBottom: 8, paddingVertical: 8, paddingHorizontal: 20, alignSelf: 'center' },
-  skipBtnText: { color: '#94A3B8', fontSize: 13, fontWeight: '600', textDecorationLine: 'underline' },
+  skipBtnText: { color: BSColors.slate300, fontSize: 13, fontWeight: '600', textDecorationLine: 'underline' },
 });

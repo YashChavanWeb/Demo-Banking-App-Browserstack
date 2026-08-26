@@ -1,9 +1,9 @@
 {
   "expo": {
-    "name": "Demo-Banking-App",
+    "name": "BrowserStack Bank",
     "slug": "yash",
-    "version": "1.1.0",
-    "orientation": "portrait",
+    "version": "2.0.0",
+    "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "demobankingapp",
     "userInterfaceStyle": "automatic",
@@ -14,7 +14,7 @@
     },
     "android": {
       "package": "com.yash.bankingapp",
-      "googleServicesFile": "./google-services.json",
+      "googleServicesFile": "$GOOGLE_SERVICES_JSON",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -28,13 +28,23 @@
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
     "plugins": [
       "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow BrowserStack Bank to access your camera for liveness verification and QR scanning."
+        }
+      ],
       [
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
+          "imageWidth": 80,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
           "dark": {
@@ -56,12 +66,9 @@
           "color": "#1E3A8A",
           "sounds": []
         }
-      ]
+      ],
+      "@react-native-voice/voice"
     ],
-    "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
-    },
     "extra": {
       "router": {},
       "eas": {

@@ -1,79 +1,72 @@
-// Banking store — syncs with backend, starts empty until API loads
+// Banking store — Zustand-based, syncs with backend
+import type { Transaction } from '@/types';
+import { create } from 'zustand';
 import { api } from './api';
 
-export type TxType = 'debit' | 'credit';
+// Re-export Transaction type for backward compat (other files import from here)
+export type { Transaction, TxType } from '@/types';
 
-export interface Transaction {
-  id: string;
-  merchant: string;
-  category: string;
-  date: string;
-  amount: number;       // positive = credit, negative = debit
-  type: TxType;
-  icon: string;
-  note?: string;
-  referenceId: string;
+interface BankingState {
+  balance: number | null;
+  transactions: Transaction[];
+  syncing: boolean;
+  synced: boolean;
+  syncError: string | null;
+  sync: () => Promise<void>;
+  addTransaction: (tx: Omit<Transaction, 'id' | 'referenceId'>) => Transaction;
+  transfer: (recipientName: string, amount: number, note?: string, recipientId?: string) => Promise<Transaction>;
+  recordPayment: (amount: number, description?: string) => Promise<Transaction>;
 }
 
-// Start with null to indicate "not loaded yet"
-let _balance: number | null = null;
-let _transactions: Transaction[] = [];
-let _listeners: (() => void)[] = [];
-let _syncing = false;
-let _synced = false;
+export const useBankStore = create<BankingState>((set, get) => ({
+  balance: null,
+  transactions: [],
+  syncing: false,
+  synced: false,
+  syncError: null,
 
-function notify() { _listeners.forEach(fn => fn()); }
-
-export const BankStore = {
-  getBalance: () => _balance ?? 0,
-  getSavings: () => Math.round((_balance ?? 0) * 0.73 * 100) / 100,
-  getChecking: () => Math.round((_balance ?? 0) * 0.27 * 100) / 100,
-  getTransactions: () => _transactions,
-  isLoading: () => !_synced,
-
-  canAfford: (amount: number) => (_balance ?? 0) >= amount,
-
-  // Load real data from backend
   sync: async () => {
-    if (_syncing) return;
-    _syncing = true;
+    if (get().syncing) return;
+    set({ syncing: true, syncError: null });
     try {
       const [balRes, txRes] = await Promise.all([
         api.getBalance(),
         api.getTransactions(),
       ]);
-      _balance = balRes.balance;
-      _transactions = txRes.transactions;
-      _synced = true;
-      notify();
-    } catch { /* stay empty until next sync */ }
-    _syncing = false;
+      set({
+        // Fix 8: server is single source of truth for balance breakdown
+        balance: balRes.balance,
+        transactions: txRes.transactions,
+        synced: true,
+        syncing: false,
+      });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to load account data';
+      set({ syncing: false, syncError: message });
+    }
   },
 
-  isSynced: () => _synced,
-
-  addTransaction: (tx: Omit<Transaction, 'id' | 'referenceId'>): Transaction => {
+  addTransaction: (tx) => {
     const id = `t${Date.now()}`;
     const referenceId = `TXN${Date.now().toString().slice(-8)}`;
     const newTx: Transaction = { ...tx, id, referenceId };
-    _transactions = [newTx, ..._transactions];
-    _balance = Math.round(((_balance ?? 0) + tx.amount) * 100) / 100;
-    notify();
+    set((state) => ({
+      transactions: [newTx, ...state.transactions],
+      balance: Math.round(((state.balance ?? 0) + tx.amount) * 100) / 100,
+    }));
     return newTx;
   },
 
-  // Transfer via API (updates DB + local state)
-  transfer: async (recipientName: string, amount: number, note?: string, recipientId?: string): Promise<Transaction> => {
+  transfer: async (recipientName, amount, note, recipientId) => {
     try {
       const res = await api.transfer(recipientName, amount, note, recipientId);
-      _balance = res.newBalance;
-      const tx = res.transaction;
-      _transactions = [tx, ..._transactions];
-      notify();
-      return tx;
+      set((state) => ({
+        balance: res.newBalance,
+        transactions: [res.transaction, ...state.transactions],
+      }));
+      return res.transaction;
     } catch {
-      // Fallback to local
-      return BankStore.addTransaction({
+      return get().addTransaction({
         merchant: recipientName,
         category: 'Transfer',
         date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
@@ -85,17 +78,16 @@ export const BankStore = {
     }
   },
 
-  // Record payment via API
-  recordPayment: async (amount: number, description?: string): Promise<Transaction> => {
+  recordPayment: async (amount, description) => {
     try {
       const res = await api.recordPayment(amount, description);
-      _balance = res.newBalance;
-      const tx = res.transaction;
-      _transactions = [tx, ..._transactions];
-      notify();
-      return tx;
+      set((state) => ({
+        balance: res.newBalance,
+        transactions: [res.transaction, ...state.transactions],
+      }));
+      return res.transaction;
     } catch {
-      return BankStore.addTransaction({
+      return get().addTransaction({
         merchant: description || 'Card Payment',
         category: 'Payment',
         date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
@@ -106,9 +98,26 @@ export const BankStore = {
       });
     }
   },
+}));
 
-  subscribe: (fn: () => void) => {
-    _listeners.push(fn);
-    return () => { _listeners = _listeners.filter(l => l !== fn); };
-  },
+// ── Backward-compat shim ──────────────────────────────────────────────────────
+// All existing code that imports BankStore continues to work unchanged.
+export const BankStore = {
+  getBalance: () => useBankStore.getState().balance ?? 0,
+  // Fix 8: savings/checking are server-computed; client just reads balance
+  getSavings: () => Math.round((useBankStore.getState().balance ?? 0) * 0.73 * 100) / 100,
+  getChecking: () => Math.round((useBankStore.getState().balance ?? 0) * 0.27 * 100) / 100,
+  getTransactions: () => useBankStore.getState().transactions,
+  isLoading: () => !useBankStore.getState().synced,
+  isSynced: () => useBankStore.getState().synced,
+  getSyncError: () => useBankStore.getState().syncError,
+  canAfford: (amount: number) => (useBankStore.getState().balance ?? 0) >= amount,
+  sync: () => useBankStore.getState().sync(),
+  addTransaction: (tx: Omit<Transaction, 'id' | 'referenceId'>) =>
+    useBankStore.getState().addTransaction(tx),
+  transfer: (recipientName: string, amount: number, note?: string, recipientId?: string) =>
+    useBankStore.getState().transfer(recipientName, amount, note, recipientId),
+  recordPayment: (amount: number, description?: string) =>
+    useBankStore.getState().recordPayment(amount, description),
+  subscribe: (fn: () => void) => useBankStore.subscribe(fn),
 };

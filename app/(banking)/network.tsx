@@ -6,32 +6,41 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-// Use multiple small non-CDN endpoints to get a realistic speed reading
-// that reflects BrowserStack network throttling
-const SPEED_TEST_URLS = [
-  'https://httpbin.org/bytes/200000',       // 200KB, non-CDN
-  'https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png',
-  'https://speed.cloudflare.com/__down?bytes=200000',
+// Measure latency via HEAD requests to fast endpoints (no large downloads)
+// Latency-based classification reflects BrowserStack throttling accurately
+const PING_URLS = [
+  'https://www.google.com/generate_204',
+  'https://connectivitycheck.gstatic.com/generate_204',
+  'https://www.cloudflare.com/cdn-cgi/trace',
 ];
 
-async function measureSpeedMbps(): Promise<number> {
-  let totalBits = 0;
-  let totalSecs = 0;
-  for (const url of SPEED_TEST_URLS) {
-    try {
-      const start = Date.now();
-      const res = await fetch(url, { cache: 'no-store' });
-      const blob = await res.blob();
-      const elapsed = (Date.now() - start) / 1000;
-      if (elapsed > 0 && blob.size > 0) {
-        totalBits += blob.size * 8;
-        totalSecs += elapsed;
-      }
-    } catch { /* skip failed endpoint */ }
+async function fetchWithTimeout(url: string, timeoutMs: number): Promise<{ ok: boolean; elapsed: number }> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const start = Date.now();
+  try {
+    const res = await fetch(url, { method: 'HEAD', cache: 'no-store', signal: controller.signal });
+    clearTimeout(timer);
+    return { ok: res.ok || res.status === 204, elapsed: Date.now() - start };
+  } catch {
+    clearTimeout(timer);
+    return { ok: false, elapsed: timeoutMs };
   }
-  if (totalSecs === 0) throw new Error('All speed test endpoints failed');
-  const mbps = totalBits / (totalSecs * 1_000_000);
-  return Math.round(mbps * 10) / 10;
+}
+
+async function measureSpeedMbps(): Promise<number> {
+  // Run all pings in parallel with 4s timeout each
+  const results = await Promise.all(PING_URLS.map(url => fetchWithTimeout(url, 4000)));
+  const successful = results.filter(r => r.ok);
+  if (successful.length === 0) throw new Error('No connectivity');
+  const avgLatencyMs = successful.reduce((s, r) => s + r.elapsed, 0) / successful.length;
+  // Map latency to approximate Mbps (lower latency = faster connection)
+  if (avgLatencyMs < 50) return 80;    // Excellent — 5G/Fibre
+  if (avgLatencyMs < 150) return 30;   // Good — 4G LTE
+  if (avgLatencyMs < 300) return 12;   // Fair — 4G
+  if (avgLatencyMs < 600) return 4;    // Slow — 3G
+  if (avgLatencyMs < 1500) return 1;   // Very slow — 2G/Edge
+  return 0.2;                          // Extremely slow
 }
 
 export default function NetworkScreen() {
@@ -75,8 +84,8 @@ export default function NetworkScreen() {
   useEffect(() => { checkConnection(); }, []);
 
   const isOnline = online === true;
-  const statusColor = online === null ? '#94A3B8' : isOnline ? BSColors.success : BSColors.error;
-  const statusBg = online === null ? BSColors.lightGray : isOnline ? '#F0FDF4' : '#FEF2F2';
+  const statusColor = online === null ? BSColors.slate300 : isOnline ? BSColors.success : BSColors.error;
+  const statusBg = online === null ? BSColors.lightGray : isOnline ? BSColors.successBg : BSColors.errorBg;
   const statusText = checking ? 'Measuring...' : online === null ? 'Checking...' : isOnline ? 'Online' : 'Offline';
 
   const speedColor = speedMbps === null ? statusColor
@@ -201,6 +210,6 @@ const styles = StyleSheet.create({
   qualityText: { fontSize: 13, fontWeight: '700' },
   checkBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 14, paddingVertical: 16, marginBottom: 12 },
   checkBtnDisabled: { opacity: 0.6 },
-  checkBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  checkBtnText: { color: BSColors.white, fontSize: 16, fontWeight: '700' },
   note: { color: BSColors.darkGray, fontSize: 12, textAlign: 'center' },
 });

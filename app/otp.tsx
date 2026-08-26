@@ -18,14 +18,13 @@ export default function OTPScreen() {
   const isSignup = AuthStore.getFlow() === 'signup';
   const email = AuthStore.getEmail();
 
-  // Send OTP on mount
+  // Send OTP on mount and store it for autofill (demo convenience)
   useEffect(() => {
     if (!email) return;
     api.sendOtp(email).then(res => {
-      setServerOtp(res.otp); // demo: show OTP in hint
+      if (res.otp) setServerOtp(res.otp);
     }).catch(() => {
-      // fallback to static OTP for demo
-      setServerOtp('123456');
+      setServerOtp('123456'); // fallback for demo
     });
   }, [email]);
 
@@ -71,10 +70,9 @@ export default function OTPScreen() {
     setOtp('');
     setError('');
     if (email) {
-      try {
-        const res = await api.sendOtp(email);
-        setServerOtp(res.otp);
-      } catch { /* ignore */ }
+      api.sendOtp(email).then(res => {
+        if (res.otp) setServerOtp(res.otp);
+      }).catch(() => {});
     }
   };
 
@@ -100,7 +98,7 @@ export default function OTPScreen() {
                 onPress={() => { setOtp(serverOtp); setError(''); }}
                 testID="autofill-otp-btn"
               >
-                <Ionicons name="flash" size={14} color="#fff" style={{ marginRight: 4 }} />
+                <Ionicons name="flash" size={14} color={BSColors.white} style={{ marginRight: 4 }} />
                 <Text style={s.autoFillBtnText}>Auto-fill</Text>
               </TouchableOpacity>
             </View>
@@ -147,11 +145,11 @@ export default function OTPScreen() {
 }
 
 const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F8FAFF' },
+  safe: { flex: 1, backgroundColor: BSColors.bgPageAlt },
   flex: { flex: 1 },
   container: { flex: 1, alignItems: 'center', paddingHorizontal: 28, paddingTop: 36, paddingBottom: 32 },
   logo: { width: 180, height: 48, marginBottom: 16 },
-  stepBadge: { backgroundColor: '#EEF2FF', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 5, marginBottom: 16, borderWidth: 1, borderColor: BSColors.primary + '40' },
+  stepBadge: { backgroundColor: BSColors.indigoBg, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 5, marginBottom: 16, borderWidth: 1, borderColor: BSColors.primary + '40' },
   stepBadgeText: { color: BSColors.primary, fontSize: 12, fontWeight: '600' },
   title: { color: '#111', fontSize: 24, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
   subtitle: { color: '#888', fontSize: 14, textAlign: 'center', marginBottom: 6 },
@@ -159,21 +157,21 @@ const s = StyleSheet.create({
   hint: { color: '#888', fontSize: 13 },
   hintCode: { color: BSColors.primary, fontWeight: '700' },
   autoFillBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: BSColors.primary, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 },
-  autoFillBtnText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  autoFillBtnText: { color: BSColors.white, fontSize: 12, fontWeight: '700' },
   otpRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
-  otpBox: { width: 46, height: 56, borderRadius: 12, borderWidth: 2, borderColor: '#C7D2FE', backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
-  otpBoxFilled: { borderColor: BSColors.primary, backgroundColor: '#EEF2FF' },
+  otpBox: { width: 46, height: 56, borderRadius: 12, borderWidth: 2, borderColor: BSColors.indigoBorder, backgroundColor: BSColors.white, alignItems: 'center', justifyContent: 'center' },
+  otpBoxFilled: { borderColor: BSColors.primary, backgroundColor: BSColors.indigoBg },
   otpBoxActive: { borderColor: BSColors.primary, borderWidth: 2.5 },
   otpDigit: { color: '#111', fontSize: 22, fontWeight: '700' },
   hiddenInput: { position: 'absolute', opacity: 0, width: 1, height: 1 },
-  error: { color: '#DC2626', fontSize: 13, marginBottom: 12, textAlign: 'center' },
+  error: { color: BSColors.errorDark, fontSize: 13, marginBottom: 12, textAlign: 'center' },
   verifyBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     backgroundColor: BSColors.primary, borderRadius: 12, paddingVertical: 15, paddingHorizontal: 48,
     marginBottom: 16, shadowColor: BSColors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
   },
   verifyBtnDisabled: { opacity: 0.45 },
-  verifyBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  verifyBtnText: { color: BSColors.white, fontSize: 16, fontWeight: '700' },
   resendRow: { marginTop: 4 },
   resendText: { color: '#888', fontSize: 14 },
   resendLink: { color: BSColors.primary, fontWeight: '700' },

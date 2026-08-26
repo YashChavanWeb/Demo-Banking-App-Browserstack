@@ -18,9 +18,13 @@ if (!admin.getApps().length) {
 
 async function sendOtpPushToUser(email, otp) {
   try {
-    const [user] = await sql`SELECT id FROM users WHERE email = ${email}`;
-    if (!user) return;
-    const [row] = await sql`SELECT token FROM push_tokens WHERE user_id = ${user.id}`;
+    // Single JOIN query — avoids two round-trips to the DB
+    const [row] = await sql`
+      SELECT pt.token FROM push_tokens pt
+      JOIN users u ON u.id = pt.user_id
+      WHERE u.email = ${email}
+      LIMIT 1
+    `;
     if (!row?.token) return;
     await getMessaging().send({
       token: row.token,
@@ -29,7 +33,7 @@ async function sendOtpPushToUser(email, otp) {
       apns: { payload: { aps: { sound: 'default', badge: 1 } } },
       data: { type: 'otp', otp },
     });
-    console.log(`[OTP Push] Sent to user ${email}`);
+    console.log(`[OTP Push] Sent to ${email}`);
   } catch (err) {
     console.error('[OTP Push] Error:', err.message);
   }
@@ -103,7 +107,7 @@ router.post('/signup', async (req, res) => {
     res.status(201).json({ token, user: { id: user.id, fullName: user.full_name, email: user.email, role: user.role, kycStatus: user.kyc_status } });
   } catch (err) {
     console.error('Signup error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }
 });
 
@@ -130,7 +134,7 @@ router.post('/login', async (req, res) => {
     res.json({ token, user: { id: user.id, fullName: user.full_name, email: user.email, role: user.role, kycStatus: user.kyc_status } });
   } catch (err) {
     console.error('Login error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }
 });
 
@@ -148,14 +152,14 @@ router.post('/send-otp', async (req, res) => {
       VALUES (${email}, ${code}, ${expiresAt})
     `;
 
-    // In production: send via email. For demo, return in response.
-    // Also send as FCM push notification (fire-and-forget)
+    // Send as FCM push notification (fire-and-forget)
     sendOtpPushToUser(email, code).catch(() => {});
 
+    // Demo app: return OTP in response for autofill convenience
     res.json({ message: 'OTP sent', otp: code, expiresAt });
   } catch (err) {
     console.error('OTP error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }
 });
 
@@ -179,7 +183,7 @@ router.post('/verify-otp', async (req, res) => {
     res.json({ verified: true });
   } catch (err) {
     console.error('Verify OTP error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }
 });
 

@@ -33,7 +33,7 @@ router.get('/', authMiddleware, async (req, res) => {
     res.json({ transactions: txs });
   } catch (err) {
     console.error('Transactions error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }
 });
 
@@ -116,7 +116,7 @@ router.post('/transfer', authMiddleware, async (req, res) => {
     });
   } catch (err) {
     console.error('Transfer error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }
 });
 
@@ -172,7 +172,7 @@ router.post('/payment', authMiddleware, async (req, res) => {
     });
   } catch (err) {
     console.error('Payment record error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An unexpected error occurred. Please try again.' });
   }
 });
 

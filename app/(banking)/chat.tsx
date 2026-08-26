@@ -243,7 +243,7 @@ export default function ChatScreen() {
                   ? [styles.bubbleMine, { backgroundColor: primaryColor }]
                   : styles.bubbleTheirs,
               ]}>
-                <Text style={[styles.bubbleText, isMine && { color: '#fff' }]}>{item.body}</Text>
+                <Text style={[styles.bubbleText, isMine && { color: BSColors.white }]}>{item.body}</Text>
                 <Text style={[styles.bubbleTime, isMine && { color: 'rgba(255,255,255,0.7)' }]}>
                   {formatTime(item.created_at)}
                 </Text>
@@ -252,7 +252,7 @@ export default function ChatScreen() {
           }}
           ListEmptyComponent={
             <View style={styles.center}>
-              <Text style={styles.emptyText}>No messages yet. Say hello! 👋</Text>
+              <Text style={styles.emptyText}>No messages yet. Say hello!</Text>
             </View>
           }
         />
@@ -301,27 +301,27 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 32 },
   emptyText: { color: BSColors.darkGray, fontSize: 14, textAlign: 'center' },
   startBtn: { borderRadius: 14, paddingHorizontal: 24, paddingVertical: 12, marginTop: 8 },
-  startBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  startBtnText: { color: BSColors.white, fontSize: 14, fontWeight: '700' },
   convRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: BSColors.white, borderRadius: 16, padding: 14, gap: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 },
   convTop: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 3 },
   convName: { color: BSColors.textPrimary, fontSize: 14, fontWeight: '700' },
   convTime: { color: BSColors.darkGray, fontSize: 11 },
   convPreview: { color: BSColors.textSecondary, fontSize: 12 },
   unreadBadge: { minWidth: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5 },
-  unreadText: { color: '#fff', fontSize: 11, fontWeight: '800' },
+  unreadText: { color: BSColors.white, fontSize: 11, fontWeight: '800' },
   avatar: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
-  avatarText: { color: '#fff', fontSize: 15, fontWeight: '800' },
+  avatarText: { color: BSColors.white, fontSize: 15, fontWeight: '800' },
   searchRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: BSColors.white, margin: 16, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10, gap: 8, borderWidth: 1, borderColor: BSColors.mediumGray },
   searchInput: { flex: 1, fontSize: 14, color: BSColors.textPrimary },
   userRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: BSColors.white, borderRadius: 16, padding: 14, gap: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 },
   userName: { color: BSColors.textPrimary, fontSize: 14, fontWeight: '700', marginBottom: 2 },
   userEmail: { color: BSColors.darkGray, fontSize: 12 },
   bubble: { maxWidth: '78%', borderRadius: 18, paddingHorizontal: 14, paddingVertical: 10 },
-  bubbleMine: { alignSelf: 'flex-end', borderBottomRightRadius: 4, backgroundColor: '#4F46E5' },
+  bubbleMine: { alignSelf: 'flex-end', borderBottomRightRadius: 4, backgroundColor: BSColors.accent },
   bubbleTheirs: { alignSelf: 'flex-start', backgroundColor: BSColors.white, borderBottomLeftRadius: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: 1 },
   bubbleText: { color: BSColors.textPrimary, fontSize: 14, lineHeight: 20 },
   bubbleTime: { color: BSColors.darkGray, fontSize: 10, marginTop: 4, textAlign: 'right' },
-  errorBar: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FEF2F2', paddingHorizontal: 16, paddingVertical: 8, borderTopWidth: 1, borderTopColor: '#FECACA' },
+  errorBar: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: BSColors.errorBg, paddingHorizontal: 16, paddingVertical: 8, borderTopWidth: 1, borderTopColor: BSColors.errorBorder },
   errorText: { color: BSColors.error, fontSize: 12, flex: 1 },
   inputRow: { flexDirection: 'row', alignItems: 'flex-end', padding: 12, paddingBottom: 20, gap: 8, backgroundColor: BSColors.white, borderTopWidth: 1, borderTopColor: BSColors.mediumGray },
   msgInput: { flex: 1, backgroundColor: BSColors.lightGray, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, color: BSColors.textPrimary, maxHeight: 100 },

@@ -25,9 +25,9 @@ const ALL_TX: Tx[] = [
 const FILTERS: (TxStatus | 'All')[] = ['All', 'Completed', 'Flagged', 'Pending'];
 
 const STATUS_COLORS: Record<TxStatus, { bg: string; text: string }> = {
-  Completed: { bg: '#D1FAE5', text: '#059669' },
-  Flagged: { bg: '#FEE2E2', text: '#DC2626' },
-  Pending: { bg: '#FEF3C7', text: '#D97706' },
+  Completed: { bg: BSColors.successBgLight, text: BSColors.successDark },
+  Flagged: { bg: BSColors.errorBorderDark, text: BSColors.errorDark },
+  Pending: { bg: BSColors.warningBorder, text: BSColors.warningDark },
 };
 
 const TYPE_ICONS: Record<string, string> = {
@@ -61,9 +61,9 @@ export default function TransactionsTab() {
         {/* Summary cards */}
         <View style={s.statsRow}>
           {[
-            { label: 'Total Volume', value: '$' + ALL_TX.reduce((a, t) => a + t.amount, 0).toLocaleString(), color: '#4F46E5' },
-            { label: 'Flagged', value: String(flaggedCount), color: '#DC2626' },
-            { label: 'Pending', value: String(ALL_TX.filter(t => t.status === 'Pending').length), color: '#D97706' },
+            { label: 'Total Volume', value: '$' + ALL_TX.reduce((a, t) => a + t.amount, 0).toLocaleString(), color: BSColors.accent },
+            { label: 'Flagged', value: String(flaggedCount), color: BSColors.errorDark },
+            { label: 'Pending', value: String(ALL_TX.filter(t => t.status === 'Pending').length), color: BSColors.warningDark },
           ].map(st => (
             <View key={st.label} style={s.statCard}>
               <Text style={[s.statValue, { color: st.color }]}>{st.value}</Text>
@@ -76,7 +76,7 @@ export default function TransactionsTab() {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.filterRow} contentContainerStyle={{ gap: 8, paddingRight: 16 }}>
           {FILTERS.map(f => (
             <TouchableOpacity key={f} style={[s.filterPill, filter === f && s.filterPillActive]} onPress={() => setFilter(f)}>
-              {f === 'Flagged' && <Ionicons name="warning-outline" size={12} color={filter === f ? '#fff' : '#DC2626'} />}
+              {f === 'Flagged' && <Ionicons name="warning-outline" size={12} color={filter === f ? BSColors.white : BSColors.errorDark} />}
               <Text style={[s.filterPillText, filter === f && s.filterPillTextActive]}>{f}</Text>
             </TouchableOpacity>
           ))}
@@ -86,8 +86,8 @@ export default function TransactionsTab() {
         {filtered.map(tx => (
           <View key={tx.id} style={[s.txCard, tx.status === 'Flagged' && s.txCardFlagged]}>
             <View style={s.txTop}>
-              <View style={[s.txIcon, { backgroundColor: tx.status === 'Flagged' ? '#FEE2E2' : '#F5F6FA' }]}>
-                <Ionicons name={TYPE_ICONS[tx.type] as any} size={18} color={tx.status === 'Flagged' ? '#DC2626' : '#555'} />
+              <View style={[s.txIcon, { backgroundColor: tx.status === 'Flagged' ? BSColors.errorBorderDark : BSColors.bgPageLight }]}>
+                <Ionicons name={TYPE_ICONS[tx.type] as any} size={18} color={tx.status === 'Flagged' ? BSColors.errorDark : '#555'} />
               </View>
               <View style={s.txInfo}>
                 <Text style={s.txId}>{tx.id}</Text>
@@ -122,24 +122,24 @@ export default function TransactionsTab() {
 }
 
 const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F5F6FA' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#EEF2FF' },
+  safe: { flex: 1, backgroundColor: BSColors.bgPageLight },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: BSColors.white, paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: BSColors.indigoBg },
   headerTitle: { color: '#111', fontSize: 17, fontWeight: '700' },
   headerSub: { color: '#888', fontSize: 12, marginTop: 1 },
-  alertBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#FEE2E2', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
-  alertBadgeText: { color: '#DC2626', fontSize: 12, fontWeight: '700' },
+  alertBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: BSColors.errorBorderDark, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
+  alertBadgeText: { color: BSColors.errorDark, fontSize: 12, fontWeight: '700' },
   content: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 32 },
   statsRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },
-  statCard: { flex: 1, backgroundColor: '#fff', borderRadius: 12, padding: 12, alignItems: 'center', gap: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 },
+  statCard: { flex: 1, backgroundColor: BSColors.white, borderRadius: 12, padding: 12, alignItems: 'center', gap: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 },
   statValue: { fontSize: 16, fontWeight: '700' },
   statLabel: { color: '#888', fontSize: 11 },
   filterRow: { marginBottom: 14 },
-  filterPill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, backgroundColor: '#fff', borderWidth: 1, borderColor: '#C7D2FE' },
+  filterPill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, backgroundColor: BSColors.white, borderWidth: 1, borderColor: BSColors.indigoBorder },
   filterPillActive: { backgroundColor: BSColors.primary, borderColor: BSColors.primary },
   filterPillText: { color: '#555', fontSize: 13, fontWeight: '600' },
-  filterPillTextActive: { color: '#fff' },
-  txCard: { backgroundColor: '#fff', borderRadius: 14, padding: 14, marginBottom: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 },
-  txCardFlagged: { borderLeftWidth: 3, borderLeftColor: '#DC2626' },
+  filterPillTextActive: { color: BSColors.white },
+  txCard: { backgroundColor: BSColors.white, borderRadius: 14, padding: 14, marginBottom: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 },
+  txCardFlagged: { borderLeftWidth: 3, borderLeftColor: BSColors.errorDark },
   txTop: { flexDirection: 'row', alignItems: 'center' },
   txIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   txInfo: { flex: 1 },
@@ -150,8 +150,8 @@ const s = StyleSheet.create({
   txAmount: { color: '#111', fontSize: 14, fontWeight: '700' },
   txBadge: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 10 },
   txBadgeText: { fontSize: 10, fontWeight: '700' },
-  flagNote: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#FEE2E2' },
-  flagNoteText: { color: '#DC2626', fontSize: 12, flex: 1 },
+  flagNote: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: BSColors.errorBorderDark },
+  flagNoteText: { color: BSColors.errorDark, fontSize: 12, flex: 1 },
   empty: { alignItems: 'center', paddingVertical: 40, gap: 10 },
   emptyText: { color: '#AAA', fontSize: 14 },
 });

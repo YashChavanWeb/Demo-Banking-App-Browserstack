@@ -27,9 +27,52 @@ export const BSColors = {
 
   // Semantic
   error: '#EF4444',          // --color-danger
+  errorDark: '#DC2626',      // darker red (used for debit amounts, error states)
+  errorBg: '#FEF2F2',        // red-50
+  errorBgLight: '#FFF5F5',   // very light red
+  errorBorder: '#FECACA',    // red-200
+  errorBorderDark: '#FEE2E2',// red-100
   success: '#10B981',        // --color-success
+  successDark: '#059669',    // darker green (green mode primary, success states)
+  successBg: '#F0FDF4',      // green-50
+  successBgLight: '#D1FAE5', // green-100
+  successBorder: '#BBF7D0',  // green-200
   warning: '#F59E0B',        // --color-warning
+  warningDark: '#D97706',    // amber-600
+  warningBg: '#FFFBEB',      // amber-50
+  warningBorder: '#FEF3C7',  // amber-100
   info: '#3B82F6',
+  infoDark: '#0891B2',       // cyan-600
+  infoBg: '#E0F2FE',         // sky-100
+  infoDeep: '#0369A1',       // sky-700
+  infoDeepAlt: '#0284C7',    // sky-600
+
+  // Additional neutrals
+  grayNeutral: '#E0E0E0',    // neutral gray border
+  grayDark: '#374151',       // gray-700 (dark overlays)
+  greenLight: '#6EE7B7',     // emerald-300 (switch track)
+  greenBright: '#4ADE80',    // green-400 (QR success)
+  amberText: '#92400E',      // amber-800 (warning text)
+  amberHighlight: '#FDE68A', // amber-200
+  indigoLight: '#E0E7FF',    // indigo-100
+  neutralFaint: '#FAFAFA',   // near-white neutral
+  errorDeep: '#E11D48',      // rose-600
+  errorDeeper: '#D32F2F',    // material red-700
+  tealDeep: '#0a7ea4',       // teal (web color scheme)
+
+  // Extended neutrals
+  slate300: '#94A3B8',       // placeholder text, inactive icons
+  slate400: '#64748B',       // same as darkGray — alias for clarity
+  slate700: '#334155',       // dark text variant
+  bgPageAlt: '#F8FAFF',      // slightly blue-tinted page bg (auth screens)
+  bgPageLight: '#F5F6FA',    // neutral light bg
+  bgPageNeutral: '#F5F5F5',  // pure neutral bg
+  borderLight: '#F0F0F0',    // very light border
+
+  // Indigo / accent extended
+  indigoBg: '#EEF2FF',       // indigo-50 (step badges, highlights)
+  indigoBorder: '#C7D2FE',   // indigo-200
+  purple: '#7C3AED',         // violet-700 (chat, agents)
 
   // Legacy aliases (keep so existing references don't break)
   blue: '#3B82F6',
@@ -62,6 +105,15 @@ export const Colors = {
     tabIconDefault: '#9BA1A6',
     tabIconSelected: tintColorDark,
   },
+};
+
+// Urbanist font family constants — loaded in app/_layout.tsx via expo-font
+export const BSFonts = {
+  regular:    'Urbanist-Regular',
+  medium:     'Urbanist-Medium',
+  semiBold:   'Urbanist-SemiBold',
+  bold:       'Urbanist-Bold',
+  extraBold:  'Urbanist-ExtraBold',
 };
 
 export const Fonts = Platform.select({

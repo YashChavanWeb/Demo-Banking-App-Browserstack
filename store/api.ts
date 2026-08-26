@@ -1,4 +1,5 @@
 // Central API client — all backend calls go through here
+import type { AuthResponse, Card, Conversation, Message, Order, ProfileResponse, Transaction, TransferResponse } from '@/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // ── Backend URL — read from env (EXPO_PUBLIC_API_URL) ────────────────────────
@@ -43,52 +44,52 @@ async function request<T>(
 export const api = {
   // Auth
   signup: (fullName: string, email: string, password: string) =>
-    request<{ token: string; user: any }>('POST', '/auth/signup', { fullName, email, password }, false),
+    request<AuthResponse>('POST', '/auth/signup', { fullName, email, password }, false),
 
   login: (email: string, password: string) =>
-    request<{ token: string; user: any }>('POST', '/auth/login', { email, password }, false),
+    request<AuthResponse>('POST', '/auth/login', { email, password }, false),
 
   sendOtp: (email: string) =>
-    request<{ otp: string; message: string }>('POST', '/auth/send-otp', { email }, false),
+    request<{ message: string; otp?: string; expiresAt?: string }>('POST', '/auth/send-otp', { email }, false),
 
   verifyOtp: (email: string, code: string) =>
     request<{ verified: boolean }>('POST', '/auth/verify-otp', { email, code }, false),
 
   // Account
-  getProfile: () => request<any>('GET', '/account/profile'),
+  getProfile: () => request<ProfileResponse>('GET', '/account/profile'),
   getBalance: () => request<{ balance: number; savings: number; checking: number; currency: string }>('GET', '/account/balance'),
-  markKyc: () => request<any>('PATCH', '/account/kyc'),
+  markKyc: () => request<{ kycStatus: string }>('PATCH', '/account/kyc'),
 
   // Transactions
-  getTransactions: () => request<{ transactions: any[] }>('GET', '/transactions'),
+  getTransactions: () => request<{ transactions: Transaction[] }>('GET', '/transactions'),
   transfer: (recipientName: string, amount: number, note?: string, recipientId?: string) =>
-    request<{ transaction: any; newBalance: number }>('POST', '/transactions/transfer', { recipientName, amount, note, recipientId }),
+    request<TransferResponse>('POST', '/transactions/transfer', { recipientName, amount, note, recipientId }),
   recordPayment: (amount: number, description?: string) =>
-    request<{ transaction: any; newBalance: number }>('POST', '/transactions/payment', { amount, description }),
+    request<TransferResponse>('POST', '/transactions/payment', { amount, description }),
 
-  // Users (for transfer recipient list)
-  getUsers: () => request<{ users: any[] }>('GET', '/users'),
+  // Users (for transfer recipient list — returns a different shape than auth User)
+  getUsers: () => request<{ users: { id: string; name: string; email: string; avatar: string; account: string }[] }>('GET', '/users'),
 
   // Shop
   placeOrder: (items: { id: string; name: string; price: number; qty: number }[], total: number, description?: string) =>
-    request<{ order: any; transaction: any; newBalance: number }>('POST', '/shop/order', { items, total, description }),
-  getOrders: () => request<{ orders: any[] }>('GET', '/shop/orders'),
+    request<{ order: Order; transaction: Transaction; newBalance: number }>('POST', '/shop/order', { items, total, description }),
+  getOrders: () => request<{ orders: Order[] }>('GET', '/shop/orders'),
 
   // Cards
-  getCards: () => request<{ cards: any[] }>('GET', '/cards'),
+  getCards: () => request<{ cards: Card[] }>('GET', '/cards'),
   createCard: (card: { label: string; number: string; holder: string; expiry: string; color: string; cardType: string }) =>
-    request<{ card: any }>('POST', '/cards', card),
+    request<{ card: Card }>('POST', '/cards', card),
   updateCard: (id: string, updates: { frozen?: boolean; label?: string; color?: string }) =>
-    request<{ card: any }>('PATCH', `/cards/${id}`, updates),
+    request<{ card: Card }>('PATCH', `/cards/${id}`, updates),
   deleteCard: (id: string) => request<{ deleted: boolean }>('DELETE', `/cards/${id}`),
 
   // Chat / Messages
   sendMessage: (recipientId: string, body: string) =>
-    request<{ message: any }>('POST', '/messages', { recipientId, body }),
+    request<{ message: Message }>('POST', '/messages', { recipientId, body }),
   getConversation: (userId: string) =>
-    request<{ messages: any[] }>('GET', `/messages/conversation/${userId}`),
+    request<{ messages: Message[] }>('GET', `/messages/conversation/${userId}`),
   getInbox: () =>
-    request<{ conversations: any[] }>('GET', '/messages/inbox'),
+    request<{ conversations: Conversation[] }>('GET', '/messages/inbox'),
   getUnreadCount: () =>
     request<{ count: number }>('GET', '/messages/unread-count'),
 
@@ -105,6 +106,9 @@ export const api = {
     _memToken = null;
     return AsyncStorage.removeItem('auth_token');
   },
+  // Account deletion
+  deleteAccount: () => request<{ deleted: boolean }>('DELETE', '/account'),
+
   setMemToken: (token: string) => { _memToken = token; },
   getToken,
 };

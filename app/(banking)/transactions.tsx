@@ -58,15 +58,15 @@ export default function TransactionsScreen() {
 
         {/* Summary Cards */}
         <View style={[styles.summaryRow, greenMode && { flexDirection: "column" }]}>
-          <View style={[styles.summaryCard, { backgroundColor: '#F0FDF4' }]}>
+          <View style={[styles.summaryCard, { backgroundColor: BSColors.successBg }]}>
             <Ionicons name="arrow-down-circle-outline" size={20} color="#059669" />
             <Text style={styles.summaryLabel}>Total In</Text>
-            <Text style={[styles.summaryValue, { color: '#059669' }]}>+${totalCredit.toLocaleString('en-US', { minimumFractionDigits: 2 })}</Text>
+            <Text style={[styles.summaryValue, { color: BSColors.successDark }]}>+${totalCredit.toLocaleString('en-US', { minimumFractionDigits: 2 })}</Text>
           </View>
-          <View style={[styles.summaryCard, { backgroundColor: '#FEF2F2' }]}>
+          <View style={[styles.summaryCard, { backgroundColor: BSColors.errorBg }]}>
             <Ionicons name="arrow-up-circle-outline" size={20} color="#DC2626" />
             <Text style={styles.summaryLabel}>Total Out</Text>
-            <Text style={[styles.summaryValue, { color: '#DC2626' }]}>-${totalDebit.toLocaleString('en-US', { minimumFractionDigits: 2 })}</Text>
+            <Text style={[styles.summaryValue, { color: BSColors.errorDark }]}>-${totalDebit.toLocaleString('en-US', { minimumFractionDigits: 2 })}</Text>
           </View>
           <View style={[styles.summaryCard, { backgroundColor: primaryBg }]}>
             <Ionicons name="wallet-outline" size={20} color={primaryColor} />
@@ -94,11 +94,11 @@ export default function TransactionsScreen() {
           <View style={styles.txList}>
             {filtered.map((tx, i) => (
               <View key={tx.id} style={[styles.txRow, i < filtered.length - 1 && styles.txBorder]}>
-                <View style={[styles.txIconWrap, { backgroundColor: tx.type === 'credit' ? '#F0FDF4' : '#F8FAFF' }]}>
+                <View style={[styles.txIconWrap, { backgroundColor: tx.type === 'credit' ? BSColors.successBg : BSColors.bgPageAlt }]}>
                   <Ionicons
                     name={(CATEGORY_ICONS[tx.category] || tx.icon) as any}
                     size={20}
-                    color={tx.type === 'credit' ? '#059669' : '#64748B'}
+                    color={tx.type === 'credit' ? BSColors.successDark : BSColors.darkGray}
                   />
                 </View>
                 <View style={styles.txInfo}>
@@ -111,8 +111,8 @@ export default function TransactionsScreen() {
                   <Text style={[styles.txAmount, tx.amount > 0 ? styles.txCredit : styles.txDebit]}>
                     {tx.amount > 0 ? '+' : ''}${Math.abs(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   </Text>
-                  <View style={[styles.txTypeBadge, { backgroundColor: tx.type === 'credit' ? '#F0FDF4' : '#FEF2F2' }]}>
-                    <Text style={[styles.txTypeBadgeText, { color: tx.type === 'credit' ? '#059669' : '#DC2626' }]}>
+                  <View style={[styles.txTypeBadge, { backgroundColor: tx.type === 'credit' ? BSColors.successBg : BSColors.errorBg }]}>
+                    <Text style={[styles.txTypeBadgeText, { color: tx.type === 'credit' ? BSColors.successDark : BSColors.errorDark }]}>
                       {tx.type === 'credit' ? 'Credit' : 'Debit'}
                     </Text>
                   </View>
@@ -128,33 +128,33 @@ export default function TransactionsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F8FAFF' },
+  safe: { flex: 1, backgroundColor: BSColors.bgPageAlt },
   content: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 },
-  pageTitle: { color: '#0F172A', fontSize: 22, fontWeight: '700', marginBottom: 16 },
+  pageTitle: { color: BSColors.textPrimary, fontSize: 22, fontWeight: '700', marginBottom: 16 },
   summaryRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
   summaryCard: { flex: 1, borderRadius: 14, padding: 12, alignItems: 'center', gap: 4 },
-  summaryLabel: { color: '#64748B', fontSize: 11, fontWeight: '600' },
+  summaryLabel: { color: BSColors.darkGray, fontSize: 11, fontWeight: '600' },
   summaryValue: { fontSize: 12, fontWeight: '800' },
   filterScroll: { marginBottom: 16 },
-  filterChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#E2E8F0' },
+  filterChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: BSColors.white, borderWidth: 1.5, borderColor: BSColors.mediumGray },
   filterChipActive: { backgroundColor: BSColors.primary, borderColor: BSColors.primary },
-  filterChipText: { color: '#64748B', fontSize: 13, fontWeight: '600' },
-  filterChipTextActive: { color: '#fff' },
-  txList: { backgroundColor: '#fff', borderRadius: 16, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
+  filterChipText: { color: BSColors.darkGray, fontSize: 13, fontWeight: '600' },
+  filterChipTextActive: { color: BSColors.white },
+  txList: { backgroundColor: BSColors.white, borderRadius: 16, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
   txRow: { flexDirection: 'row', alignItems: 'flex-start', paddingHorizontal: 16, paddingVertical: 14 },
-  txBorder: { borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  txBorder: { borderBottomWidth: 1, borderBottomColor: BSColors.lightGray },
   txIconWrap: { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 12, marginTop: 2 },
   txInfo: { flex: 1 },
-  txMerchant: { color: '#0F172A', fontSize: 14, fontWeight: '600', marginBottom: 2 },
-  txMeta: { color: '#94A3B8', fontSize: 12, marginBottom: 2 },
-  txNote: { color: '#64748B', fontSize: 11, fontStyle: 'italic', marginBottom: 2 },
-  txRef: { color: '#C7D2FE', fontSize: 10 },
+  txMerchant: { color: BSColors.textPrimary, fontSize: 14, fontWeight: '600', marginBottom: 2 },
+  txMeta: { color: BSColors.slate300, fontSize: 12, marginBottom: 2 },
+  txNote: { color: BSColors.darkGray, fontSize: 11, fontStyle: 'italic', marginBottom: 2 },
+  txRef: { color: BSColors.indigoBorder, fontSize: 10 },
   txRight: { alignItems: 'flex-end', gap: 4 },
   txAmount: { fontSize: 14, fontWeight: '700' },
-  txCredit: { color: '#059669' },
-  txDebit: { color: '#DC2626' },
+  txCredit: { color: BSColors.successDark },
+  txDebit: { color: BSColors.errorDark },
   txTypeBadge: { borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2 },
   txTypeBadgeText: { fontSize: 10, fontWeight: '700' },
   emptyState: { alignItems: 'center', paddingVertical: 60, gap: 12 },
-  emptyText: { color: '#94A3B8', fontSize: 15 },
+  emptyText: { color: BSColors.slate300, fontSize: 15 },
 });

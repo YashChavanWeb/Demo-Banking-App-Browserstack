@@ -1,3 +1,13 @@
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { BSColors } from '@/constants/theme';
+import {
+  Urbanist_400Regular,
+  Urbanist_500Medium,
+  Urbanist_600SemiBold,
+  Urbanist_700Bold,
+  Urbanist_800ExtraBold,
+  useFonts,
+} from '@expo-google-fonts/urbanist';
 import { StripeProvider } from '@stripe/stripe-react-native';
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -8,6 +18,13 @@ import 'react-native-reanimated';
 const STRIPE_PK = process.env.EXPO_PUBLIC_STRIPE_PK ?? 'pk_test_YOUR_PUBLISHABLE_KEY_HERE';
 
 export default function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    'Urbanist-Regular':   Urbanist_400Regular,
+    'Urbanist-Medium':    Urbanist_500Medium,
+    'Urbanist-SemiBold':  Urbanist_600SemiBold,
+    'Urbanist-Bold':      Urbanist_700Bold,
+    'Urbanist-ExtraBold': Urbanist_800ExtraBold,
+  });
   const router = useRouter();
   const notifListener = useRef<any>(null);
   const responseListener = useRef<any>(null);
@@ -73,7 +90,7 @@ export default function RootLayout() {
             name: 'default',
             importance: Notifications.AndroidImportance.MAX,
             vibrationPattern: [0, 250, 250, 250],
-            lightColor: '#1E3A8A',
+            lightColor: BSColors.primary,
           });
         }
 
@@ -124,21 +141,21 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <StripeProvider publishableKey={STRIPE_PK} merchantIdentifier="merchant.com.browserstackbank" urlScheme="demobankingapp">
-      <Stack>
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="signup" options={{ headerShown: false }} />
-        <Stack.Screen name="otp" options={{ headerShown: false }} />
-        <Stack.Screen name="biometric" options={{ headerShown: false }} />
-        <Stack.Screen name="liveness" options={{ headerShown: false }} />
-        <Stack.Screen name="kyc" options={{ headerShown: false }} />
-        <Stack.Screen name="dashboard" options={{ headerShown: false }} />
-        <Stack.Screen name="admin" options={{ headerShown: false }} />
-        <Stack.Screen name="(admin)" options={{ headerShown: false }} />
-        <Stack.Screen name="(banking)" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      </Stack>
-      <StatusBar style="light" />
-    </StripeProvider>
+    <ErrorBoundary>
+      <StripeProvider publishableKey={STRIPE_PK} merchantIdentifier="merchant.com.browserstackbank" urlScheme="demobankingapp">
+        <Stack>
+          <Stack.Screen name="index" options={{ headerShown: false }} />
+          <Stack.Screen name="signup" options={{ headerShown: false }} />
+          <Stack.Screen name="otp" options={{ headerShown: false }} />
+          <Stack.Screen name="biometric" options={{ headerShown: false }} />
+          <Stack.Screen name="liveness" options={{ headerShown: false }} />
+          <Stack.Screen name="kyc" options={{ headerShown: false }} />
+          <Stack.Screen name="dashboard" options={{ headerShown: false }} />
+          <Stack.Screen name="(admin)" options={{ headerShown: false }} />
+          <Stack.Screen name="(banking)" options={{ headerShown: false }} />
+        </Stack>
+        <StatusBar style="light" />
+      </StripeProvider>
+    </ErrorBoundary>
   );
 }
