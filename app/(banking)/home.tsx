@@ -142,12 +142,6 @@ export default function HomeScreen() {
     }
     setScanned(false);
     setQrResult(null);
-    // Inject a QR code image into the BrowserStack camera feed so the
-    // barcode scanner can detect it. Safe no-op on real devices.
-    const { injectCameraImage: injectQR } = await import('@/utils/browserstack-camera');
-    await injectQR(
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/QR_code_for_mobile_English_Wikipedia.svg/1200px-QR_code_for_mobile_English_Wikipedia.svg.png'
-    );
     setShowQRModal(true);
   }, [cameraPermission, requestCameraPermission]);
 

@@ -80,7 +80,16 @@ export default function SignupScreen() {
     AuthStore.setFlow('signup');
     AuthStore.setEmail(email);
     AuthStore.setFlowConfig(flowConfig);
-    router.replace('/otp' as any);
+    const cfg = flowConfig;
+    if (cfg.cameraInjection) {
+      router.replace('/liveness' as any);
+    } else if (cfg.biometric) {
+      router.replace('/biometric' as any);
+    } else if (cfg.fileUpload) {
+      router.replace('/kyc' as any);
+    } else {
+      router.replace('/(banking)/home' as any);
+    }
     setLoading(false);
   };
 

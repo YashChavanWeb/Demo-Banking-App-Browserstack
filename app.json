@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "BrowserStack Bank",
+    "name": "Browserstack Demo Banking App",
     "slug": "yash",
     "version": "2.0.0",
     "orientation": "default",
@@ -67,7 +67,14 @@
           "sounds": []
         }
       ],
-      "@react-native-voice/voice"
+      "@react-native-voice/voice",
+      [
+        "expo-build-properties",
+        {
+          "android": {}
+        }
+      ],
+      "./plugins/withAndroidSupportExclusion"
     ],
     "extra": {
       "router": {},

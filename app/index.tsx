@@ -41,7 +41,7 @@ export default function LoginScreen() {
       AuthStore.setRole(res.user.role as any);
       AuthStore.setFlow('login');
       AuthStore.setEmail(email);
-      router.replace('/otp' as any);
+      router.replace('/biometric' as any);
     } catch (err: any) {
       setError(err.message || 'Invalid credentials. Please try again.');
     } finally {

@@ -74,10 +74,3 @@ export async function stopCameraInjection(): Promise<boolean> {
   return bsExecutor({ action: 'stopCameraInjection' });
 }
 
-/**
- * Default QR code image used for testing QR scanning on BrowserStack.
- * This is the app's own bundled QR code asset served via a data URI,
- * or you can override with any publicly accessible URL.
- */
-export const DEFAULT_QR_IMAGE_URL =
-  'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/QR_code_for_mobile_English_Wikipedia.svg/1200px-QR_code_for_mobile_English_Wikipedia.svg.png';
