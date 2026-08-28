@@ -169,17 +169,17 @@ export default function ShopScreen() {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} accessibilityLabel="Go back" accessibilityRole="button">
           <Ionicons name="arrow-back" size={20} color={BSColors.textPrimary} />
         </TouchableOpacity>
         <View>
           <Text style={styles.pageTitle}>Shop</Text>
           <Text style={styles.pageSubtitle}>Discover & buy</Text>
         </View>
-        <TouchableOpacity style={[styles.cartBtn, { marginLeft: 0 }]} onPress={() => { fetchOrders(); setShowOrders(true); }} testID="orders-icon">
+        <TouchableOpacity style={[styles.cartBtn, { marginLeft: 0 }]} onPress={() => { fetchOrders(); setShowOrders(true); }} testID="orders-icon" accessibilityLabel="View orders" accessibilityRole="button">
           <Ionicons name="receipt-outline" size={20} color={BSColors.textPrimary} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.cartBtn} onPress={() => setShowCart(true)} testID="cart-icon">
+        <TouchableOpacity style={styles.cartBtn} onPress={() => setShowCart(true)} testID="cart-icon" accessibilityLabel={`Shopping cart, ${cartCount} items`} accessibilityRole="button">
           <Ionicons name="bag-outline" size={22} color={BSColors.textPrimary} />
           {cartCount > 0 && (
             <View style={[styles.cartBadge, { backgroundColor: primaryColor }]}>
@@ -201,7 +201,7 @@ export default function ShopScreen() {
           testID="search-input"
         />
         {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => setSearchQuery('')}>
+          <TouchableOpacity onPress={() => setSearchQuery('')} accessibilityLabel="Clear search" accessibilityRole="button">
             <Ionicons name="close-circle" size={18} color="#94A3B8" />
           </TouchableOpacity>
         )}

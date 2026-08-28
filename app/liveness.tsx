@@ -110,12 +110,12 @@ export default function LivenessScreen() {
               <Ionicons name="camera-outline" size={56} color={BSColors.primary} />
             </View>
 
-            <TouchableOpacity style={s.primaryBtn} onPress={handleLaunchCamera} testID="launch-camera-btn">
+            <TouchableOpacity style={s.primaryBtn} onPress={handleLaunchCamera} testID="launch-camera-btn" accessibilityLabel="Open camera to take liveness photo" accessibilityRole="button">
               <Ionicons name="camera-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
               <Text style={s.primaryBtnText}>Open Camera</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={s.skipBtn} onPress={handleSkip} testID="skip-liveness-btn">
+            <TouchableOpacity style={s.skipBtn} onPress={handleSkip} testID="skip-liveness-btn" accessibilityLabel="Skip liveness verification" accessibilityRole="button">
               <Text style={s.skipBtnText}>Skip this step</Text>
             </TouchableOpacity>
           </>
@@ -137,7 +137,7 @@ export default function LivenessScreen() {
             </View>
 
             <View style={s.previewActions}>
-              <TouchableOpacity style={s.retakeBtn} onPress={handleRecapture} disabled={uploadLoading} testID="recapture-btn">
+              <TouchableOpacity style={s.retakeBtn} onPress={handleRecapture} disabled={uploadLoading} testID="recapture-btn" accessibilityLabel="Retake photo" accessibilityRole="button">
                 <Ionicons name="refresh-outline" size={18} color={BSColors.primary} style={{ marginRight: 6 }} />
                 <Text style={s.retakeBtnText}>Recapture</Text>
               </TouchableOpacity>
@@ -146,6 +146,9 @@ export default function LivenessScreen() {
                 onPress={handleSetProfile}
                 disabled={uploadLoading}
                 testID="set-profile-btn"
+                accessibilityLabel={uploadLoading ? 'Uploading profile photo' : 'Set as profile photo'}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: uploadLoading }}
               >
                 {uploadLoading
                   ? <ActivityIndicator size="small" color="#fff" style={{ marginRight: 6 }} />

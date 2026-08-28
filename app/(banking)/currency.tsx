@@ -152,7 +152,7 @@ export default function RegionScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} accessibilityLabel="Go back" accessibilityRole="button">
           <Ionicons name="arrow-back" size={20} color={BSColors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.pageTitle}>Region Info</Text>

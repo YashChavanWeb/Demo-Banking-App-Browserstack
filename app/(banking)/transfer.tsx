@@ -287,6 +287,8 @@ export default function TransferScreen() {
               style={[styles.primaryBtn, { backgroundColor: primaryColor, shadowColor: primaryColor }]}
               onPress={handleSend}
               testID="send-btn"
+              accessibilityLabel="Send money"
+              accessibilityRole="button"
             >
               <Ionicons name="send" size={18} color="#fff" style={{ marginRight: 8 }} />
               <Text style={styles.primaryBtnText}>Send Money</Text>
@@ -340,6 +342,9 @@ export default function TransferScreen() {
                 onPress={fetchAndInitPay}
                 disabled={payLoading}
                 testID="init-pay-btn"
+                accessibilityLabel={payLoading ? 'Preparing payment' : 'Proceed to payment'}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: payLoading }}
               >
                 {payLoading
                   ? <ActivityIndicator color="#fff" style={{ marginRight: 8 }} />
@@ -352,6 +357,8 @@ export default function TransferScreen() {
                 style={[styles.primaryBtn, { backgroundColor: BSColors.success, shadowColor: BSColors.success }]}
                 onPress={handlePresent}
                 testID="pay-btn"
+                accessibilityLabel={`Pay $${parseFloat(amount || '0').toFixed(2)} now`}
+                accessibilityRole="button"
               >
                 <Ionicons name="lock-closed-outline" size={18} color="#fff" style={{ marginRight: 8 }} />
                 <Text style={styles.primaryBtnText}>Pay ${parseFloat(amount || '0').toFixed(2)} Now</Text>
@@ -398,7 +405,7 @@ export default function TransferScreen() {
                 ${BankStore.getBalance().toLocaleString('en-US', { minimumFractionDigits: 2 })}
               </Text>
             </View>
-            <TouchableOpacity style={[styles.doneBtn, { backgroundColor: primaryColor }]} onPress={handleDone} testID="done-btn">
+            <TouchableOpacity style={[styles.doneBtn, { backgroundColor: primaryColor }]} onPress={handleDone} testID="done-btn" accessibilityLabel="Done, close transfer confirmation" accessibilityRole="button">
               <Text style={styles.doneBtnText}>Done</Text>
             </TouchableOpacity>
           </View>

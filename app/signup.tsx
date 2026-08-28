@@ -131,7 +131,7 @@ export default function SignupScreen() {
               placeholderTextColor="#AAA" value={password}
               onChangeText={setPassword} secureTextEntry={!showPassword} testID="password-input"
             />
-            <TouchableOpacity onPress={() => setShowPassword(v => !v)} style={styles.eyeBtn} testID="toggle-password-visibility">
+            <TouchableOpacity onPress={() => setShowPassword(v => !v)} style={styles.eyeBtn} testID="toggle-password-visibility" accessibilityLabel={showPassword ? 'Hide password' : 'Show password'} accessibilityRole="button">
               <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#94A3B8" />
             </TouchableOpacity>
           </View>
@@ -145,7 +145,7 @@ export default function SignupScreen() {
               placeholderTextColor="#AAA" value={confirmPassword}
               onChangeText={setConfirmPassword} secureTextEntry={!showConfirmPassword} testID="confirm-password-input"
             />
-            <TouchableOpacity onPress={() => setShowConfirmPassword(v => !v)} style={styles.eyeBtn} testID="toggle-confirm-password-visibility">
+            <TouchableOpacity onPress={() => setShowConfirmPassword(v => !v)} style={styles.eyeBtn} testID="toggle-confirm-password-visibility" accessibilityLabel={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'} accessibilityRole="button">
               <Ionicons name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#94A3B8" />
             </TouchableOpacity>
           </View>
@@ -153,7 +153,7 @@ export default function SignupScreen() {
 
         {error ? <Text style={styles.error} testID="signup-error">{error}</Text> : null}
 
-        <TouchableOpacity style={[styles.primaryBtn, loading && { opacity: 0.7 }]} onPress={handleSignup} disabled={loading} testID="signup-btn">
+        <TouchableOpacity style={[styles.primaryBtn, loading && { opacity: 0.7 }]} onPress={handleSignup} disabled={loading} testID="signup-btn" accessibilityLabel="Create your account" accessibilityRole="button" accessibilityState={{ disabled: loading }}>
           {loading
             ? <ActivityIndicator color="#fff" />
             : <Text style={styles.primaryBtnText}>Create Account</Text>}

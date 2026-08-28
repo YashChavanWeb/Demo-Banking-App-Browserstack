@@ -124,7 +124,7 @@ export default function KYCScreen() {
           ))}
         </View>
 
-        <TouchableOpacity style={[s.uploadArea, docName && s.uploadAreaDone]} onPress={handlePickDocument} testID="upload-btn">
+        <TouchableOpacity style={[s.uploadArea, docName && s.uploadAreaDone]} onPress={handlePickDocument} testID="upload-btn" accessibilityLabel={docName ? `Document selected: ${docName}. Tap to replace` : 'Upload identity document PDF'} accessibilityRole="button">
           {docName ? (
             <View style={s.uploadedContent}>
               <View style={s.uploadedIcon}>
@@ -153,7 +153,7 @@ export default function KYCScreen() {
 
         {docName && (
           <View style={s.docActions}>
-            <TouchableOpacity style={s.reuploadBtn} onPress={handlePickDocument}>
+            <TouchableOpacity style={s.reuploadBtn} onPress={handlePickDocument} accessibilityLabel="Replace document" accessibilityRole="button">
               <Ionicons name="refresh-outline" size={14} color={BSColors.primary} />
               <Text style={s.reuploadText}>Replace document</Text>
             </TouchableOpacity>
@@ -177,12 +177,15 @@ export default function KYCScreen() {
           style={[s.completeBtn, !docName && s.completeBtnDisabled]}
           onPress={handleComplete}
           testID="complete-btn"
+          accessibilityLabel="Complete registration"
+          accessibilityRole="button"
+          accessibilityState={{ disabled: !docName }}
         >
           <Ionicons name="checkmark-circle-outline" size={18} color="#fff" style={{ marginRight: 8 }} />
           <Text style={s.completeBtnText}>Complete Registration</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={s.skipBtn} onPress={handleSkip} testID="skip-kyc-btn">
+        <TouchableOpacity style={s.skipBtn} onPress={handleSkip} testID="skip-kyc-btn" accessibilityLabel="Skip KYC verification" accessibilityRole="button">
           <Text style={s.skipBtnText}>Skip this step</Text>
         </TouchableOpacity>
 

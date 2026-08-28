@@ -348,6 +348,8 @@ export default function AgentsScreen() {
                                 testID={ids.quickAction(a.id)}
                                 style={[styles.quickChip, { backgroundColor: primaryBg, borderColor: primaryBorder }, healingOn && styles.quickChipHighlight]}
                                 onPress={() => sendMessage(a.label)}
+                                accessibilityLabel={`Ask about ${a.label}`}
+                                accessibilityRole="button"
                             >
                                 <Ionicons name={a.icon} size={12} color={primaryColor} />
                                 <Text style={[styles.quickChipText, { color: primaryColor }]}>{a.label}</Text>

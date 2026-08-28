@@ -102,7 +102,7 @@ export default function NetworkScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} accessibilityLabel="Go back" accessibilityRole="button">
           <Ionicons name="arrow-back" size={22} color={BSColors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.pageTitle}>Network Status</Text>

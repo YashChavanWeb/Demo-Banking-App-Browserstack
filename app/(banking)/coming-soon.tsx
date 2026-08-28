@@ -23,7 +23,7 @@ export default function ComingSoonScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} accessibilityLabel="Go back" accessibilityRole="button">
           <Ionicons name="arrow-back" size={22} color="#333" />
         </TouchableOpacity>
         <Text style={styles.pageTitle}>{name}</Text>
@@ -49,7 +49,7 @@ export default function ComingSoonScreen() {
           <Text style={styles.cardSub}>This feature is being built and will be available in a future release of the BrowserStack Bank demo app.</Text>
         </View>
 
-        <TouchableOpacity style={[styles.backHomeBtn, { backgroundColor: meta.color }]} onPress={() => router.back()} testID="coming-soon-back-btn">
+        <TouchableOpacity style={[styles.backHomeBtn, { backgroundColor: meta.color }]} onPress={() => router.back()} testID="coming-soon-back-btn" accessibilityLabel="Go back to previous screen" accessibilityRole="button">
           <Ionicons name="arrow-back" size={18} color="#fff" style={{ marginRight: 8 }} />
           <Text style={styles.backHomeBtnText}>Go Back</Text>
         </TouchableOpacity>

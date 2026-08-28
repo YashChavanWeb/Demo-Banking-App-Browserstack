@@ -45,7 +45,7 @@ export default function WebViewScreen() {
     <SafeAreaView style={styles.safe}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.iconBtn}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.iconBtn} accessibilityLabel="Close" accessibilityRole="button">
           <Ionicons name="close" size={20} color={BSColors.textPrimary} />
         </TouchableOpacity>
         <View style={styles.titleWrap}>

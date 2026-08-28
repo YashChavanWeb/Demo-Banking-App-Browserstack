@@ -89,7 +89,7 @@ export default function LoginScreen() {
               secureTextEntry={!showPassword}
               testID="password-input"
             />
-            <TouchableOpacity style={styles.eyeBtn} onPress={() => setShowPassword(s => !s)} testID="toggle-password-visibility">
+            <TouchableOpacity style={styles.eyeBtn} onPress={() => setShowPassword(s => !s)} testID="toggle-password-visibility" accessibilityLabel={showPassword ? 'Hide password' : 'Show password'} accessibilityRole="button">
               <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#94A3B8" />
             </TouchableOpacity>
           </View>
@@ -102,12 +102,15 @@ export default function LoginScreen() {
           onPress={handleLogin}
           disabled={loading}
           testID="login-btn"
+          accessibilityLabel="Sign in to your account"
+          accessibilityRole="button"
+          accessibilityState={{ disabled: loading }}
         >
           {loading ? <ActivityIndicator color="#fff" style={{ marginRight: 8 }} /> : null}
           <Text style={styles.primaryBtnText}>{loading ? 'Signing in...' : 'Sign In'}</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.linkRow} onPress={() => router.replace('/signup' as any)} testID="goto-signup">
+        <TouchableOpacity style={styles.linkRow} onPress={() => router.replace('/signup' as any)} testID="goto-signup" accessibilityLabel="Go to sign up" accessibilityRole="link">
           <Text style={styles.linkText}>Don't have an account? <Text style={styles.link}>Sign Up</Text></Text>
         </TouchableOpacity>
 

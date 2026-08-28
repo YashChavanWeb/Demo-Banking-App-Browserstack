@@ -257,7 +257,7 @@ export default function HomeScreen() {
                 : <Ionicons name="location-outline" size={12} color={primaryColor} />}
               <Text style={[styles.locationText, { color: primaryColor }]} numberOfLines={1}>{locationName}</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.notifBtn} onPress={() => setShowNotifs(true)} testID="notif-btn">
+            <TouchableOpacity style={styles.notifBtn} onPress={() => setShowNotifs(true)} testID="notif-btn" accessibilityLabel="Notifications" accessibilityRole="button">
               <Ionicons name="notifications-outline" size={22} color={BSColors.textPrimary} />
               <View style={[styles.notifDot, { backgroundColor: BSColors.error }]} />
             </TouchableOpacity>
@@ -277,6 +277,8 @@ export default function HomeScreen() {
             trackColor={{ false: BSColors.mediumGray, true: BSColors.greenLight }}
             thumbColor={greenMode ? BSColors.successDark : primaryColor}
             testID="theme-toggle"
+            accessibilityLabel={greenMode ? 'Green mode is on, tap to switch to default theme' : 'Default theme is on, tap to switch to green mode'}
+            accessibilityRole="switch"
           />
         </View>
 
@@ -294,7 +296,7 @@ export default function HomeScreen() {
                   <Text style={styles.balanceLabel}>Total Balance</Text>
                   <Text style={styles.balanceCurrency}>USD</Text>
                 </View>
-                <TouchableOpacity onPress={handleBalanceToggle} style={styles.eyeBtn} testID="balance-eye-btn">
+                <TouchableOpacity onPress={handleBalanceToggle} style={styles.eyeBtn} testID="balance-eye-btn" accessibilityLabel={balanceVisible ? 'Hide balance' : 'Show balance — requires passcode'} accessibilityRole="button">
                   <Ionicons name={balanceVisible ? 'eye-outline' : 'eye-off-outline'} size={22} color="rgba(255,255,255,0.85)" />
                 </TouchableOpacity>
               </View>
@@ -331,7 +333,7 @@ export default function HomeScreen() {
         <Text style={styles.sectionTitle}>Quick Actions</Text>
         <View style={styles.quickActions}>
           {QUICK_ACTIONS.map(action => (
-            <TouchableOpacity key={action.label} style={styles.quickAction} onPress={action.onPress}>
+            <TouchableOpacity key={action.label} style={styles.quickAction} onPress={action.onPress} accessibilityLabel={action.label} accessibilityRole="button">
               <View style={[styles.quickActionIcon, { backgroundColor: action.bg }]}>
                 {action.label === currencyLabel && ipLoading
                   ? <ActivityIndicator size="small" color={action.color} />
@@ -383,7 +385,7 @@ export default function HomeScreen() {
         {/* Recent Transactions */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Recent Transactions</Text>
-          <TouchableOpacity onPress={() => router.push('/(banking)/transactions' as any)}>
+          <TouchableOpacity onPress={() => router.push('/(banking)/transactions' as any)} accessibilityLabel="See all transactions" accessibilityRole="link">
             <Text style={[styles.seeAll, { color: primaryColor }]}>
               {greenMode ? 'See all' : 'See all →'}
             </Text>
@@ -420,7 +422,7 @@ export default function HomeScreen() {
         <SafeAreaView style={{ flex: 1, backgroundColor: BSColors.bgPage }}>
           <View style={styles.notifHeader}>
             <Text style={styles.notifTitle}>Notifications</Text>
-            <TouchableOpacity onPress={() => setShowNotifs(false)} style={styles.notifCloseBtn}>
+            <TouchableOpacity onPress={() => setShowNotifs(false)} style={styles.notifCloseBtn} accessibilityLabel="Close notifications" accessibilityRole="button">
               <Ionicons name="close" size={22} color={BSColors.textPrimary} />
             </TouchableOpacity>
           </View>

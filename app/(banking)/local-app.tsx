@@ -203,7 +203,7 @@ export default function LocalAppScreen() {
         <SafeAreaView style={styles.safe}>
             <Animated.View style={{ flex: 1, opacity: mountAnim, transform: [{ translateY: mountAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
                 <View style={styles.header}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} accessibilityLabel="Go back" accessibilityRole="button">
                         <Ionicons name="arrow-back" size={22} color={BSColors.textPrimary} />
                     </TouchableOpacity>
                     <View style={{ flex: 1 }}>
@@ -223,28 +223,28 @@ export default function LocalAppScreen() {
                                     placeholderTextColor={BSColors.slate300}
                                     autoFocus
                                 />
-                                <TouchableOpacity onPress={() => saveUrl(urlInput)}>
+                                <TouchableOpacity onPress={() => saveUrl(urlInput)} accessibilityLabel="Save server URL" accessibilityRole="button">
                                     <Ionicons name="checkmark-circle" size={22} color={primaryColor} />
                                 </TouchableOpacity>
-                                <TouchableOpacity onPress={() => setEditingUrl(false)}>
+                                <TouchableOpacity onPress={() => setEditingUrl(false)} accessibilityLabel="Cancel URL edit" accessibilityRole="button">
                                     <Ionicons name="close-circle-outline" size={22} color={BSColors.darkGray} />
                                 </TouchableOpacity>
                             </View>
                         ) : (
-                            <TouchableOpacity onPress={() => setEditingUrl(true)} style={styles.urlRow}>
+                            <TouchableOpacity onPress={() => setEditingUrl(true)} style={styles.urlRow} accessibilityLabel={`Server URL: ${serverUrl}. Tap to edit`} accessibilityRole="button">
                                 <Text style={styles.pageSubtitle} numberOfLines={1}>{serverUrl}</Text>
                                 <Ionicons name="pencil-outline" size={11} color={BSColors.slate300} />
                             </TouchableOpacity>
                         )}
                     </View>
-                    <TouchableOpacity onPress={onRefresh} style={styles.backBtn}>
+                    <TouchableOpacity onPress={onRefresh} style={styles.backBtn} accessibilityLabel="Refresh data" accessibilityRole="button">
                         <Ionicons name="refresh-outline" size={20} color={primaryColor} />
                     </TouchableOpacity>
                 </View>
 
                 <View style={styles.tabs}>
                     {(['market', 'watchlist', 'portfolio'] as Tab[]).map(t => (
-                        <TouchableOpacity key={t} style={[styles.tab, tab === t && { borderBottomColor: primaryColor, borderBottomWidth: 2 }]} onPress={() => setTab(t)}>
+                        <TouchableOpacity key={t} style={[styles.tab, tab === t && { borderBottomColor: primaryColor, borderBottomWidth: 2 }]} onPress={() => setTab(t)} accessibilityLabel={t.charAt(0).toUpperCase() + t.slice(1)} accessibilityRole="tab" accessibilityState={{ selected: tab === t }}>
                             <Text style={[styles.tabText, tab === t && { color: primaryColor, fontWeight: '700' }]}>{t.charAt(0).toUpperCase() + t.slice(1)}</Text>
                         </TouchableOpacity>
                     ))}

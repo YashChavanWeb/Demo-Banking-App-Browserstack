@@ -12,8 +12,14 @@ import { StripeProvider } from '@stripe/stripe-react-native';
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef } from 'react';
-import { Platform } from 'react-native';
+import { LogBox, Platform } from 'react-native';
 import 'react-native-reanimated';
+
+// Suppress known third-party library warnings that are not actionable
+LogBox.ignoreLogs([
+  'animations-in-inline-styling',
+  "It looks like you might be using shared value's .value inside reanimated inline style",
+]);
 
 const STRIPE_PK = process.env.EXPO_PUBLIC_STRIPE_PK ?? 'pk_test_YOUR_PUBLISHABLE_KEY_HERE';
 

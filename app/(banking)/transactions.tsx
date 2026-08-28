@@ -1,14 +1,12 @@
 import { BSColors } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import { BankStore, Transaction } from '@/store/banking';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
-    ScrollView, StyleSheet, Text, TouchableOpacity, View,
+  ScrollView, StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTheme } from '@/hooks/use-theme';
-import { api } from '@/store/api';
-import { TransactionShimmer } from '@/components/shimmer';
 
 const FILTERS = ['All', 'Credit', 'Debit', 'Transfer', 'Payment'];
 
@@ -78,7 +76,7 @@ export default function TransactionsScreen() {
         {/* Filters */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={{ gap: 8, paddingHorizontal: 2 }}>
           {FILTERS.map(f => (
-            <TouchableOpacity key={f} style={[styles.filterChip, activeFilter === f && styles.filterChipActive]} onPress={() => setActiveFilter(f)}>
+            <TouchableOpacity key={f} style={[styles.filterChip, activeFilter === f && styles.filterChipActive]} onPress={() => setActiveFilter(f)} accessibilityLabel={`Filter by ${f}`} accessibilityRole="button" accessibilityState={{ selected: activeFilter === f }}>
               <Text style={[styles.filterChipText, activeFilter === f && styles.filterChipTextActive]}>{f}</Text>
             </TouchableOpacity>
           ))}

@@ -86,7 +86,7 @@ export default function PaymentScreen() {
     <SafeAreaView style={s.safe}>
       <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
         <View style={s.header}>
-          <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
+          <TouchableOpacity onPress={() => router.back()} style={s.backBtn} accessibilityLabel="Go back" accessibilityRole="button">
             <Ionicons name="arrow-back" size={22} color="#333" />
           </TouchableOpacity>
           <Text style={s.headerTitle}>Make a Payment</Text>

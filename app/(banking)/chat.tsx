@@ -109,12 +109,12 @@ export default function ChatScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} accessibilityLabel="Go back" accessibilityRole="button">
             <Ionicons name="arrow-back" size={20} color={BSColors.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.pageTitle}>Messages</Text>
           <TouchableOpacity style={[styles.newBtn, { backgroundColor: primaryColor }]}
-            onPress={() => { setView('new'); loadUsers(); }} testID="new-chat-btn">
+            onPress={() => { setView('new'); loadUsers(); }} testID="new-chat-btn" accessibilityLabel="New message" accessibilityRole="button">
             <Ionicons name="create-outline" size={18} color="#fff" />
           </TouchableOpacity>
         </View>
@@ -173,7 +173,7 @@ export default function ChatScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => setView('inbox')} style={styles.backBtn}>
+          <TouchableOpacity onPress={() => setView('inbox')} style={styles.backBtn} accessibilityLabel="Back to inbox" accessibilityRole="button">
             <Ionicons name="arrow-back" size={20} color={BSColors.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.pageTitle}>New Message</Text>
@@ -215,7 +215,7 @@ export default function ChatScreen() {
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => { setView('inbox'); loadInbox(); }} style={styles.backBtn}>
+        <TouchableOpacity onPress={() => { setView('inbox'); loadInbox(); }} style={styles.backBtn} accessibilityLabel="Back to messages" accessibilityRole="button">
           <Ionicons name="arrow-back" size={20} color={BSColors.textPrimary} />
         </TouchableOpacity>
         <View style={[styles.avatar, { backgroundColor: primaryColor, width: 32, height: 32, borderRadius: 16 }]}>

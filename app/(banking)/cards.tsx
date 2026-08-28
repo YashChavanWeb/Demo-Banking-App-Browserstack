@@ -1,12 +1,12 @@
+import { CardShimmer } from '@/components/shimmer';
 import { BSColors } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { AuthStore } from '@/store/auth';
-import { CardShimmer } from '@/components/shimmer';
 import { api } from '@/store/api';
+import { AuthStore } from '@/store/auth';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator, Alert, Modal, ScrollView, StyleSheet,
+  Alert, Modal, ScrollView, StyleSheet,
   Text, TextInput, TouchableOpacity, View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -57,7 +57,7 @@ function CardDisplay({ card }: { card: Card }) {
         <Text style={styles.cardLabel}>{card.label}</Text>
         <Text style={styles.cardTypeText}>{card.type.toUpperCase()}</Text>
       </View>
-      <TouchableOpacity style={styles.cardNumberRow} onPress={() => setShowNumber(!showNumber)}>
+      <TouchableOpacity style={styles.cardNumberRow} onPress={() => setShowNumber(!showNumber)} accessibilityLabel={showNumber ? 'Hide card number' : 'Show card number'} accessibilityRole="button">
         <Text style={styles.cardNumber}>{showNumber ? card.number : masked}</Text>
         <Ionicons name={showNumber ? 'eye-off-outline' : 'eye-outline'} size={16} color="rgba(255,255,255,0.7)" />
       </TouchableOpacity>
@@ -197,7 +197,7 @@ export default function CardsScreen() {
           <View style={styles.modalCard}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Create New Card</Text>
-              <TouchableOpacity onPress={() => setShowCreateModal(false)}><Ionicons name="close" size={24} color="#64748B" /></TouchableOpacity>
+              <TouchableOpacity onPress={() => setShowCreateModal(false)} accessibilityLabel="Close add card" accessibilityRole="button"><Ionicons name="close" size={24} color="#64748B" /></TouchableOpacity>
             </View>
             <ScrollView showsVerticalScrollIndicator={false}>
               <Text style={styles.fieldLabel}>Card Label</Text>

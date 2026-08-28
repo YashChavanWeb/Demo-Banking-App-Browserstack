@@ -130,6 +130,9 @@ export default function OTPScreen() {
             onPress={handleVerify}
             disabled={loading}
             testID="verify-btn"
+            accessibilityLabel={loading ? 'Verifying OTP' : 'Verify OTP code'}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: otp.length < 6 || loading }}
           >
             <Ionicons name="checkmark-circle-outline" size={18} color="#fff" style={{ marginRight: 8 }} />
             <Text style={s.verifyBtnText}>{loading ? 'Verifying...' : 'Verify OTP'}</Text>

@@ -127,6 +127,9 @@ export default function BiometricScreen() {
               onPress={triggerBiometric}
               disabled={bioLoading}
               testID="fingerprint-btn"
+              accessibilityLabel={bioLoading ? 'Verifying biometric' : 'Scan biometric to verify identity'}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: bioLoading }}
             >
               {bioLoading
                 ? <Text style={s.primaryBtnText}>Verifying...</Text>
@@ -136,7 +139,7 @@ export default function BiometricScreen() {
                   </>}
             </TouchableOpacity>
 
-            <TouchableOpacity style={s.skipBtn} onPress={handleSkip} testID="skip-biometric-btn">
+            <TouchableOpacity style={s.skipBtn} onPress={handleSkip} testID="skip-biometric-btn" accessibilityLabel="Skip biometric verification" accessibilityRole="button">
               <Text style={s.skipBtnText}>Skip this step</Text>
             </TouchableOpacity>
           </View>
