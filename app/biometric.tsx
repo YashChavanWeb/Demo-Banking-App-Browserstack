@@ -27,8 +27,10 @@ export default function BiometricScreen() {
         return;
       }
     }
-    // Auto-trigger biometric on mount
-    triggerBiometric();
+    // Delay auto-trigger on iOS — the system biometric prompt gets dismissed
+    // if it fires before the screen transition animation completes
+    const timer = setTimeout(triggerBiometric, 500);
+    return () => clearTimeout(timer);
   }, []);
 
   const navigateToDashboard = () => {
@@ -68,11 +70,15 @@ export default function BiometricScreen() {
       const result = await LocalAuthentication.authenticateAsync({
         promptMessage: 'Verify your identity to continue',
         cancelLabel: 'Cancel',
-        disableDeviceFallback: true,
+        // disableDeviceFallback: false (default) — allows iOS passcode fallback after
+        // repeated biometric failures, which is required for Face ID to work correctly
+        disableDeviceFallback: false,
       });
       setBioLoading(false);
       if (result.success) {
         handleSuccess();
+      } else if (result.error === 'user_cancel' || result.error === 'system_cancel') {
+        // User cancelled — stay on screen silently, no error
       } else {
         setBioError('Biometric authentication failed. Please try again.');
       }
