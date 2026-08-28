@@ -17,6 +17,7 @@ export interface User {
   // Some endpoints return these additional fields
   name?: string;
   avatar?: string;
+  avatarUrl?: string;
   account?: string;
 }
 

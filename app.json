@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Browserstack Demo Banking App",
+    "name": "BrowserStack Demo Banking App",
     "slug": "yash",
     "version": "2.0.0",
     "orientation": "default",
@@ -41,14 +41,23 @@
         }
       ],
       [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Allow BrowserStack Bank to access your camera to take a liveness photo."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 80,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
+          "imageBackgroundColor": "#ffffff",
+          "textColor": "#000000",
           "dark": {
-            "backgroundColor": "#000000"
+            "backgroundColor": "#000000",
+            "textColor": "#000000"
           }
         }
       ],

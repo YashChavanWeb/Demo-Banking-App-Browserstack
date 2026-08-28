@@ -4,22 +4,31 @@ import { AuthStore } from '@/store/auth';
 import { BankStore } from '@/store/banking';
 import { ThemeStore } from '@/store/theme';
 import { Ionicons } from '@expo/vector-icons';
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import { scanFromURLAsync } from 'expo-camera';
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator, Alert, Animated,
   Modal, ScrollView,
-  StyleSheet, Switch, Text, TouchableOpacity, View,
+  StyleSheet, Switch, Text, TextInput,
+  TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // IP-based geolocation — ip-api.com is free, no key, works from mobile
 const IP_GEO_URL = 'http://ip-api.com/json/?fields=status,country,countryCode,regionName,city,currency,timezone,org,lat,lon,query,callingCodes';
 
+const CORRECT_PIN = '1234';
+
 export default function HomeScreen() {
   const router = useRouter();
-  const [balanceVisible, setBalanceVisible] = useState(true);
+  // Balance visibility — protected by passcode once per session
+  const [balanceVisible, setBalanceVisible] = useState(false);
+  const [balanceUnlockedThisSession, setBalanceUnlockedThisSession] = useState(false);
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [pin, setPin] = useState('');
+  const [pinError, setPinError] = useState('');
   const [showQRModal, setShowQRModal] = useState(false);
   const [scanned, setScanned] = useState(false);
   const [qrResult, setQrResult] = useState<string | null>(null);
@@ -130,25 +139,63 @@ export default function HomeScreen() {
     }
   }, []);
 
-  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
+  const pinInputRef = useRef<TextInput>(null);
 
   const openQRScanner = useCallback(async () => {
-    if (!cameraPermission?.granted) {
-      const result = await requestCameraPermission();
-      if (!result.granted) {
-        Alert.alert('Camera Permission', 'Camera access is needed to scan QR codes.');
-        return;
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Camera Permission', 'Camera access is needed to scan QR codes.');
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: 'images',
+      quality: 0.9,
+      allowsEditing: false,
+    });
+    if (result.canceled || !result.assets?.[0]?.uri) return;
+    const uri = result.assets[0].uri;
+    try {
+      const barcodes = await scanFromURLAsync(uri, ['qr', 'aztec', 'datamatrix', 'pdf417', 'code128', 'code39', 'ean13', 'ean8']);
+      if (barcodes.length > 0) {
+        setQrResult(barcodes[0].data ?? null);
+      } else {
+        setQrResult('No QR code detected in the image.');
+      }
+    } catch {
+      setQrResult('Could not decode image. Please try again.');
+    }
+    setScanned(true);
+    setShowQRModal(true);
+  }, []);
+
+  // Balance eye-icon handler
+  const handleBalanceToggle = () => {
+    if (balanceVisible) {
+      // User manually hides — require passcode again next time
+      setBalanceVisible(false);
+      setBalanceUnlockedThisSession(false);
+    } else {
+      if (balanceUnlockedThisSession) {
+        setBalanceVisible(true);
+      } else {
+        setPin('');
+        setPinError('');
+        setShowPinModal(true);
       }
     }
-    setScanned(false);
-    setQrResult(null);
-    setShowQRModal(true);
-  }, [cameraPermission, requestCameraPermission]);
+  };
 
-  const handleBarCodeScanned = ({ data }: { data: string }) => {
-    if (scanned) return;
-    setScanned(true);
-    setQrResult(data);
+  const handlePinSubmit = (digits: string) => {
+    if (digits === CORRECT_PIN) {
+      setBalanceUnlockedThisSession(true);
+      setBalanceVisible(true);
+      setShowPinModal(false);
+      setPin('');
+      setPinError('');
+    } else {
+      setPinError('Incorrect passcode. Please try again.');
+      setPin('');
+    }
   };
 
   const handleThemeToggle = () => {
@@ -251,7 +298,7 @@ export default function HomeScreen() {
                   <Text style={styles.balanceLabel}>Total Balance</Text>
                   <Text style={styles.balanceCurrency}>USD</Text>
                 </View>
-                <TouchableOpacity onPress={() => setBalanceVisible(!balanceVisible)} style={styles.eyeBtn}>
+                <TouchableOpacity onPress={handleBalanceToggle} style={styles.eyeBtn} testID="balance-eye-btn">
                   <Ionicons name={balanceVisible ? 'eye-outline' : 'eye-off-outline'} size={22} color="rgba(255,255,255,0.85)" />
                 </TouchableOpacity>
               </View>
@@ -404,65 +451,83 @@ export default function HomeScreen() {
         </SafeAreaView>
       </Modal>
 
-      {/* QR Scanner Modal — camera is always active; scanning starts immediately on open */}
-      <Modal visible={showQRModal} animationType="slide" onShow={() => { setScanned(false); setQrResult(null); }}>
-        <View style={{ flex: 1, backgroundColor: '#000' }}>
-          {/* Camera fills the full screen */}
-          <CameraView
-            key={showQRModal ? 'qr-active' : 'qr-inactive'}
-            style={{ flex: 1 }}
-            facing="back"
-            active={showQRModal}
-            onBarcodeScanned={!scanned ? handleBarCodeScanned : undefined}
-            barcodeScannerSettings={{ barcodeTypes: ['qr', 'aztec', 'datamatrix', 'pdf417', 'code128', 'code39', 'ean13', 'ean8', 'upc_e'] }}
-            testID="qr-camera-view"
-          />
+      {/* Passcode Modal for balance reveal — OTP-style boxes */}
+      <Modal visible={showPinModal} transparent animationType="fade" onShow={() => setTimeout(() => pinInputRef.current?.focus(), 100)}>
+        <View style={styles.pinOverlay}>
+          <View style={styles.pinModal}>
+            <View style={styles.pinModalHeader}>
+              <Ionicons name="lock-closed-outline" size={24} color={BSColors.primary} />
+              <Text style={styles.pinModalTitle}>Enter Passcode</Text>
+            </View>
+            <Text style={styles.pinModalSub}>Enter your 4-digit passcode to view your balance</Text>
 
-          {/* Bottom overlay — hint + close + actions all together */}
-          <SafeAreaView style={styles.qrBottomOverlay}>
-            <View style={styles.qrHint}>
-              {!scanned && <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="search-outline" size={16} color="#fff" /><Text style={styles.qrHintText}>Point camera at a QR code</Text></View>}
-              {scanned && <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="checkmark-circle-outline" size={16} color={BSColors.greenBright} /><Text style={[styles.qrHintText, { color: BSColors.greenBright }]}>QR Code Detected!</Text></View>}
-            </View>
-            <View style={styles.qrActions}>
-              {!scanned ? (
-                <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
-                  <View style={[styles.qrScanBtn, { backgroundColor: BSColors.grayDark, flex: 1 }]}>
-                    <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />
-                    <Text style={styles.qrScanBtnText}>Scanning...</Text>
-                  </View>
-                  <TouchableOpacity
-                    onPress={() => { setShowQRModal(false); setScanned(false); setQrResult(null); }}
-                    style={styles.qrClose}
-                    hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                    testID="qr-close-btn"
-                  >
-                    <Ionicons name="close" size={22} color="#fff" />
-                  </TouchableOpacity>
+            <TouchableOpacity activeOpacity={1} onPress={() => pinInputRef.current?.focus()} style={styles.pinRow} testID="pin-display">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <View key={i} style={[styles.pinBox, pin[i] ? styles.pinBoxFilled : null, i === pin.length && styles.pinBoxActive]}>
+                  <Text style={styles.pinDigit}>{pin[i] ? '●' : ''}</Text>
                 </View>
-              ) : (
-                <>
-                  <Text style={{ color: BSColors.white, fontSize: 13, marginBottom: 10, textAlign: 'center', paddingHorizontal: 16 }} numberOfLines={2}>
-                    {qrResult}
-                  </Text>
-                  <View style={{ flexDirection: 'row', gap: 12 }}>
-                    <TouchableOpacity style={[styles.qrScanBtn, { backgroundColor: BSColors.successDark, flex: 1 }]} onPress={() => { setScanned(false); setQrResult(null); }} testID="scan-again-btn">
-                      <Ionicons name="refresh" size={18} color="#fff" style={{ marginRight: 8 }} />
-                      <Text style={styles.qrScanBtnText}>Scan Again</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => { setShowQRModal(false); setScanned(false); setQrResult(null); }}
-                      style={styles.qrClose}
-                      hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                      testID="qr-close-btn"
-                    >
-                      <Ionicons name="close" size={22} color="#fff" />
-                    </TouchableOpacity>
-                  </View>
-                </>
-              )}
+              ))}
+            </TouchableOpacity>
+
+            <TextInput
+              ref={pinInputRef}
+              style={styles.hiddenInput}
+              value={pin}
+              onChangeText={(text: string) => {
+                const digits = text.replace(/[^0-9]/g, '').slice(0, 4);
+                setPin(digits);
+                setPinError('');
+                if (digits.length === 4) {
+                  setTimeout(() => handlePinSubmit(digits), 150);
+                }
+              }}
+              keyboardType="number-pad"
+              maxLength={4}
+              testID="balance-pin-input"
+              secureTextEntry
+            />
+
+            {pinError ? <Text style={styles.pinError} testID="balance-pin-error">{pinError}</Text> : null}
+
+            <TouchableOpacity
+              style={styles.pinCancelBtn}
+              onPress={() => { setShowPinModal(false); setPin(''); setPinError(''); }}
+              testID="balance-pin-cancel"
+            >
+              <Text style={styles.pinCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* QR Result Modal — shown after native camera capture + decode */}
+      <Modal visible={showQRModal} transparent animationType="fade">
+        <View style={styles.pinOverlay}>
+          <View style={styles.qrResultModal}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+              <Ionicons name="qr-code-outline" size={24} color={BSColors.primary} />
+              <Text style={styles.pinModalTitle}>QR Result</Text>
             </View>
-          </SafeAreaView>
+            <Text style={styles.qrResultText} testID="qr-result-text" selectable>{qrResult ?? ''}</Text>
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 20 }}>
+              <TouchableOpacity
+                style={[styles.qrResultBtn, { backgroundColor: BSColors.successDark }]}
+                onPress={() => { setShowQRModal(false); setScanned(false); setQrResult(null); openQRScanner(); }}
+                testID="scan-again-btn"
+              >
+                <Ionicons name="refresh" size={16} color="#fff" style={{ marginRight: 6 }} />
+                <Text style={styles.qrResultBtnText}>Scan Again</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.qrResultBtn, { backgroundColor: BSColors.darkGray }]}
+                onPress={() => { setShowQRModal(false); setScanned(false); setQrResult(null); }}
+                testID="qr-close-btn"
+              >
+                <Ionicons name="close" size={16} color="#fff" style={{ marginRight: 6 }} />
+                <Text style={styles.qrResultBtnText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
       </Modal>
     </SafeAreaView>
@@ -538,7 +603,28 @@ const styles = StyleSheet.create({
   notifItemBody: { color: BSColors.textSecondary, fontSize: 12, lineHeight: 17, marginBottom: 4 },
   notifItemTime: { color: BSColors.darkGray, fontSize: 11 },
 
-  // QR
+  // Passcode modal
+  pinOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center' },
+  pinModal: { backgroundColor: BSColors.white, borderRadius: 20, padding: 28, width: '85%', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 20, elevation: 10 },
+  pinModalHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
+  pinModalTitle: { color: BSColors.textPrimary, fontSize: 18, fontWeight: '700' },
+  pinModalSub: { color: BSColors.darkGray, fontSize: 13, textAlign: 'center', marginBottom: 24 },
+  pinRow: { flexDirection: 'row', gap: 14, marginBottom: 16 },
+  pinBox: { width: 56, height: 64, borderRadius: 12, borderWidth: 2, borderColor: BSColors.indigoBorder, backgroundColor: BSColors.bgPageAlt, alignItems: 'center', justifyContent: 'center' },
+  pinBoxFilled: { borderColor: BSColors.primary, backgroundColor: BSColors.indigoBg },
+  pinBoxActive: { borderColor: BSColors.primary, borderWidth: 2.5 },
+  pinDigit: { color: '#111', fontSize: 22, fontWeight: '700' },
+  hiddenInput: { position: 'absolute', opacity: 0, width: 1, height: 1 },
+  pinError: { color: BSColors.errorDark, fontSize: 13, marginBottom: 12, textAlign: 'center' },
+  pinCancelBtn: { marginTop: 8, paddingVertical: 10, paddingHorizontal: 24 },
+  pinCancelText: { color: BSColors.darkGray, fontSize: 14, fontWeight: '600' },
+
+  // QR result modal
+  qrResultModal: { backgroundColor: BSColors.white, borderRadius: 20, padding: 24, width: '88%', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 20, elevation: 10 },
+  qrResultText: { color: BSColors.textPrimary, fontSize: 14, textAlign: 'center', lineHeight: 22, paddingHorizontal: 4 },
+  qrResultBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 12, paddingVertical: 12 },
+  qrResultBtnText: { color: BSColors.white, fontSize: 14, fontWeight: '700' },
+  // QR (legacy styles kept for reference)
   qrHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, backgroundColor: 'rgba(0,0,0,0.6)' },
   qrClose: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center' },
   qrTitle: { color: BSColors.white, fontSize: 17, fontWeight: '700' },

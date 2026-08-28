@@ -7,7 +7,7 @@ import { BankStore } from '@/store/banking';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const DEFAULT_USER = {
@@ -29,6 +29,16 @@ export default function ProfileScreen() {
   const [txCount, setTxCount] = useState(BankStore.getTransactions().length);
   const [userInfo, setUserInfo] = useState(DEFAULT_USER);
   const [profileLoading, setProfileLoading] = useState(true);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(AuthStore.getUser()?.avatarUrl ?? null);
+
+  // Keep avatar in sync if it's updated (e.g. after liveness upload)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const url = AuthStore.getUser()?.avatarUrl ?? null;
+      setAvatarUrl(prev => (prev !== url ? url : prev));
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const unsub = BankStore.subscribe(() => {
@@ -96,9 +106,18 @@ export default function ProfileScreen() {
             </>
           ) : (
             <>
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>{userInfo.name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()}</Text>
-              </View>
+              {avatarUrl ? (
+                <Image
+                  source={{ uri: avatarUrl }}
+                  style={styles.avatarImage}
+                  resizeMode="cover"
+                  testID="profile-avatar-image"
+                />
+              ) : (
+                <View style={styles.avatar}>
+                  <Text style={styles.avatarText}>{userInfo.name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()}</Text>
+                </View>
+              )}
               <Text style={styles.userName}>{userInfo.name}</Text>
               <Text style={styles.userEmail}>{userInfo.email}</Text>
               <View style={styles.kycBadge}>
@@ -228,6 +247,7 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 },
   avatarSection: { alignItems: 'center', marginBottom: 24 },
   avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: BSColors.primary, alignItems: 'center', justifyContent: 'center', marginBottom: 12, shadowColor: BSColors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 6 },
+  avatarImage: { width: 80, height: 80, borderRadius: 40, marginBottom: 12, shadowColor: BSColors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
   avatarText: { color: BSColors.white, fontSize: 28, fontWeight: '800' },
   userName: { color: BSColors.textPrimary, fontSize: 20, fontWeight: '700', marginBottom: 4 },
   userEmail: { color: BSColors.darkGray, fontSize: 14, marginBottom: 10 },

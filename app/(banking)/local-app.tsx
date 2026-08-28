@@ -5,8 +5,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator, Animated, FlatList, RefreshControl,
-  ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
+    ActivityIndicator, Animated, FlatList, RefreshControl,
+    ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -261,9 +261,28 @@ export default function LocalAppScreen() {
                             <Ionicons name="server-outline" size={48} color={BSColors.slate300} />
                             <Text style={styles.errorTitle}>Server Unreachable</Text>
                             <Text style={styles.errorText}>{error}</Text>
-                            <TouchableOpacity style={[styles.retryBtn, { backgroundColor: primaryColor }]} onPress={fetchAll}>
-                                <Text style={styles.retryText}>Retry</Text>
-                            </TouchableOpacity>
+                            <View style={styles.errorUrlRow}>
+                                <TextInput
+                                    style={[styles.errorUrlInput, { borderColor: primaryColor }]}
+                                    value={urlInput}
+                                    onChangeText={setUrlInput}
+                                    autoCapitalize="none"
+                                    autoCorrect={false}
+                                    keyboardType="url"
+                                    returnKeyType="done"
+                                    onSubmitEditing={() => { saveUrl(urlInput); fetchAll(); }}
+                                    placeholder="http://192.168.x.x:5000"
+                                    placeholderTextColor={BSColors.slate300}
+                                    testID="error-url-input"
+                                />
+                                <TouchableOpacity
+                                    style={[styles.retryBtn, { backgroundColor: primaryColor, marginTop: 0 }]}
+                                    onPress={() => { saveUrl(urlInput); fetchAll(); }}
+                                    testID="retry-btn"
+                                >
+                                    <Text style={styles.retryText}>Retry</Text>
+                                </TouchableOpacity>
+                            </View>
                         </View>
                     ) : (
                         <>
@@ -322,4 +341,6 @@ const styles = StyleSheet.create({
     errorText: { color: BSColors.darkGray, fontSize: 13, textAlign: 'center', lineHeight: 20 },
     retryBtn: { paddingHorizontal: 28, paddingVertical: 12, borderRadius: 14, marginTop: 8 },
     retryText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+    errorUrlRow: { flexDirection: 'row', alignItems: 'center', gap: 8, width: '100%', paddingHorizontal: 8, marginTop: 4 },
+    errorUrlInput: { flex: 1, fontSize: 13, color: BSColors.textPrimary, backgroundColor: BSColors.white, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, borderWidth: 1.5, height: 44 },
 });
