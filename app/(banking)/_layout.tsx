@@ -25,6 +25,7 @@ async function registerPushTokenAfterLogin() {
 
 export default function BankingLayout() {
   const [greenMode, setGreenMode] = useState(ThemeStore.isGreenMode());
+  const { bottom: bottomInset } = require('react-native-safe-area-context').useSafeAreaInsets();
 
   useEffect(() => {
     const unsub = ThemeStore.subscribe(() => setGreenMode(ThemeStore.isGreenMode()));
@@ -34,6 +35,8 @@ export default function BankingLayout() {
   }, []);
 
   const primaryColor = greenMode ? BSColors.successDark : BSColors.accent;
+  // Tab bar height = icon+label area (48) + device bottom inset + small buffer (4)
+  const tabBarHeight = 48 + bottomInset + 4;
 
   return (
     <Tabs
@@ -45,10 +48,9 @@ export default function BankingLayout() {
           backgroundColor: BSColors.white,
           borderTopColor: BSColors.mediumGray,
           borderTopWidth: 1,
+          height: tabBarHeight,
           paddingTop: 8,
-          // No fixed height or paddingBottom — Expo Router's Tabs adds the correct
-          // bottom safe-area inset automatically for each device (gesture nav, button
-          // nav, notch, etc.), so the tab bar always sits above the system UI.
+          paddingBottom: bottomInset + 4,
         },
         tabBarItemStyle: {
           paddingVertical: 4,
