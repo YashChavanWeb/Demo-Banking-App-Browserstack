@@ -1,13 +1,21 @@
 const express = require('express');
 const { sql } = require('../db');
 const { authMiddleware } = require('../middleware/auth');
-const cloudinary = require('cloudinary').v2;
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+let cloudinary = null;
+try {
+  cloudinary = require('cloudinary').v2;
+  if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
+    cloudinary.config({
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET,
+    });
+  } else {
+    cloudinary = null; // not configured — skip image deletion
+  }
+} catch {
+  cloudinary = null;
+}
 
 const router = express.Router();
 
@@ -80,17 +88,18 @@ router.delete('/', authMiddleware, async (req, res) => {
     await sql`DELETE FROM cards WHERE user_id = ${userId}`;
     await sql`DELETE FROM orders WHERE user_id = ${userId}`;
     await sql`DELETE FROM otps WHERE email = (SELECT email FROM users WHERE id = ${userId})`;
-    // Delete Cloudinary profile image if present
-    const [profileRow] = await sql`SELECT avatar_url FROM users WHERE id = ${userId}`;
-    if (profileRow?.avatar_url) {
-      try {
-        // Extract public_id from the Cloudinary URL (path after /upload/ without extension)
-        const match = profileRow.avatar_url.match(/\/upload\/(?:v\d+\/)?(.+?)(?:\.[a-z]+)?$/i);
-        if (match?.[1]) {
-          await cloudinary.uploader.destroy(match[1]);
+    // Delete Cloudinary profile image if present and Cloudinary is configured
+    if (cloudinary) {
+      const [profileRow] = await sql`SELECT avatar_url FROM users WHERE id = ${userId}`;
+      if (profileRow?.avatar_url) {
+        try {
+          const match = profileRow.avatar_url.match(/\/upload\/(?:v\d+\/)?(.+?)(?:\.[a-z]+)?$/i);
+          if (match?.[1]) {
+            await cloudinary.uploader.destroy(match[1]);
+          }
+        } catch (e) {
+          console.warn('Cloudinary delete failed (non-fatal):', e?.message);
         }
-      } catch (e) {
-        console.warn('Cloudinary delete failed (non-fatal):', e?.message);
       }
     }
     await sql`DELETE FROM push_tokens WHERE user_id = ${userId}`;
