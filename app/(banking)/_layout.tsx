@@ -45,9 +45,10 @@ export default function BankingLayout() {
           backgroundColor: BSColors.white,
           borderTopColor: BSColors.mediumGray,
           borderTopWidth: 1,
-          height: 72,
-          paddingBottom: 16,
           paddingTop: 6,
+          // No fixed height or paddingBottom — Expo Router's Tabs adds the correct
+          // bottom safe-area inset automatically for each device (gesture nav, button
+          // nav, notch, etc.), so the tab bar always sits above the system UI.
         },
         tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
       }}

@@ -77,9 +77,10 @@ export default function BiometricScreen() {
       setBioLoading(false);
       if (result.success) {
         handleSuccess();
-      } else if (result.error === 'user_cancel' || result.error === 'system_cancel') {
-        // User cancelled — stay on screen silently, no error
+      } else if (result.error === 'user_cancel') {
+        // User explicitly cancelled — stay on screen silently
       } else {
+        // Covers: system_cancel, lockout, lockout_permanent, not_enrolled, failed, etc.
         setBioError('Biometric authentication failed. Please try again.');
       }
     } catch {
