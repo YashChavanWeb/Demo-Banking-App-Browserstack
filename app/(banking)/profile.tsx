@@ -62,7 +62,14 @@ export default function ProfileScreen() {
     return unsub;
   }, []);
 
+  const PROTECTED_EMAILS = ['yash@gmail.com'];
+  const isProtectedAccount = PROTECTED_EMAILS.includes(userInfo.email.toLowerCase());
+
   const handleDeleteAccount = async () => {
+    if (isProtectedAccount) {
+      Alert.alert('Cannot Delete', 'This account cannot be deleted.');
+      return;
+    }
     Alert.alert(
       'Delete Account',
       'This will permanently delete your account and all data. This cannot be undone.',
@@ -72,7 +79,14 @@ export default function ProfileScreen() {
           text: 'Delete', style: 'destructive', onPress: async () => {
             try {
               await api.deleteAccount();
-            } catch { /* ignore — proceed with local logout */ }
+            } catch (err: any) {
+              const msg = err?.message || '';
+              if (msg.includes('cannot be deleted')) {
+                Alert.alert('Cannot Delete', msg);
+                return;
+              }
+              // Other errors — proceed with local logout
+            }
             await AuthStore.logout();
             router.replace('/' as any);
           },
@@ -227,14 +241,29 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} testID="logout-btn">
+        <TouchableOpacity
+          style={styles.logoutBtn}
+          onPress={handleLogout}
+          testID="logout-btn"
+          accessibilityLabel="Sign out of your account"
+          accessibilityRole="button"
+        >
           <Ionicons name="log-out-outline" size={18} color="#DC2626" />
           <Text style={styles.logoutText}>Sign Out</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.deleteBtn} onPress={handleDeleteAccount} testID="delete-account-btn">
-          <Ionicons name="trash-outline" size={18} color="#DC2626" />
-          <Text style={styles.deleteText}>Delete Account</Text>
+        <TouchableOpacity
+          style={[styles.deleteBtn, isProtectedAccount && styles.deleteBtnDisabled]}
+          onPress={handleDeleteAccount}
+          testID="delete-account-btn"
+          accessibilityLabel={isProtectedAccount ? 'Delete account is disabled for this account' : 'Delete your account permanently'}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: isProtectedAccount }}
+        >
+          <Ionicons name="trash-outline" size={18} color={isProtectedAccount ? BSColors.slate300 : '#DC2626'} />
+          <Text style={[styles.deleteText, isProtectedAccount && styles.deleteTextDisabled]}>
+            {isProtectedAccount ? 'Delete Account (Protected)' : 'Delete Account'}
+          </Text>
         </TouchableOpacity>
 
       </ScrollView>
@@ -265,6 +294,8 @@ const styles = StyleSheet.create({
   infoContent: { flex: 1 },
   infoLabel: { color: BSColors.slate300, fontSize: 11, marginBottom: 2 },
   infoValue: { color: BSColors.textPrimary, fontSize: 14, fontWeight: '500' },
+  deleteBtnDisabled: { opacity: 0.5 },
+  deleteTextDisabled: { color: BSColors.slate300 },
   insightsCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderRadius: 18, padding: 18, marginBottom: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.2, shadowRadius: 12, elevation: 6 },
   insightsLeft: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   insightsIconWrap: { width: 44, height: 44, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },

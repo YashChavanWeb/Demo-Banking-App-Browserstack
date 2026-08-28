@@ -1,6 +1,13 @@
 const express = require('express');
 const { sql } = require('../db');
 const { authMiddleware } = require('../middleware/auth');
+const cloudinary = require('cloudinary').v2;
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 const router = express.Router();
 
@@ -53,10 +60,17 @@ router.get('/balance', authMiddleware, async (req, res) => {
   }
 });
 
+const PROTECTED_EMAILS = ['yash@gmail.com'];
+
 // DELETE /account  — permanently delete the authenticated user's account and all data
 router.delete('/', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.userId;
+    // Fetch the user's email to check if it's protected
+    const [userRow] = await sql`SELECT email FROM users WHERE id = ${userId}`;
+    if (userRow && PROTECTED_EMAILS.includes(userRow.email.toLowerCase())) {
+      return res.status(403).json({ error: 'This account cannot be deleted.' });
+    }
     // Delete in dependency order: transactions → accounts → cards → orders → otps → push_tokens → user
     const [account] = await sql`SELECT id FROM accounts WHERE user_id = ${userId}`;
     if (account) {
@@ -66,6 +80,19 @@ router.delete('/', authMiddleware, async (req, res) => {
     await sql`DELETE FROM cards WHERE user_id = ${userId}`;
     await sql`DELETE FROM orders WHERE user_id = ${userId}`;
     await sql`DELETE FROM otps WHERE email = (SELECT email FROM users WHERE id = ${userId})`;
+    // Delete Cloudinary profile image if present
+    const [profileRow] = await sql`SELECT avatar_url FROM users WHERE id = ${userId}`;
+    if (profileRow?.avatar_url) {
+      try {
+        // Extract public_id from the Cloudinary URL (path after /upload/ without extension)
+        const match = profileRow.avatar_url.match(/\/upload\/(?:v\d+\/)?(.+?)(?:\.[a-z]+)?$/i);
+        if (match?.[1]) {
+          await cloudinary.uploader.destroy(match[1]);
+        }
+      } catch (e) {
+        console.warn('Cloudinary delete failed (non-fatal):', e?.message);
+      }
+    }
     await sql`DELETE FROM push_tokens WHERE user_id = ${userId}`;
     await sql`DELETE FROM users WHERE id = ${userId}`;
     res.json({ deleted: true });

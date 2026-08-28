@@ -50,9 +50,6 @@ export default function HomeScreen() {
   const primaryColor = greenMode ? BSColors.successDark : BSColors.primary;
   const accentColor = greenMode ? BSColors.success : BSColors.accent;
 
-  // Theme toggle smooth transition
-  const toggleAnim = useRef(new Animated.Value(greenMode ? 1 : 0)).current;
-
   // Card metallic shimmer — sweeps every 2.5s
   const shimmerAnim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -200,7 +197,6 @@ export default function HomeScreen() {
 
   const handleThemeToggle = () => {
     const next = !ThemeStore.isGreenMode();
-    Animated.timing(toggleAnim, { toValue: next ? 1 : 0, duration: 350, useNativeDriver: false }).start();
     ThemeStore.toggle();
     setGreenMode(next);
   };
@@ -269,9 +265,9 @@ export default function HomeScreen() {
         </View>
 
         {/* Theme Toggle */}
-        <Animated.View style={[styles.themeToggleRow, {
-          borderColor: toggleAnim.interpolate({ inputRange: [0, 1], outputRange: [BSColors.primary + '30', BSColors.successDark + '30'] }),
-          backgroundColor: toggleAnim.interpolate({ inputRange: [0, 1], outputRange: [BSColors.primary + '08', BSColors.successDark + '12'] }),
+        <View style={[styles.themeToggleRow, {
+          borderColor: greenMode ? BSColors.successDark + '30' : BSColors.primary + '30',
+          backgroundColor: greenMode ? BSColors.successDark + '12' : BSColors.primary + '08',
         }]}>
           <Ionicons name={greenMode ? 'leaf-outline' : 'color-palette-outline'} size={16} color={primaryColor} />
           <Text style={[styles.themeToggleLabel, { color: primaryColor }]}>{greenMode ? 'Green Mode ON' : 'Default Theme'}</Text>
@@ -282,7 +278,7 @@ export default function HomeScreen() {
             thumbColor={greenMode ? BSColors.successDark : primaryColor}
             testID="theme-toggle"
           />
-        </Animated.View>
+        </View>
 
         {/* Balance Card — shifts slightly left+top in green mode (Percy visual diff use-case) */}
         <View style={[styles.balanceCard, { backgroundColor: primaryColor }, greenMode && styles.balanceCardGreen]}>
@@ -537,7 +533,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: BSColors.bgPage },
   container: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32 },
+  content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 100 },
 
   // Header
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },

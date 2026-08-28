@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
   bubbleTime: { color: BSColors.darkGray, fontSize: 10, marginTop: 4, textAlign: 'right' },
   errorBar: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: BSColors.errorBg, paddingHorizontal: 16, paddingVertical: 8, borderTopWidth: 1, borderTopColor: BSColors.errorBorder },
   errorText: { color: BSColors.error, fontSize: 12, flex: 1 },
-  inputRow: { flexDirection: 'row', alignItems: 'flex-end', padding: 12, paddingBottom: 20, gap: 8, backgroundColor: BSColors.white, borderTopWidth: 1, borderTopColor: BSColors.mediumGray },
+  inputRow: { flexDirection: 'row', alignItems: 'flex-end', padding: 12, paddingBottom: Platform.OS === 'android' ? 28 : 20, gap: 8, backgroundColor: BSColors.white, borderTopWidth: 1, borderTopColor: BSColors.mediumGray },
   msgInput: { flex: 1, backgroundColor: BSColors.lightGray, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, color: BSColors.textPrimary, maxHeight: 100 },
   charCount: { color: BSColors.darkGray, fontSize: 10, alignSelf: 'flex-end', marginBottom: 10 },
   sendBtn: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },

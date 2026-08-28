@@ -93,7 +93,7 @@ export default function BankingLayout() {
       <Tabs.Screen name="shake" options={{ href: null }} />
       <Tabs.Screen name="shop" options={{ href: null }} />
       <Tabs.Screen name="currency" options={{ href: null }} />
-      <Tabs.Screen name="chat" options={{ href: null }} />
+      <Tabs.Screen name="chat" options={{ href: null, tabBarStyle: { display: 'none' } }} />
       <Tabs.Screen name="webview" options={{ href: null }} />
       <Tabs.Screen name="coming-soon" options={{ href: null }} />
       <Tabs.Screen name="local-app" options={{ href: null, tabBarStyle: { display: 'none' } }} />

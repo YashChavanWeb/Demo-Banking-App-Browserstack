@@ -463,7 +463,7 @@ const styles = StyleSheet.create({
     quickChipHighlight: { borderColor: '#D97706', borderWidth: 1.5 },
     quickChipText: { fontSize: 12, fontWeight: '600' },
     quickScroll: { maxHeight: 50, borderTopWidth: 1, borderTopColor: BSColors.lightGray },
-    inputBar: { flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: 12, paddingVertical: 10, paddingBottom: 16, borderTopWidth: 1, borderTopColor: BSColors.mediumGray, gap: 8, backgroundColor: BSColors.white },
+    inputBar: { flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: 12, paddingVertical: 10, paddingBottom: Platform.OS === 'android' ? 24 : 16, borderTopWidth: 1, borderTopColor: BSColors.mediumGray, gap: 8, backgroundColor: BSColors.white },
     iconBtn: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: BSColors.lightGray },
     inputField: { flex: 1, backgroundColor: BSColors.lightGray, borderRadius: 20, paddingHorizontal: 14, paddingTop: 9, paddingBottom: 9, fontSize: 14, color: BSColors.textPrimary, maxHeight: 96, minHeight: 38 },
     inputHighlight: { borderWidth: 1.5, borderColor: '#D97706' },
