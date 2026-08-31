@@ -74,13 +74,13 @@ export default function BiometricScreen() {
         // repeated biometric failures, which is required for Face ID to work correctly
         disableDeviceFallback: false,
       });
+      // Clear loading immediately so the UI responds without delay
       setBioLoading(false);
       if (result.success) {
         handleSuccess();
-      } else if (result.error === 'user_cancel') {
-        // User explicitly cancelled — stay on screen silently
       } else {
-        // Covers: system_cancel, lockout, lockout_permanent, not_enrolled, failed, etc.
+        // Show error for all failure cases including cancel — on BrowserStack App Live
+        // both FAIL and Cancel return non-success results and should show the error
         setBioError('Biometric authentication failed. Please try again.');
       }
     } catch {
