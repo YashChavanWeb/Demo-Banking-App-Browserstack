@@ -35,8 +35,8 @@ export default function BankingLayout() {
   }, []);
 
   const primaryColor = greenMode ? BSColors.successDark : BSColors.accent;
-  // Tab bar height = icon+label area (48) + device bottom inset + small buffer (4)
-  const tabBarHeight = 48 + bottomInset + 4;
+  // Tab bar height = icon+label area (60) + device bottom inset + top padding (8)
+  const tabBarHeight = 60 + bottomInset + 8;
 
   return (
     <Tabs
@@ -50,10 +50,10 @@ export default function BankingLayout() {
           borderTopWidth: 1,
           height: tabBarHeight,
           paddingTop: 8,
-          paddingBottom: bottomInset + 4,
+          paddingBottom: bottomInset + 8,
         },
         tabBarItemStyle: {
-          paddingVertical: 4,
+          paddingVertical: 2,
         },
         tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
       }}
