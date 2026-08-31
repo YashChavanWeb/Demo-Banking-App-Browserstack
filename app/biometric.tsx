@@ -77,7 +77,7 @@ export default function BiometricScreen() {
         disableDeviceFallback: false,
       });
       const timeoutPromise = new Promise<{ success: false; error: 'timeout' }>(resolve =>
-        setTimeout(() => resolve({ success: false, error: 'timeout' }), 2500)
+        setTimeout(() => resolve({ success: false, error: 'timeout' }), 1000)
       );
 
       const result = await Promise.race([authPromise, timeoutPromise]);
