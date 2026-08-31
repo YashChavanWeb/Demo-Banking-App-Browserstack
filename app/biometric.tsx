@@ -67,20 +67,24 @@ export default function BiometricScreen() {
         handleSuccess();
         return;
       }
-      const result = await LocalAuthentication.authenticateAsync({
+
+      // Race the biometric prompt against a 2.5s timeout.
+      // On Android, tapping FAIL causes the OS to hold the callback for ~8s before
+      // returning — the timeout lets us show the error immediately instead of waiting.
+      const authPromise = LocalAuthentication.authenticateAsync({
         promptMessage: 'Verify your identity to continue',
         cancelLabel: 'Cancel',
-        // disableDeviceFallback: false (default) — allows iOS passcode fallback after
-        // repeated biometric failures, which is required for Face ID to work correctly
         disableDeviceFallback: false,
       });
-      // Clear loading immediately so the UI responds without delay
+      const timeoutPromise = new Promise<{ success: false; error: 'timeout' }>(resolve =>
+        setTimeout(() => resolve({ success: false, error: 'timeout' }), 2500)
+      );
+
+      const result = await Promise.race([authPromise, timeoutPromise]);
       setBioLoading(false);
       if (result.success) {
         handleSuccess();
       } else {
-        // Show error for all failure cases including cancel — on BrowserStack App Live
-        // both FAIL and Cancel return non-success results and should show the error
         setBioError('Biometric authentication failed. Please try again.');
       }
     } catch {
