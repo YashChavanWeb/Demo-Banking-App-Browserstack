@@ -6,29 +6,25 @@ import { ThemeStore } from '@/store/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { scanFromURLAsync } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
+import * as LocalAuthentication from 'expo-local-authentication';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator, Alert, Animated,
   Modal, ScrollView,
-  StyleSheet, Switch, Text, TextInput,
-  TouchableOpacity, View,
+  StyleSheet, Switch, Text,
+  TouchableOpacity, View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // IP-based geolocation — ip-api.com is free, no key, works from mobile
 const IP_GEO_URL = 'http://ip-api.com/json/?fields=status,country,countryCode,regionName,city,currency,timezone,org,lat,lon,query,callingCodes';
 
-const CORRECT_PIN = '1234';
-
 export default function HomeScreen() {
   const router = useRouter();
   // Balance visibility — protected by passcode once per session
   const [balanceVisible, setBalanceVisible] = useState(false);
   const [balanceUnlockedThisSession, setBalanceUnlockedThisSession] = useState(false);
-  const [showPinModal, setShowPinModal] = useState(false);
-  const [pin, setPin] = useState('');
-  const [pinError, setPinError] = useState('');
   const [showQRModal, setShowQRModal] = useState(false);
   const [scanned, setScanned] = useState(false);
   const [qrResult, setQrResult] = useState<string | null>(null);
@@ -136,8 +132,6 @@ export default function HomeScreen() {
     }
   }, []);
 
-  const pinInputRef = useRef<TextInput>(null);
-
   const openQRScanner = useCallback(async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
@@ -165,8 +159,8 @@ export default function HomeScreen() {
     setShowQRModal(true);
   }, []);
 
-  // Balance eye-icon handler
-  const handleBalanceToggle = () => {
+  // Balance eye-icon handler — uses device passcode via LocalAuthentication
+  const handleBalanceToggle = async () => {
     if (balanceVisible) {
       // User manually hides — require passcode again next time
       setBalanceVisible(false);
@@ -175,23 +169,27 @@ export default function HomeScreen() {
       if (balanceUnlockedThisSession) {
         setBalanceVisible(true);
       } else {
-        setPin('');
-        setPinError('');
-        setShowPinModal(true);
+        try {
+          const hasHardware = await LocalAuthentication.hasHardwareAsync();
+          const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+          if (!hasHardware || !isEnrolled) {
+            setBalanceUnlockedThisSession(true);
+            setBalanceVisible(true);
+            return;
+          }
+          const result = await LocalAuthentication.authenticateAsync({
+            promptMessage: 'Authenticate to view your balance',
+            cancelLabel: 'Cancel',
+            disableDeviceFallback: false,
+          });
+          if (result.success) {
+            setBalanceUnlockedThisSession(true);
+            setBalanceVisible(true);
+          }
+        } catch {
+          // Authentication failed or not available — do nothing
+        }
       }
-    }
-  };
-
-  const handlePinSubmit = (digits: string) => {
-    if (digits === CORRECT_PIN) {
-      setBalanceUnlockedThisSession(true);
-      setBalanceVisible(true);
-      setShowPinModal(false);
-      setPin('');
-      setPinError('');
-    } else {
-      setPinError('Incorrect passcode. Please try again.');
-      setPin('');
     }
   };
 
@@ -449,54 +447,6 @@ export default function HomeScreen() {
         </SafeAreaView>
       </Modal>
 
-      {/* Passcode Modal for balance reveal — OTP-style boxes */}
-      <Modal visible={showPinModal} transparent animationType="fade" onShow={() => setTimeout(() => pinInputRef.current?.focus(), 100)}>
-        <View style={styles.pinOverlay}>
-          <View style={styles.pinModal}>
-            <View style={styles.pinModalHeader}>
-              <Ionicons name="lock-closed-outline" size={24} color={BSColors.primary} />
-              <Text style={styles.pinModalTitle}>Enter Passcode</Text>
-            </View>
-            <Text style={styles.pinModalSub}>Enter your 4-digit passcode to view your balance</Text>
-
-            <TouchableOpacity activeOpacity={1} onPress={() => pinInputRef.current?.focus()} style={styles.pinRow} testID="pin-display">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <View key={i} style={[styles.pinBox, pin[i] ? styles.pinBoxFilled : null, i === pin.length && styles.pinBoxActive]}>
-                  <Text style={styles.pinDigit}>{pin[i] ? '●' : ''}</Text>
-                </View>
-              ))}
-            </TouchableOpacity>
-
-            <TextInput
-              ref={pinInputRef}
-              style={styles.hiddenInput}
-              value={pin}
-              onChangeText={(text: string) => {
-                const digits = text.replace(/[^0-9]/g, '').slice(0, 4);
-                setPin(digits);
-                setPinError('');
-                if (digits.length === 4) {
-                  setTimeout(() => handlePinSubmit(digits), 150);
-                }
-              }}
-              keyboardType="number-pad"
-              maxLength={4}
-              testID="balance-pin-input"
-              secureTextEntry
-            />
-
-            {pinError ? <Text style={styles.pinError} testID="balance-pin-error">{pinError}</Text> : null}
-
-            <TouchableOpacity
-              style={styles.pinCancelBtn}
-              onPress={() => { setShowPinModal(false); setPin(''); setPinError(''); }}
-              testID="balance-pin-cancel"
-            >
-              <Text style={styles.pinCancelText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
 
       {/* QR Result Modal — shown after native camera capture + decode */}
       <Modal visible={showQRModal} transparent animationType="fade">

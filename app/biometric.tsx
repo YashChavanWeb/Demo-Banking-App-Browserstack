@@ -68,19 +68,11 @@ export default function BiometricScreen() {
         return;
       }
 
-      // Race the biometric prompt against a 2.5s timeout.
-      // On Android, tapping FAIL causes the OS to hold the callback for ~8s before
-      // returning — the timeout lets us show the error immediately instead of waiting.
-      const authPromise = LocalAuthentication.authenticateAsync({
+      const result = await LocalAuthentication.authenticateAsync({
         promptMessage: 'Verify your identity to continue',
         cancelLabel: 'Cancel',
         disableDeviceFallback: false,
       });
-      const timeoutPromise = new Promise<{ success: false; error: 'timeout' }>(resolve =>
-        setTimeout(() => resolve({ success: false, error: 'timeout' }), 1000)
-      );
-
-      const result = await Promise.race([authPromise, timeoutPromise]);
       setBioLoading(false);
       if (result.success) {
         handleSuccess();

@@ -1,6 +1,7 @@
 /**
  * TransactionAuthModal
- * Either/Or transaction authentication: PIN (1234) OR Biometric — either one is sufficient.
+ * Either/Or transaction authentication: Device Passcode OR Biometric — either one is sufficient.
+ * The PIN is verified against the device passcode (not a hardcoded value).
  */
 import { BSColors } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,8 +16,6 @@ import {
   View,
 } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
-
-const CORRECT_PIN = '1234';
 
 type Step = 'auth' | 'success' | 'failed';
 
@@ -86,12 +85,32 @@ export function TransactionAuthModal({ visible, amount, description, onSuccess, 
     setPinError('');
   };
 
-  const validatePin = (enteredPin: string) => {
-    if (enteredPin === CORRECT_PIN) {
-      handleSuccess();
-    } else {
+  const validatePin = async (_enteredPin: string) => {
+    // Verify against the device passcode/biometric using LocalAuthentication
+    try {
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+      if (!hasHardware || !isEnrolled) {
+        handleSuccess();
+        return;
+      }
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'Authenticate to authorize transaction',
+        cancelLabel: 'Cancel',
+        disableDeviceFallback: false,
+      });
+      if (result.success) {
+        handleSuccess();
+      } else if (result.error === 'user_cancel') {
+        setPin('');
+      } else {
+        shake();
+        setPinError('Incorrect passcode. Try again or use biometrics.');
+        setPin('');
+      }
+    } catch {
       shake();
-      setPinError('Incorrect PIN. Try again or use biometrics.');
+      setPinError('Passcode verification failed. Try again or use biometrics.');
       setPin('');
     }
   };
