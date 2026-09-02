@@ -86,16 +86,12 @@ export function TransactionAuthModal({ visible, amount, description, onSuccess, 
   };
 
   const validatePin = async (_enteredPin: string) => {
-    // Verify against the device passcode/biometric using LocalAuthentication
+    // PIN entry triggers a device passcode prompt (not biometric).
+    // disableDeviceFallback: false is required so the OS passcode dialog appears.
+    // Do NOT skip based on isEnrolled — BrowserStack passcode executor handles it.
     try {
-      const hasHardware = await LocalAuthentication.hasHardwareAsync();
-      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
-      if (!hasHardware || !isEnrolled) {
-        handleSuccess();
-        return;
-      }
       const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: 'Authenticate to authorize transaction',
+        promptMessage: 'Enter your device passcode to authorize',
         cancelLabel: 'Cancel',
         disableDeviceFallback: false,
       });
@@ -119,14 +115,8 @@ export function TransactionAuthModal({ visible, amount, description, onSuccess, 
   const triggerBiometric = async () => {
     setBioLoading(true);
     try {
-      const hasHardware = await LocalAuthentication.hasHardwareAsync();
-      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
-      if (!hasHardware || !isEnrolled) {
-        // No biometric set up — auto-pass (demo / BrowserStack device)
-        setBioLoading(false);
-        handleSuccess();
-        return;
-      }
+      // Do NOT skip based on isEnrolled — BrowserStack biometric executor handles it.
+      // disableDeviceFallback: false allows the OS passcode as a fallback if biometric fails.
       const result = await LocalAuthentication.authenticateAsync({
         promptMessage: 'Confirm transaction with biometrics',
         fallbackLabel: 'Use PIN instead',
@@ -139,17 +129,14 @@ export function TransactionAuthModal({ visible, amount, description, onSuccess, 
       } else if (result.error === 'user_cancel') {
         // User cancelled — stay on screen silently
       } else if (result.error === 'user_fallback') {
-        // User tapped "Use PIN instead" — just focus the PIN area
+        // User tapped "Use PIN instead" — guide them to the PIN keypad
         setPinError('Enter your PIN below to authorize.');
       } else {
-        // Any other failure — auto-pass for demo (BrowserStack devices may not have biometric enrolled)
-        setBioLoading(false);
-        handleSuccess();
+        setPinError('Biometric failed. Please enter your PIN below.');
       }
     } catch {
-      // If LocalAuthentication throws entirely, auto-pass for demo
       setBioLoading(false);
-      handleSuccess();
+      setPinError('Biometric unavailable. Please enter your PIN below.');
     }
   };
 

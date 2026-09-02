@@ -170,15 +170,11 @@ export default function HomeScreen() {
         setBalanceVisible(true);
       } else {
         try {
-          const hasHardware = await LocalAuthentication.hasHardwareAsync();
-          const isEnrolled = await LocalAuthentication.isEnrolledAsync();
-          if (!hasHardware || !isEnrolled) {
-            setBalanceUnlockedThisSession(true);
-            setBalanceVisible(true);
-            return;
-          }
+          // Do NOT skip based on isEnrolled — on BrowserStack the passcode executor
+          // handles this. disableDeviceFallback: false shows the device passcode
+          // prompt (PIN/pattern/password) as the primary method for this flow.
           const result = await LocalAuthentication.authenticateAsync({
-            promptMessage: 'Authenticate to view your balance',
+            promptMessage: 'Enter your device passcode to view balance',
             cancelLabel: 'Cancel',
             disableDeviceFallback: false,
           });

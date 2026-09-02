@@ -60,22 +60,20 @@ export default function BiometricScreen() {
     setBioLoading(true);
     setBioError('');
     try {
-      const hasHardware = await LocalAuthentication.hasHardwareAsync();
-      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
-      if (!hasHardware || !isEnrolled) {
-        setBioLoading(false);
-        handleSuccess();
-        return;
-      }
-
+      // Do NOT skip based on isEnrolled — on BrowserStack the biometric executor
+      // handles enrollment simulation. Always invoke authenticateAsync so the
+      // BrowserStack biometric prompt appears.
       const result = await LocalAuthentication.authenticateAsync({
         promptMessage: 'Verify your identity to continue',
+        fallbackLabel: 'Use Passcode',
         cancelLabel: 'Cancel',
         disableDeviceFallback: false,
       });
       setBioLoading(false);
       if (result.success) {
         handleSuccess();
+      } else if (result.error === 'user_cancel') {
+        setBioError('Biometric cancelled. Tap "Scan Biometric" to try again.');
       } else {
         setBioError('Biometric authentication failed. Please try again.');
       }
