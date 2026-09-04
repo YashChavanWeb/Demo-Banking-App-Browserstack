@@ -5,7 +5,7 @@ import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, BackHandler, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function LivenessScreen() {
@@ -15,6 +15,16 @@ export default function LivenessScreen() {
   const [uploadLoading, setUploadLoading] = useState(false);
 
   const flowConfig = AuthStore.getFlowConfig();
+
+  // Intercept Android back — go back to OTP screen
+  React.useEffect(() => {
+    const onBack = () => {
+      router.replace('/otp' as any);
+      return true;
+    };
+    const sub = BackHandler.addEventListener('hardwareBackPress', onBack);
+    return () => sub.remove();
+  }, []);
 
   React.useEffect(() => {
     if (!flowConfig.cameraInjection) {
@@ -91,7 +101,7 @@ export default function LivenessScreen() {
   return (
     <SafeAreaView style={s.safe}>
       <View style={s.container}>
-        <Image source={require('@/assets/images/browserstack-logo.png')} style={s.logo} contentFit="contain" />
+        <Image source={require('@/assets/images/bstack-bank-logo.png')} style={s.logo} contentFit="contain" />
 
         <View style={s.stepBadge}>
           <Text style={s.stepBadgeText}>Step 3 of 5 — Liveness Check</Text>

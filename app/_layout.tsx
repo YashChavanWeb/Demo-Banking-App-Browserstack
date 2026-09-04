@@ -60,7 +60,13 @@ export default function RootLayout() {
                   AuthStore.setRole(profile.role === 'admin' ? 'admin' : 'user');
                 }
               } catch { /* use token without profile */ }
-              router.replace('/(banking)/home' as any);
+              // Only auto-route to home on a clean login flow.
+              // If the user backed out of biometric mid-login, the token was
+              // already cleared in biometric.tsx handleBack(), so this branch
+              // won't be reached. This guard is an extra safety net.
+              if (AuthStore.getFlow() !== 'signup') {
+                router.replace('/(banking)/home' as any);
+              }
               return;
             }
           }
